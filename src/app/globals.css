@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/*
+  Design tokens — Tailwind v4 (CSS-first, لا يوجد tailwind.config).
+  @theme يولّد المتغيّر و الـ utility معاً: --color-primary => bg-primary / text-primary ...
+
+  ملاحظة للدارك مود لاحقاً:
+  بنحوّل لنمط الطبقتين — القيم الخام بـ :root و .dark، و @theme inline بيشير إلها،
+  مع @custom-variant dark (&:where(.dark, .dark *)) عشان تشتغل utilities الـ dark:
+*/
+@theme {
+  /* ── الهوية ─────────────────────────────────────── */
+  --color-primary: #253745;
+  --color-primary-hover: #1b2a35;
+  --color-primary-soft: #e9edef;
+  --color-icon: #ffffff;
+
+  /* ── النصوص ─────────────────────────────────────── */
+  --color-heading: #111827;
+  --color-text-secondary: #6b7280;
+  --color-field-label: #374151;
+  --color-placeholder: #9ca3af;
+
+  /* ── الأسطح ─────────────────────────────────────── */
+  --color-app-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-field-bg: #f3f4f6;
+  --color-border: #e5e7eb;
+
+  /* ── الحالات ────────────────────────────────────── */
+  --color-success: #16a34a;
+  --color-success-soft: #dcfce7;
+  --color-warning: #ca8a04;
+  --color-warning-soft: #fef9c3;
+  --color-info: #2563eb;
+  --color-info-soft: #dbeafe;
+  --color-danger: #ef4444;
+  --color-danger-soft: #fee2e2;
+
+  /* ── الخط ───────────────────────────────────────── */
+  --font-sans: var(--font-cairo), Arial, Helvetica, sans-serif;
+}
+
+body {
+  background: var(--color-app-bg);
+  color: var(--color-heading);
+}
+
+/* الأرقام والهواتف والإيميلات لازم تنعرض LTR حتى داخل نص عربي */
+.ltr-nums {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* إخفاء شريط التمرير مع إبقاء إمكانية التمرير (تبويبات الفلاتر بالموبايل) */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
