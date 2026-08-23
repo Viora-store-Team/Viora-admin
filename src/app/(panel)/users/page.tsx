@@ -15,8 +15,7 @@ import Pagination from "@/components/ui/Pagination";
 import Button from "@/components/ui/Button";
 import UsersTable from "@/components/admin/UsersTable";
 import { fetchUsers } from "@/lib/admin/api";
-import { ENTITY_STATUS, ENTITY_STATUS_KEYS } from "@/lib/admin/status";
-import type { AdminUserListItem, EntityStatus } from "@/lib/admin/types";
+import type { AdminRole, AdminUserListItem } from "@/lib/admin/types";
 import { useAdminList } from "@/lib/admin/useAdminList";
 import { formatNumber } from "@/lib/format";
 import { t } from "@/lib/strings";
@@ -29,11 +28,16 @@ const ROLE_TABS: TabItem[] = [
   { key: "CUSTOMER", label: t.admin.users.customer },
 ];
 
-/* الحالة محور ثانوي — قائمة منسدلة بدل صف تبويبات ثاني يزحم الشاشة.
-   PENDING مستثناة: هي حالة متاجر مش حسابات. */
-const STATUS_OPTIONS = ENTITY_STATUS_KEYS.filter((k) => k !== "PENDING").map(
-  (key) => ({ value: key, label: ENTITY_STATUS[key].label }),
-);
+/*
+  الحالة محور ثانوي — قائمة منسدلة بدل صف تبويبات ثاني يزحم الشاشة.
+
+  ⚠️ القيم `"true"`/`"false"` لأن الفلتر بالباك إند اسمه `isActive` بولياني،
+  مش `status` بقيم نصية. `?status=` بينتجاهل بصمت على السيرفر.
+*/
+const ACTIVE_OPTIONS = [
+  { value: "true", label: t.admin.status.active },
+  { value: "false", label: t.admin.status.suspended },
+];
 
 export default function AdminUsersPage() {
   const router = useRouter();
@@ -51,8 +55,8 @@ export default function AdminUsersPage() {
       fetchUsers({
         page,
         q,
-        role: filters.role,
-        status: filters.status as EntityStatus | "",
+        role: filters.role as AdminRole | "",
+        isActive: filters.isActive as "true" | "false" | "",
       }),
     [],
   );
@@ -65,7 +69,7 @@ export default function AdminUsersPage() {
   const list = useAdminList<AdminUserListItem>({
     fetcher,
     select,
-    initialFilters: { role: "", status: "" },
+    initialFilters: { role: "", isActive: "" },
   });
 
   const total = list.pagination?.total ?? 0;
@@ -104,9 +108,9 @@ export default function AdminUsersPage() {
           />
           <Select
             id="users-status"
-            value={list.filters.status ?? ""}
-            onChange={(value) => list.changeFilter("status", value)}
-            options={STATUS_OPTIONS}
+            value={list.filters.isActive ?? ""}
+            onChange={(value) => list.changeFilter("isActive", value)}
+            options={ACTIVE_OPTIONS}
             placeholder={t.admin.common.all}
             className="sm:w-48"
           />

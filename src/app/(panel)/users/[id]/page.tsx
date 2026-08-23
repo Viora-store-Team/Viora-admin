@@ -7,7 +7,7 @@ import {
   Ban,
   Check,
   CircleCheck,
-  ShieldOff,
+  PowerOff,
   UserRound,
 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
@@ -15,22 +15,22 @@ import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import ReasonDialog from "@/components/ui/ReasonDialog";
 import EmptyState from "@/components/ui/EmptyState";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
 import InfoGrid from "@/components/admin/InfoGrid";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { fetchUser, reactivateUser, suspendUser } from "@/lib/admin/api";
-import { ENTITY_STATUS, ROLE_LABEL } from "@/lib/admin/status";
+import { activateUser, fetchUser, suspendUser } from "@/lib/admin/api";
+import { accountStatus, ROLE_LABEL, STORE_STATUS } from "@/lib/admin/status";
 import type { AdminUserDetail } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
 import type { ApiResponse } from "@/lib/api";
-import { formatDate, formatNumber } from "@/lib/format";
+import { textOrNull } from "@/lib/brokenText";
+import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { useFlash } from "@/lib/useFlash";
 import { t } from "@/lib/strings";
 
-type Dialog = "suspend" | "reactivate" | null;
+type Dialog = "suspend" | "activate" | null;
 
 export default function AdminUserDetailPage() {
   const router = useRouter();
@@ -44,7 +44,6 @@ export default function AdminUserDetailPage() {
 
   const [dialog, setDialog] = useState<Dialog>(null);
   const [busy, setBusy] = useState(false);
-  const [reasonError, setReasonError] = useState<string>();
   const [flash, showFlash] = useFlash();
 
   useEffect(() => {
@@ -80,6 +79,7 @@ export default function AdminUserDetailPage() {
     };
   }, [userId, attempt]);
 
+  /** كل رد نجاح بيرجّع المستخدم كامل، فبنعيد بذر الحالة منه بدل إعادة جلب */
   const run = useCallback(
     async (
       call: () => Promise<ApiResponse & { user?: AdminUserDetail }>,
@@ -87,26 +87,18 @@ export default function AdminUserDetailPage() {
     ) => {
       setBusy(true);
       setError("");
-      setReasonError(undefined);
 
       const res = await call();
       setBusy(false);
+      setDialog(null);
 
       if (res.success && res.user) {
         setUser(res.user);
-        setDialog(null);
         showFlash(success);
         return;
       }
 
       const failure = classifyStatus(res);
-
-      if (failure.kind === "validation" && failure.errors?.reason) {
-        setReasonError(failure.errors.reason);
-        return;
-      }
-
-      setDialog(null);
       setError(
         failure.kind === "unauthorized"
           ? t.admin.common.sessionInvalid
@@ -149,12 +141,29 @@ export default function AdminUserDetailPage() {
     );
   }
 
-  const suspended = user.status === "SUSPENDED";
+  /*
+    طريقة الدخول — الحسابين مستقلين: ممكن يكون عنده كلمة مرور، أو غوغل،
+    أو الاتنين. الحالة الفاضية واردة نظرياً (حساب انربط ثم انفكّ) وبتفيد
+    المشرف يفهم ليش المستخدم ما بيقدر يدخل.
+  */
+  const signInMethod =
+    user.hasPassword && user.linkedGoogle
+      ? t.admin.users.signInBoth
+      : user.hasPassword
+        ? t.admin.users.hasPassword
+        : user.linkedGoogle
+          ? t.admin.users.linkedGoogle
+          : t.admin.users.signInNone;
+
+  /* التاجر بياخد `revenue` والزبون `totalSpent` — مفتاح واحد بكل رد */
+  const money = user.role === "MERCHANT" ? user.revenue : user.totalSpent;
+  const moneyLabel =
+    user.role === "MERCHANT" ? t.admin.users.revenue : t.admin.users.totalSpent;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={user.name}
+        title={textOrNull(user.name) ?? `${t.admin.users.brokenName}${user.id}`}
         subtitle={t.admin.users.detailsTitle}
         action={
           <div className="flex flex-wrap items-center gap-3">
@@ -185,7 +194,7 @@ export default function AdminUserDetailPage() {
       <Card>
         <CardBody className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge meta={ENTITY_STATUS[user.status]} />
+            <StatusBadge meta={accountStatus(user.isActive)} />
             <StatusBadge meta={ROLE_LABEL[user.role]} />
             <Badge tone={user.emailVerified ? "success" : "warning"}>
               {user.emailVerified
@@ -194,15 +203,7 @@ export default function AdminUserDetailPage() {
             </Badge>
           </div>
 
-          {suspended ? (
-            <Button
-              disabled={busy}
-              onClick={() => setDialog("reactivate")}
-              icon={<CircleCheck className="size-4" aria-hidden="true" />}
-            >
-              {t.admin.users.reactivate}
-            </Button>
-          ) : (
+          {user.isActive ? (
             <Button
               variant="danger"
               disabled={busy}
@@ -211,30 +212,23 @@ export default function AdminUserDetailPage() {
             >
               {t.admin.users.suspend}
             </Button>
+          ) : (
+            <Button
+              disabled={busy}
+              onClick={() => setDialog("activate")}
+              icon={<CircleCheck className="size-4" aria-hidden="true" />}
+            >
+              {t.admin.users.activate}
+            </Button>
           )}
         </CardBody>
       </Card>
-
-      {user.suspension && (
-        <Card className="border-danger/20 bg-danger-soft/40">
-          <CardBody className="space-y-2">
-            <p className="flex items-center gap-2 text-sm font-extrabold text-danger">
-              <ShieldOff className="size-4" aria-hidden="true" />
-              {t.admin.stores.suspensionInfo}
-            </p>
-            <p className="text-sm text-heading">{user.suspension.reason}</p>
-            <p className="ltr-nums text-xs text-text-secondary">
-              {formatDate(user.suspension.at)} · {t.admin.common.by}{" "}
-              {user.suspension.by}
-            </p>
-          </CardBody>
-        </Card>
-      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader title={t.admin.users.account} />
           <CardBody>
+            {/* ما في «آخر دخول» — الباك إند ما بيرجّعه، فانشال بدل ما يعرض فراغ دايم */}
             <InfoGrid
               rows={[
                 {
@@ -251,11 +245,29 @@ export default function AdminUserDetailPage() {
                   label: t.admin.users.role,
                   value: ROLE_LABEL[user.role].label,
                 },
+                { label: t.admin.users.signInMethod, value: signInMethod },
                 {
                   label: t.admin.users.colOrders,
                   value: (
                     <span className="ltr-nums">
                       {formatNumber(user.ordersCount)}
+                    </span>
+                  ),
+                },
+                {
+                  label: t.admin.users.addresses,
+                  value: (
+                    <span className="ltr-nums">
+                      {formatNumber(user.addressesCount)}{" "}
+                      {t.admin.users.addressUnit}
+                    </span>
+                  ),
+                },
+                {
+                  label: moneyLabel,
+                  value: money && (
+                    <span className="ltr-nums">
+                      {formatCurrency(Number(money))}
                     </span>
                   ),
                 },
@@ -266,13 +278,9 @@ export default function AdminUserDetailPage() {
                   ),
                 },
                 {
-                  label: t.admin.users.lastLogin,
-                  value: user.lastLoginAt ? (
-                    <span className="ltr-nums">
-                      {formatDate(user.lastLoginAt)}
-                    </span>
-                  ) : (
-                    t.admin.users.neverLoggedIn
+                  label: t.admin.users.updatedAt,
+                  value: (
+                    <span className="ltr-nums">{formatDate(user.updatedAt)}</span>
                   ),
                 },
               ]}
@@ -284,11 +292,11 @@ export default function AdminUserDetailPage() {
           <CardHeader
             title={t.admin.users.store}
             action={
-              user.storeId ? (
+              user.store ? (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => router.push(`/stores/${user.storeId}`)}
+                  onClick={() => router.push(`/stores/${user.store!.id}`)}
                 >
                   {t.admin.users.viewStore}
                 </Button>
@@ -296,18 +304,27 @@ export default function AdminUserDetailPage() {
             }
           />
           <CardBody>
-            {user.storeId ? (
+            {user.store ? (
               <InfoGrid
                 rows={[
-                  { label: t.admin.stores.colStore, value: user.storeName },
                   {
-                    /*
-                      حالة المتجر مستقلة عن حالة الحساب — إيقاف الحساب ما
-                      بيوقف المتجر تلقائياً. القرار لسا ما تحدّد مع الباك إند.
-                    */
+                    label: t.admin.stores.colStore,
+                    value: textOrNull(user.store.name),
+                  },
+                  {
+                    /* حالة **مراجعة** المتجر — مستقلة عن حالة الحساب */
                     label: t.admin.stores.colStatus,
-                    value: user.storeStatus && (
-                      <StatusBadge meta={ENTITY_STATUS[user.storeStatus]} />
+                    value: <StatusBadge meta={STORE_STATUS[user.store.status]} />,
+                  },
+                  {
+                    label: t.admin.users.storeRunning,
+                    value: user.store.isActive ? (
+                      t.common.active
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-danger">
+                        <PowerOff className="size-4" aria-hidden="true" />
+                        {t.common.inactive}
+                      </span>
                     ),
                   },
                 ]}
@@ -321,28 +338,34 @@ export default function AdminUserDetailPage() {
         </Card>
       </div>
 
+      {/*
+        الإيقاف بتأكيد بسيط بلا حقل سبب — رد السيرفر ما فيه ولا حقل يخزّن
+        سبب (`isActive` وبس)، فطلب سبب كان بيضيّع اللي بيكتبه المشرف.
+      */}
       <ConfirmDialog
-        open={dialog === "reactivate"}
-        tone="primary"
-        title={t.admin.users.reactivateTitle}
-        body={t.admin.users.reactivateBody}
-        confirmLabel={t.admin.users.reactivate}
-        loading={busy}
-        onConfirm={() =>
-          run(() => reactivateUser(userId), t.admin.users.didReactivate)
+        open={dialog === "suspend"}
+        tone="danger"
+        title={t.admin.users.suspendTitle}
+        body={
+          user.store
+            ? `${t.admin.users.suspendBody} ${t.admin.users.storeIndependentNote}`
+            : t.admin.users.suspendBody
         }
+        confirmLabel={t.admin.users.suspend}
+        loading={busy}
+        onConfirm={() => run(() => suspendUser(userId), t.admin.users.didSuspend)}
         onCancel={() => setDialog(null)}
       />
 
-      <ReasonDialog
-        open={dialog === "suspend"}
-        title={t.admin.users.suspendTitle}
-        body={t.admin.users.suspendBody}
-        confirmLabel={t.admin.users.suspend}
+      <ConfirmDialog
+        open={dialog === "activate"}
+        tone="primary"
+        title={t.admin.users.activateTitle}
+        body={t.admin.users.activateBody}
+        confirmLabel={t.admin.users.activate}
         loading={busy}
-        serverError={reasonError}
-        onConfirm={(reason) =>
-          run(() => suspendUser(userId, reason), t.admin.users.didSuspend)
+        onConfirm={() =>
+          run(() => activateUser(userId), t.admin.users.didActivate)
         }
         onCancel={() => setDialog(null)}
       />

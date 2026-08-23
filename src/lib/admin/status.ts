@@ -2,10 +2,10 @@ import type { BadgeTone } from "@/components/ui/Badge";
 import { t } from "@/lib/strings";
 import type {
   DeliveryStatus,
-  EntityStatus,
   ReportStatus,
   ReportTarget,
   ReviewTarget,
+  StoreStatus,
 } from "./types";
 
 /**
@@ -18,17 +18,30 @@ interface StatusMeta {
   tone: BadgeTone;
 }
 
-export const ENTITY_STATUS: Record<EntityStatus, StatusMeta> = {
-  ACTIVE: { label: t.admin.status.active, tone: "success" },
-  SUSPENDED: { label: t.admin.status.suspended, tone: "danger" },
-  PENDING: { label: t.admin.status.pending, tone: "warning" },
-};
+/**
+ * حالة الحساب — مشتقّة من `isActive` مش من حقل حالة.
+ *
+ * دالة مش خريطة، لأن الباك إند بيرجّع بولياني. خريطة بمفاتيح نصية كانت
+ * بتضطرنا نخترع قيم `"ACTIVE"`/`"SUSPENDED"` ما بترجع من السيرفر أصلاً.
+ */
+export function accountStatus(isActive: boolean): StatusMeta {
+  return isActive
+    ? { label: t.admin.status.active, tone: "success" }
+    : { label: t.admin.status.suspended, tone: "danger" };
+}
 
-export const ENTITY_STATUS_KEYS = [
-  "ACTIVE",
-  "SUSPENDED",
-  "PENDING",
-] as const satisfies readonly EntityStatus[];
+/**
+ * حالة مراجعة المتجر — خريطة منفصلة عن ENTITY_STATUS عمداً.
+ *
+ * الاتنين فيهن مفتاح PENDING بس بمعنيين مختلفين ("بانتظار المراجعة" للمتجر
+ * ضد "بانتظار التوثيق" للحساب)، ودمجهن بخريطة وحدة بيخلّي أي صفحة تعرض
+ * تسمية الكيان الغلط بلا ما يشتكي التصريف.
+ */
+export const STORE_STATUS: Record<StoreStatus, StatusMeta> = {
+  PENDING: { label: t.admin.status.storePending, tone: "warning" },
+  APPROVED: { label: t.admin.status.storeApproved, tone: "success" },
+  REJECTED: { label: t.admin.status.storeRejected, tone: "danger" },
+};
 
 export const REPORT_STATUS: Record<ReportStatus, StatusMeta> = {
   OPEN: { label: t.admin.status.open, tone: "warning" },

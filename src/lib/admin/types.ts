@@ -1,10 +1,16 @@
 /**
  * أنواع كيانات لوحة مالك المنصة.
  *
- * ⚠️ الحالة الحالية: عقد الباك إند لمسارات /admin **لسا ما وصل**. كل شكل هون
- * هو تصميم مبدئي متفق عليه، والـ mock بيولّد نفس الشكل بالضبط. لما توصل
- * المسارات الحقيقية، التعديل بيصير هون وبـ mock/ بس — الصفحات ما بتتغيّر
- * لأنها بتستهلك هالأنواع مش شكل الرد الخام.
+ * الملف مقسوم لنصّين:
+ *
+ * ١. **مربوط بالباك إند** — النظرة العامة (`/admin/stats`) والمتاجر
+ *    (`/admin/stores`). الأشكال هون منسوخة حرفياً عن رد السيرفر، فما في
+ *    ولا طبقة تحويل بينهم وبين الصفحات. أي فرق بينهن بيصير خطأ ترجمة
+ *    مش عطل وقت التشغيل.
+ *
+ * ٢. **لسا تجريبي** — المستخدمون والتصنيفات والبلاغات والمحتوى والتوصيل.
+ *    مسارات الباك إند إلهن بترجّع 404 لحد الآن، فالأشكال تحتهن لسا تصميم
+ *    مقترح والـ mock بيولّدها. لما توصل، بتنعدّل هون وبـ mock/ بس.
  */
 
 // ─── تصنيفات الكتالوج ──────────────────────────────────────────
@@ -44,128 +50,210 @@ export interface CategoryRoot {
 
 // ─── مشترك ─────────────────────────────────────────────────────
 
-/** حالة المتجر أو الحساب. PENDING = متجر جديد لسا ما تم توثيقه */
-export type EntityStatus = "ACTIVE" | "SUSPENDED" | "PENDING";
+/*
+  ما في `EntityStatus` ولا `Suspension` هون بعد ما وصل عقد المستخدمين.
 
-/**
- * سجل الإيقاف. السبب إلزامي بكل عمليات الإيقاف — الواجهة بتفرضه بـ ReasonDialog
- * والسيرفر هو اللي بيسجّله فعلياً بسجل التدقيق (الواجهة بتغذّي السجل ما بتملكه).
- */
-export interface Suspension {
-  reason: string;
-  at: string;
-  /** اسم المشرف اللي نفّذ العملية — بيجي من السيرفر */
-  by: string;
-}
+  الاتنين كانوا تخميناً: افترضنا حالة حساب من تلات قيم وسجل إيقاف بسبب
+  ومنفّذ. الباك إند بيعبّر عن الإيقاف بعلم بولياني (`isActive`) بلا سبب
+  ولا تاريخ ولا منفّذ — فالنوعين انشالوا بدل ما نخلّيهم يوهموا بحقول
+  ما بترجع من السيرفر أبداً.
 
+  حالة **المتجر** إشي تاني تماماً — شوف `StoreStatus` تحت.
+*/
+
+/** الأدوار اللي بترجع بقوائم المستخدمين — الأدمن ما بينعرض بالقائمة */
 export type AdminRole = "MERCHANT" | "CUSTOMER";
+
+export const ADMIN_ROLE_KEYS = [
+  "MERCHANT",
+  "CUSTOMER",
+] as const satisfies readonly AdminRole[];
 
 // ─── ١ · لوحة التحكم ───────────────────────────────────────────
 
-/** نقطة على السلسلة الزمنية — التاريخ بصيغة YYYY-MM-DD */
-export interface GrowthPoint {
-  date: string;
-  customers: number;
-  merchants: number;
+/*
+  الأشكال تحت **مطابقة حرفياً** لرد GET /admin/stats — ما في طبقة تحويل.
+  المسار بياخد `?period=` بالأيام (رقم) مش `range=7d`؛ `days` و`range`
+  بينتجاهلوا بصمت وبيرجّع 30 يوم.
+*/
+
+/** القيم اللي أزرار المدى بتبعثها — السيرفر بيقبل أي رقم، وهدول تلاتة كفاية */
+export type StatsPeriod = 7 | 30 | 90;
+
+export const STATS_PERIODS: readonly StatsPeriod[] = [7, 30, 90];
+
+export interface StatsPeriodInfo {
+  days: number;
+  from: string;
+  to: string;
 }
 
-export interface OrdersPoint {
-  date: string;
-  count: number;
-  /** قيمة الطلبات باليوم — نص Decimal زي أسعار المنتجات */
-  value: string;
+export interface StatsCounters {
+  stores: {
+    active: number;
+    pending: number;
+    rejected: number;
+    suspended: number;
+    total: number;
+  };
+  users: {
+    merchants: number;
+    customers: number;
+    total: number;
+    /** تسجيلات جديدة **ضمن المدى** — مش الإجمالي */
+    newMerchants: number;
+    newCustomers: number;
+  };
+  orders: { total: number; inPeriod: number };
+  /** مبالغ نصية Decimal زي أسعار المنتجات — لا تعامَل كأرقام قبل التنسيق */
+  revenue: { total: string; inPeriod: string };
+  reports: { open: number };
 }
 
-export interface TopStore {
-  id: number;
-  name: string;
+/** المتجر جاي **متداخل** جوّا `store` — مش مفلطح زي باقي القوائم */
+export interface TopStoreRow {
+  store: {
+    id: number;
+    name: string;
+    logoUrl: string | null;
+    status: StoreStatus;
+  };
   orders: number;
   revenue: string;
 }
 
-export type OverviewRange = "7d" | "30d" | "90d";
-
-export const OVERVIEW_RANGES: readonly OverviewRange[] = ["7d", "30d", "90d"];
-
-export interface AdminOverview {
-  activeStores: number;
-  totalStores: number;
-  pendingStores: number;
-  customers: number;
+/** نقطة على منحنى التسجيلات — التاريخ YYYY-MM-DD */
+export interface SignupsPoint {
+  date: string;
   merchants: number;
-  orders: { total: number; today: number };
-  /** إجمالي قيمة المبيعات — نص Decimal */
-  gmv: string;
-  openReports: number;
-  registrationGrowth: GrowthPoint[];
-  ordersTrend: OrdersPoint[];
-  topStores: TopStore[];
+  customers: number;
+}
+
+export interface OrdersPoint {
+  date: string;
+  orders: number;
+  revenue: string;
+}
+
+export interface AdminStatsCharts {
+  signups: SignupsPoint[];
+  orders: OrdersPoint[];
 }
 
 // ─── ٢ · المتاجر ───────────────────────────────────────────────
+
+/**
+ * حالة مراجعة المتجر — **مش** حالة تفعيل.
+ *
+ * الباك إند بيفصل الاتنين: `status` قرار المراجعة (بانتظار · مقبول · مرفوض)
+ * و`isActive` إذا المتجر شغّال. ما في مفهوم "موثّق" (isVerified) ولا مسار
+ * إيقاف — القبول والرفض بس. الواجهة اتعدّلت لتتبع هذا مش العكس.
+ */
+export type StoreStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export const STORE_STATUS_KEYS = [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+] as const satisfies readonly StoreStatus[];
+
+/** مالك المتجر كما بيرجّعه /admin/stores — ما فيه `status`، فيه `isActive` */
+export interface StoreOwner {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  emailVerified: boolean;
+  isActive: boolean;
+  createdAt: string;
+}
 
 export interface AdminStoreListItem {
   id: number;
   name: string;
   logoUrl: string | null;
   city: string | null;
-  ownerId: number;
-  ownerName: string;
-  status: EntityStatus;
-  isVerified: boolean;
+  status: StoreStatus;
+  isActive: boolean;
+  createdAt: string;
+  /** وقت قرار المراجعة — null يعني لسا ما انراجع */
+  reviewedAt: string | null;
+  /** متداخل مش مفلطح — لهيك `store.owner.name` مش `store.ownerName` */
+  owner: StoreOwner;
   productsCount: number;
   ordersCount: number;
-  createdAt: string;
 }
 
 export interface AdminStoreDetail extends AdminStoreListItem {
   description: string | null;
-  address: string | null;
-  phone: string | null;
   coverUrl: string | null;
-  categories: { id: number; name: string }[];
-  owner: {
+  phone: string | null;
+  address: string | null;
+  /** معبّى لما تكون الحالة REJECTED */
+  rejectionReason: string | null;
+  updatedAt: string;
+  /**
+   * المشرف اللي اتخذ القرار — `null` قبل أول مراجعة.
+   * الشكل انتأكد من السيرفر بعد تنفيذ قبول فعلي على متجر.
+   */
+  reviewedBy: { id: number; name: string; email: string } | null;
+  categories: {
     id: number;
     name: string;
-    email: string;
-    phone: string | null;
-    status: EntityStatus;
-  };
-  stats: {
-    products: number;
-    orders: number;
-    revenue: string;
-    /** متوسط تقييم المتجر — null يعني ما في تقييمات بعد */
-    rating: number | null;
-    reviews: number;
-  };
-  verifiedAt: string | null;
-  suspension: Suspension | null;
+    slug: string;
+    imageUrl: string | null;
+  }[];
+  /** نص Decimal */
+  revenue: string;
 }
 
 // ─── ٣ · المستخدمون ────────────────────────────────────────────
+
+/*
+  مطابق حرفياً لرد `/admin/users` — بلا طبقة تحويل، زي المتاجر.
+
+  ⚠️ ما في `status` للحساب ولا كائن `suspension`. الباك إند بيعبّر عن
+  الإيقاف بعلم بولياني واحد `isActive`، وما بيحفظ سبب — لهيك الإيقاف
+  باللوحة صار تأكيد بسيط بلا حقل سبب.
+*/
+
+/** ملخّص متجر التاجر جوّا رد المستخدمين — أخفّ من AdminStoreListItem */
+export interface UserStoreSummary {
+  id: number;
+  name: string;
+  status: StoreStatus;
+  isActive: boolean;
+}
 
 export interface AdminUserListItem {
   id: number;
   name: string;
   email: string;
   phone: string | null;
+  avatarUrl: string | null;
   role: AdminRole;
-  status: EntityStatus;
   emailVerified: boolean;
-  /** موجود للتجار بس */
-  storeId: number | null;
-  storeName: string | null;
-  ordersCount: number;
+  /** `false` = الحساب موقوف — ما في حقل status */
+  isActive: boolean;
   createdAt: string;
+  /** `null` للزبون · متداخل للتاجر */
+  store: UserStoreSummary | null;
+  ordersCount: number;
 }
 
 export interface AdminUserDetail extends AdminUserListItem {
   updatedAt: string;
-  lastLoginAt: string | null;
-  suspension: Suspension | null;
-  /** حالة متجره — للتجار بس. مستقلة عن حالة الحساب (قرار مؤقت لحد ما يوضّح الباك إند) */
-  storeStatus: EntityStatus | null;
+  addressesCount: number;
+  /** `false` = حساب غوغل بلا كلمة مرور */
+  hasPassword: boolean;
+  linkedGoogle: boolean;
+  /**
+   * المبلغ بيختلف اسمه حسب الدور — نص Decimal بالحالتين:
+   * التاجر بياخد `revenue` (إيرادات متجره) والزبون `totalSpent` (مصروفه).
+   * الاتنين اختياريين لأن كل رد بيحمل واحد بس.
+   */
+  revenue?: string;
+  totalSpent?: string;
 }
 
 // ─── ٤ · التصنيفات ─────────────────────────────────────────────
@@ -251,7 +339,7 @@ export interface ReportedContent {
     name: string;
     logoUrl: string | null;
     city: string | null;
-    status: EntityStatus;
+    status: StoreStatus;
   } | null;
 }
 

@@ -1,11 +1,17 @@
 "use client";
 
-import { BadgeCheck, ChevronLeft, Store as StoreIcon } from "lucide-react";
+import {
+  ChevronLeft,
+  PowerOff,
+  Store as StoreIcon,
+  TriangleAlert,
+} from "lucide-react";
 import { TableShell, Td, Thead } from "@/components/ui/Table";
 import StatusBadge from "./StatusBadge";
-import { ENTITY_STATUS } from "@/lib/admin/status";
+import { STORE_STATUS } from "@/lib/admin/status";
 import type { AdminStoreListItem } from "@/lib/admin/types";
 import { formatDate, formatNumber } from "@/lib/format";
+import { isBrokenText, textOrNull } from "@/lib/brokenText";
 import { t } from "@/lib/strings";
 
 const COLUMNS = [
@@ -53,26 +59,45 @@ export default function StoresTable({
                   )}
                 </span>
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <span className="truncate font-bold text-heading">
-                    {store.name}
-                  </span>
-                  {store.isVerified && (
-                    <BadgeCheck
-                      className="size-4 shrink-0 text-info"
-                      aria-label={t.admin.stores.verified}
+                  {/* اسم مكسور الترميز بينبدل برقم المتجر — عرض الرموز
+                      المكسّرة بيخلّي الصف غير قابل للتمييز أصلاً */}
+                  {isBrokenText(store.name) ? (
+                    <span className="flex items-center gap-1 truncate font-bold text-text-secondary">
+                      <TriangleAlert
+                        className="size-4 shrink-0 text-warning"
+                        aria-label={t.admin.stores.brokenTitle}
+                      />
+                      <span className="ltr-nums">
+                        {t.admin.stores.brokenName}
+                        {store.id}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="truncate font-bold text-heading">
+                      {store.name}
+                    </span>
+                  )}
+                  {/* التوقّف مستقل عن قرار المراجعة — متجر مقبول وموقوف
+                      حالة واردة، فبتلزمها علامة لحالها جنب الشارة */}
+                  {!store.isActive && (
+                    <PowerOff
+                      className="size-4 shrink-0 text-danger"
+                      aria-label={t.admin.stores.inactive}
                     />
                   )}
                 </span>
               </div>
             </Td>
-            <Td className="text-text-secondary">{store.ownerName}</Td>
             <Td className="text-text-secondary">
-              {store.city ?? t.admin.common.none}
+              {textOrNull(store.owner.name) ?? t.admin.common.none}
+            </Td>
+            <Td className="text-text-secondary">
+              {textOrNull(store.city) ?? t.admin.common.none}
             </Td>
             <Td className="ltr-nums">{formatNumber(store.productsCount)}</Td>
             <Td className="ltr-nums">{formatNumber(store.ordersCount)}</Td>
             <Td>
-              <StatusBadge meta={ENTITY_STATUS[store.status]} />
+              <StatusBadge meta={STORE_STATUS[store.status]} />
             </Td>
             <Td className="ltr-nums whitespace-nowrap text-text-secondary">
               {formatDate(store.createdAt)}

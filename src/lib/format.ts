@@ -40,12 +40,25 @@ export function formatPrice(value: string | number): string {
 
 /**
  * "2026-08-01" => "01 أغسطس 2026"
+ * "2026-08-01T07:03:03.280Z" => "01 أغسطس 2026"
  *
- * نضيف T00:00:00 عشان JS يفسّرها كوقت محلي؛ بدونها بتتفسّر UTC
- * وبتنزاح ليوم قبل عند المستخدمين اللي توقيتهم خلف UTC.
+ * بتاخد الشكلين لأن المصدرين مختلفين: مسارات الأدمن الحقيقية بترجّع طابع
+ * ISO كامل (`createdAt` · `reviewedAt`)، بينما الـ mock وبعض الحقول بترجّع
+ * يوم مجرّد. الفرق مش تجميلي — إلحاق `T00:00:00` بطابع كامل بينتج
+ * "…280ZT00:00:00" وبيرمي RangeError بيوقّع الصفحة كلها بـ error boundary.
+ *
+ * اليوم المجرّد بينضاف إله `T00:00:00` عشان JS يفسّره كوقت محلي؛ بدونها
+ * بيتفسّر UTC وبينزاح ليوم قبل عند المستخدمين اللي توقيتهم خلف UTC.
  */
 export function formatDate(iso: string): string {
-  return dateFormatter.format(new Date(`${iso}T00:00:00`));
+  // الطابع الكامل فيه وقت أصلاً — بينفهم متل ما هو
+  const date = new Date(iso.includes("T") ? iso : `${iso}T00:00:00`);
+
+  /* قيمة غير صالحة (نص فاضي · حقل ناقص من السيرفر) بترجع شرطة بدل ما
+     ترمي — سطر تاريخ فاضي أهون بكتير من شاشة خطأ محل الجدول. */
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return dateFormatter.format(date);
 }
 
 /** تاريخ اليوم بصيغة "YYYY-MM-DD" بالتوقيت المحلي — للمقارنة النصية مع تواريخ الـ dummy data */
@@ -68,5 +81,7 @@ const dateTimeFormatter = new Intl.DateTimeFormat("ar-PS-u-nu-latn", {
  * منفصلة عن formatDate لأن هديك بتضيف T00:00:00 وبتنكسر مع طابع فيه وقت.
  */
 export function formatDateTime(iso: string): string {
-  return dateTimeFormatter.format(new Date(iso));
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return dateTimeFormatter.format(date);
 }

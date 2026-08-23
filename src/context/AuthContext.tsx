@@ -11,14 +11,14 @@ import {
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { apiFetch, getToken, removeToken, setToken } from "@/lib/api";
-import { getMe, MERCHANT_ROLE } from "@/lib/auth/api";
+import { ADMIN_ROLE, getMe } from "@/lib/auth/api";
 import type { AuthUser } from "@/lib/auth/types";
 import { t } from "@/lib/strings";
 
 export type User = AuthUser;
 
 interface LoginOptions {
-  /** وين يروح بعد الدخول. التسجيل بيمرّر /products — تاجر جديد ما عنده إشي بالرئيسية */
+  /** وين يروح بعد الدخول — الافتراضي `/` (النظرة العامة) */
   redirectTo?: string;
 }
 
@@ -26,8 +26,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   /**
-   * رسالة بتنعرض على شاشة الدخول بعد طرد المستخدم (جلسة منتهية · حساب زبون ·
-   * حساب موقوف). بتعيش بالذاكرة بس — بتختفي مع إعادة تحميل الصفحة، وهذا مقصود.
+   * رسالة بتنعرض على شاشة الدخول بعد طرد المستخدم (جلسة منتهية · حساب مش
+   * أدمن · حساب موقوف). بتعيش بالذاكرة بس — بتختفي مع إعادة تحميل الصفحة.
    */
   notice: string | null;
   setNotice: (message: string | null) => void;
@@ -38,32 +38,28 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/*
-  ⚠️ مؤقت — الحارس معطّل بالكامل لأن الباك إند لسا ما وصّل دخول الأدمن.
-
-  ما في دور ADMIN بالعقد أصلاً، وما في `/login` بهاد التطبيق — فأي دفع
-  للزائر على شاشة دخول بيرمي 404 وبيقفل اللوحة كلها بوجه المطوّر.
-
-  لما يوصل الدخول: خلّي العلم `false`، ضيف `"/login"` (وأي شاشة استرجاع
-  كلمة مرور) لـ PUBLIC_PREFIXES، وحطّ الصفحة **برّا** مجموعة `(panel)`.
-
-  هذا **مش حماية** — التوكن بالـ localStorage وما في proxy.ts، فالحماية
-  الحقيقية لازم تكون تفويض من طرف الخادم على كل مسار /admin/*.
-*/
-const AUTH_GUARD_DISABLED = true;
-
 /**
  * المسارات اللي ما بتحتاج تسجيل دخول.
- * مطابقة **بادئة** مش مطابقة تامة — `/login/reset` بتنحسب تحت `/login`.
+ *
+ * وحدة بس — حساب الأدمن بينزرع من `.env` على السيرفر، فما في تسجيل ولا
+ * استرجاع كلمة مرور من الواجهة.
+ *
+ * مطابقة **بادئة** مش مطابقة تامة — `/login/x` بتنحسب تحت `/login`.
  */
-const PUBLIC_PREFIXES: string[] = [];
+const PUBLIC_PREFIXES: string[] = ["/login"];
 
 function isPublic(pathname: string): boolean {
-  if (AUTH_GUARD_DISABLED) return true;
   return PUBLIC_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
+
+/*
+  ⚠️ الحارس تحت **مش حماية**. التوكن بالـ localStorage وما في middleware،
+  فأي حدا بيقدر يفتح الصفحات ويشوف الهيكل. الحماية الحقيقية إن كل مسار
+  تحت /api/admin بيطلب توكن دوره ADMIN — الصفحات بترجعلها 401/403 وبتطلع
+  فاضية. الحارس هون للتجربة بس: بيوفّر على المستخدم شاشة أخطاء بلا معنى.
+*/
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -100,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [router],
   );
 
-  // ── جلب بيانات المستخدم الحالي GET /api/auth/me ─────────────────
+  // ── جلب بيانات المستخدم الحالي GET /api/admin/me ────────────────
   const refetchUser = useCallback(async () => {
     const token = getToken();
     if (!token) {
@@ -112,16 +108,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const res = await getMe();
-      const fetched = res.user ?? res.data?.user;
+      /* `/admin/me` بيرجّع المستخدم بالمستوى الأعلى — انفحص على السيرفر.
+         ما في نسخة ملفوفة بـ`data` فما بنحتاط لشكل تاني. */
+      const fetched = res.user;
 
       if (res.success && fetched) {
         /*
-          بوابة الدور. التوكن مربوط بحساب واحد، وحساب الزبون حساب منفصل تماماً
-          — ما إله علاقة بجدول المتاجر أصلاً. بلا هالفحص، توكن زبون بيفوت
-          الداشبورد ويشوف شاشات بترجع 403 من كل مسار بلا سبب مفهوم.
+          بوابة الدور — حزام أمان تاني.
+
+          `/admin/me` أصلاً محمي بالدور على السيرفر، فتوكن تاجر أو زبون
+          بيرجع 403 قبل ما نوصل لهون. الفحص موجود عشان لو تراخى السيرفر
+          يوماً، ما يفوت توكن غير أدمن ويشوف شاشات بترجع 403 بلا سبب مفهوم.
         */
-        if (fetched.role !== MERCHANT_ROLE) {
-          eject(t.auth.notMerchant);
+        if (fetched.role !== ADMIN_ROLE) {
+          eject(t.auth.notAdmin);
           return;
         }
         setUser(fetched);
@@ -142,18 +142,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [eject, router]);
 
-  // التأكد من حماية المسارات محلياً عند الانتقال بين الصفحات (بدون إرسال طلبات للسيرفر)
+  /*
+    حارس التنقّل — فحص محلي بلا طلب للسيرفر.
+
+    التوجيه بس، بلا `setUser`. تصفير المستخدم مملوك لـ`logout` و`eject`،
+    وهما معالجا أحداث مش effects. الدفع على `/login` بيفكّ تركيب قشرة
+    اللوحة أصلاً، فالمستخدم القديم بالسياق ما بيرسم إشي — وتصفيره هون كان
+    بيضيف رندر متتالي بلا فايدة.
+  */
   useEffect(() => {
-    const token = getToken();
-    if (!token && !isPublicPath) {
-      setUser(null);
-      router.push("/login");
-    }
+    if (!getToken() && !isPublicPath) router.push("/login");
   }, [pathname, isPublicPath, router]);
 
-  // جلب بيانات المستخدم كاملة من السيرفر عند تحميل الموقع لأول مرة فقط
+  /*
+    مزامنة الجلسة مع السيرفر عند أول تحميل.
+
+    eslint-disable تحت مقصود ومبرّر: هاي بالضبط الحالة اللي الـeffects
+    موجودة إلها — مزامنة حالة React مع نظام خارجي (خادم المصادقة +
+    التوكن بالتخزين المحلي). كل الـsetState جوّا `refetchUser` بتصير بعد
+    `await getMe()` ما عدا فرع «ما في توكن»، والقاعدة ما بتقدر تشوف الفرق.
+    البديل الوحيد لإسكاتها بشكل «نظيف» هو `await` وهمي — تحايل على القاعدة
+    مش إصلاح، وبيخفي النية بدل ما يوضّحها.
+  */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refetchUser();
+    // مرة وحدة عند التحميل — `refetchUser` بتتغيّر مع الراوتر وما بدنا تعيد الجلب
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -169,17 +183,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   /*
-    الخروج محلي بالكامل — ما في POST /auth/logout بالعقد الجديد.
+    الخروج محلي بالكامل — ما في POST /admin/logout (فحصناه: 404).
     التوكن JWT بلا حالة على السيرفر، فمسحه من هون بينهي الجلسة فعلياً.
-
-    ما بندفع على `/login` طول ما الحارس معطّل — الصفحة مش موجودة بهاد
-    التطبيق فبيطلع 404. مسح التوكن كافي: أي طلب جاي بيروح بلا Authorization.
   */
   const logout = useCallback(() => {
     removeToken();
     setUser(null);
     setNotice(null);
-    if (!AUTH_GUARD_DISABLED) router.push("/login");
+    router.push("/login");
   }, [router]);
 
   return (

@@ -1,4 +1,5 @@
 import AppShell from "@/components/layout/AppShell";
+import PanelGuard from "@/components/layout/PanelGuard";
 import MockNotice from "@/components/admin/MockNotice";
 
 /**
@@ -8,8 +9,8 @@ import MockNotice from "@/components/admin/MockNotice";
  * حدود Server → Client (أيقونات lucide دوال وما بتنسرلز).
  *
  * كل صفحات اللوحة جوّا مجموعة `(panel)` عشان تشارك القشرة بلا ما تظهر
- * `panel` بالمسار. لما يوصل دخول الأدمن من الباك إند، `/login` بينحط
- * **برّا** المجموعة فبيطلع بلا سايدبار بلا ما ننقل ولا ملف من هون.
+ * `panel` بالمسار. شاشة الدخول برّا المجموعة — بمجموعة `(auth)` — فبتطلع
+ * بلا سايدبار.
  */
 export default function PanelLayout({
   children,
@@ -17,9 +18,11 @@ export default function PanelLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AppShell>
-      <MockNotice />
-      {children}
-    </AppShell>
+    <PanelGuard>
+      <AppShell>
+        <MockNotice />
+        {children}
+      </AppShell>
+    </PanelGuard>
   );
 }

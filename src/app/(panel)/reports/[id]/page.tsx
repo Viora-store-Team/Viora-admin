@@ -20,7 +20,7 @@ import {
   unhideReview,
   updateReport,
 } from "@/lib/admin/api";
-import { ENTITY_STATUS, REPORT_STATUS, REPORT_TARGET } from "@/lib/admin/status";
+import { REPORT_STATUS, REPORT_TARGET, STORE_STATUS } from "@/lib/admin/status";
 import type { AdminReportDetail } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
 import { formatDate, formatNumber, formatPrice } from "@/lib/format";
@@ -320,7 +320,7 @@ export default function AdminReportDetailPage() {
                     { label: t.admin.stores.colCity, value: store.city },
                     {
                       label: t.admin.stores.colStatus,
-                      value: <StatusBadge meta={ENTITY_STATUS[store.status]} />,
+                      value: <StatusBadge meta={STORE_STATUS[store.status]} />,
                     },
                   ]}
                 />

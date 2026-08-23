@@ -2,9 +2,9 @@ import type { ApiResponse, Pagination } from "@/lib/api";
 import { adminFetch, query } from "./client";
 import type {
   AdminCategoryRoot,
-  AdminOverview,
   AdminReportDetail,
   AdminReportListItem,
+  AdminStatsCharts,
   AdminStoreDetail,
   AdminStoreListItem,
   AdminUserDetail,
@@ -14,14 +14,18 @@ import type {
   CategoryPayload,
   DeliveryFailure,
   DeliveryHealth,
-  EntityStatus,
+  AdminRole,
   HomeContent,
-  OverviewRange,
   ReportStatus,
   ReportTarget,
   Review,
   StaticPage,
   StaticPageKey,
+  StatsCounters,
+  StatsPeriod,
+  StatsPeriodInfo,
+  StoreStatus,
+  TopStoreRow,
 } from "./types";
 import { ADMIN_LIMITS } from "./types";
 
@@ -29,8 +33,14 @@ import { ADMIN_LIMITS } from "./types";
  * غلاف رقيق مكتوب الأنواع فوق adminFetch لكل مسارات الأدمن.
  * نفس أسلوب lib/products/api.ts — بلا أي منطق واجهة.
  *
- * ⚠️ هاد الملف هو **العقد المقترح على الباك إند**. أي تغيير بالمسارات أو
- * بأسماء المفاتيح لما يوصل العقد الحقيقي بيتم هون وبـ mock/ فقط.
+ * الدوال تحت مقسومة لقسمين، وكل وحدة معلّمة:
+ *
+ * ✅ = مربوطة بالباك إند الحقيقي · المسار والمفاتيح متأكّدين على السيرفر.
+ * 🟡 = لسا تجريبية · المسار بيرجّع 404، والشكل مقترح لحد ما يوصل العقد.
+ *
+ * ⚠️ ما في **ولا طبقة تحويل** بالمسارات المربوطة — اللي بترجعه الدالة هو
+ * حرفياً اللي بعثه السيرفر. لو تغيّر مفتاح بالباك إند، بينكسر التصريف هون
+ * مش الصفحة وقت التشغيل.
  */
 
 const json = (body: unknown): RequestInit => ({ body: JSON.stringify(body) });
@@ -45,18 +55,38 @@ export interface ListParams {
   q?: string;
 }
 
-// ─── لوحة التحكم ───────────────────────────────────────────────
+// ─── لوحة التحكم ✅ ────────────────────────────────────────────
 
-export function fetchOverview(
-  range: OverviewRange,
-): Promise<ApiResponse & { overview?: AdminOverview }> {
-  return adminFetch(`/admin/overview${query({ range })}`);
+/**
+ * ✅ `GET /admin/stats?period=<أيام>`
+ *
+ * الكيانات بترجع **بالمستوى الأعلى** مفرّقة (`stats` · `topStores` ·
+ * `charts` · `period`) — مش ملفوفة بمفتاح واحد زي باقي المسارات.
+ *
+ * ⚠️ اسم المعامل `period` بالأيام كرقم. `range=7d` و`days=7` بينتجاهلوا
+ * بصمت وبيرجّع 30 يوم — انفحص على السيرفر.
+ */
+export type StatsResponse = ApiResponse & {
+  period?: StatsPeriodInfo;
+  stats?: StatsCounters;
+  topStores?: TopStoreRow[];
+  charts?: AdminStatsCharts;
+};
+
+export function fetchStats(period: StatsPeriod): Promise<StatsResponse> {
+  return adminFetch(`/admin/stats${query({ period })}`);
 }
 
-// ─── المتاجر ───────────────────────────────────────────────────
+// ─── المتاجر ✅ ────────────────────────────────────────────────
 
+/**
+ * ✅ `GET /admin/stores?page&limit&q&status`
+ *
+ * `status` من قيم `StoreStatus` (PENDING · APPROVED · REJECTED) —
+ * **مش** ACTIVE/SUSPENDED. `q` بيبحث بالاسم والمدينة والمالك.
+ */
 export function fetchStores(
-  params: ListParams & { status?: EntityStatus | "" } = {},
+  params: ListParams & { status?: StoreStatus | "" } = {},
 ): Promise<Paged<"stores", AdminStoreListItem>> {
   return adminFetch(
     `/admin/stores${query({
@@ -68,45 +98,59 @@ export function fetchStores(
   );
 }
 
+/** ✅ `GET /admin/stores/:id` — 404 برسالة «المتجر غير موجود» */
 export function fetchStore(
   id: number,
 ): Promise<ApiResponse & { store?: AdminStoreDetail }> {
   return adminFetch(`/admin/stores/${id}`);
 }
 
-export function verifyStore(
+/**
+ * ✅ `PATCH /admin/stores/:id/approve`
+ *
+ * ⚠️ الميثود **PATCH** مش POST — POST بيرجّع 404 من الراوتر.
+ */
+export function approveStore(
   id: number,
 ): Promise<ApiResponse & { store?: AdminStoreDetail }> {
-  return adminFetch(`/admin/stores/${id}/verify`, { method: "POST" });
+  return adminFetch(`/admin/stores/${id}/approve`, { method: "PATCH" });
 }
 
-export function unverifyStore(
-  id: number,
-): Promise<ApiResponse & { store?: AdminStoreDetail }> {
-  return adminFetch(`/admin/stores/${id}/verify`, { method: "DELETE" });
-}
-
-/** ⚠️ السبب إلزامي — بينحفظ بسجل التدقيق على السيرفر */
-export function suspendStore(
+/**
+ * ✅ `PATCH /admin/stores/:id/reject`
+ *
+ * ⚠️ شروط `reason` على السيرفر **ما انفحصت** — التحقق بيصير بعد ما يلاقي
+ * المتجر، فما بينقاس على معرّف وهمي. الواجهة بتفرض 10–500 حرف من طرفها،
+ * وأي خطأ 400 راجع بمفتاح `reason` بينعرض جوّا الحوار متل ما هو.
+ */
+export function rejectStore(
   id: number,
   reason: string,
 ): Promise<ApiResponse & { store?: AdminStoreDetail }> {
-  return adminFetch(`/admin/stores/${id}/suspend`, {
-    method: "POST",
+  return adminFetch(`/admin/stores/${id}/reject`, {
+    method: "PATCH",
     ...json({ reason }),
   });
 }
 
-export function reactivateStore(
-  id: number,
-): Promise<ApiResponse & { store?: AdminStoreDetail }> {
-  return adminFetch(`/admin/stores/${id}/reactivate`, { method: "POST" });
-}
+// ─── المستخدمون ✅ ─────────────────────────────────────────────
 
-// ─── المستخدمون ────────────────────────────────────────────────
-
+/**
+ * ✅ `GET /admin/users?page&limit&q&role&isActive`
+ *
+ * ⚠️ الفلتر اسمه **`isActive`** بقيمة `"true"`/`"false"` — **مش `status`**.
+ * `?status=` بينتجاهل بصمت (فحصناه: `status=ACTIVE` و`status=SUSPENDED`
+ * رجّعوا نفس الإجمالي 55).
+ *
+ * `role` بيقبل `MERCHANT` أو `CUSTOMER` بس — `ADMIN` بيرجّع 400
+ * برسالة «الدور غير صحيح».
+ */
 export function fetchUsers(
-  params: ListParams & { role?: string; status?: EntityStatus | "" } = {},
+  params: ListParams & {
+    role?: AdminRole | "";
+    /** نص مش بولياني — بينحط بسلسلة الاستعلام كما هو */
+    isActive?: "true" | "false" | "";
+  } = {},
 ): Promise<Paged<"users", AdminUserListItem>> {
   return adminFetch(
     `/admin/users${query({
@@ -114,35 +158,42 @@ export function fetchUsers(
       limit: params.limit ?? ADMIN_LIMITS.pageLimit,
       q: params.q,
       role: params.role,
-      status: params.status,
+      isActive: params.isActive,
     })}`,
   );
 }
 
+/** ✅ `GET /admin/users/:id` — 404 برسالة «المستخدم غير موجود» */
 export function fetchUser(
   id: number,
 ): Promise<ApiResponse & { user?: AdminUserDetail }> {
   return adminFetch(`/admin/users/${id}`);
 }
 
-/** ⚠️ السبب إلزامي */
+/**
+ * ✅ `PATCH /admin/users/:id/suspend`
+ *
+ * ⚠️ **بلا سبب.** رد المستخدم ما فيه ولا حقل يخزّن سبب الإيقاف
+ * (`isActive` وبس)، فطلب سبب من المشرف كان بيضيّع اللي بيكتبه. الميثود
+ * PATCH مش POST.
+ *
+ * ⚠️ شروط الجسم ما انفحصت end-to-end — الكتابة على السيرفر انحجبت وقت
+ * الربط، والتحقق بيصير بعد ما يلاقي المستخدم فما بينقاس على معرّف وهمي.
+ */
 export function suspendUser(
   id: number,
-  reason: string,
 ): Promise<ApiResponse & { user?: AdminUserDetail }> {
-  return adminFetch(`/admin/users/${id}/suspend`, {
-    method: "POST",
-    ...json({ reason }),
-  });
+  return adminFetch(`/admin/users/${id}/suspend`, { method: "PATCH" });
 }
 
-export function reactivateUser(
+/** ✅ `PATCH /admin/users/:id/activate` — الاسم `activate` مش `reactivate` */
+export function activateUser(
   id: number,
 ): Promise<ApiResponse & { user?: AdminUserDetail }> {
-  return adminFetch(`/admin/users/${id}/reactivate`, { method: "POST" });
+  return adminFetch(`/admin/users/${id}/activate`, { method: "PATCH" });
 }
 
-// ─── التصنيفات ─────────────────────────────────────────────────
+// ─── التصنيفات 🟡 ──────────────────────────────────────────────
 
 /* كل عمليات التصنيفات بترجّع الشجرة الكاملة بعد التعديل — أبسط من إعادة
    الجلب، وبيضمن إن الواجهة والسيرفر متفقين على الشكل النهائي. */
@@ -170,7 +221,7 @@ export function updateCategory(
   });
 }
 
-// ─── البلاغات والتقييمات ───────────────────────────────────────
+// ─── البلاغات والتقييمات 🟡 ────────────────────────────────────
 
 export function fetchReports(
   params: ListParams & { targetType?: ReportTarget | ""; status?: ReportStatus | "" } = {},
@@ -219,7 +270,7 @@ export function unhideReview(
   return adminFetch(`/admin/reviews/${id}/unhide`, { method: "POST" });
 }
 
-// ─── المحتوى ───────────────────────────────────────────────────
+// ─── المحتوى 🟡 ────────────────────────────────────────────────
 
 export function fetchHomeContent(): Promise<
   ApiResponse & { home?: HomeContent }
@@ -272,7 +323,7 @@ export function deleteBanner(
   return adminFetch(`/admin/banners/${id}`, { method: "DELETE" });
 }
 
-// ─── التوصيل ───────────────────────────────────────────────────
+// ─── التوصيل 🟡 ────────────────────────────────────────────────
 
 export function fetchDeliveryHealth(): Promise<
   ApiResponse & { health?: DeliveryHealth }

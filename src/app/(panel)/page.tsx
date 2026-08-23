@@ -10,6 +10,7 @@ import {
   TrendingUp,
   UserRound,
   Users,
+  XCircle,
 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
@@ -17,19 +18,29 @@ import { TableShell, Td, Thead } from "@/components/ui/Table";
 import EmptyState from "@/components/ui/EmptyState";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
+import StatusBadge from "@/components/admin/StatusBadge";
 import Tabs, { type TabItem } from "@/components/ui/Tabs";
 import TrendChart from "@/components/ui/TrendChart";
 import StatCard from "@/components/dashboard/StatCard";
-import { fetchOverview } from "@/lib/admin/api";
-import type { AdminOverview, OverviewRange } from "@/lib/admin/types";
+import { fetchStats } from "@/lib/admin/api";
+import { STORE_STATUS } from "@/lib/admin/status";
+import type {
+  AdminStatsCharts,
+  StatsCounters,
+  StatsPeriod,
+  TopStoreRow,
+} from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
 import { formatCurrency, formatNumber } from "@/lib/format";
+import { isBrokenText } from "@/lib/brokenText";
 import { t } from "@/lib/strings";
 
-const RANGE_TABS: TabItem[] = [
-  { key: "7d", label: t.admin.dashboard.range7 },
-  { key: "30d", label: t.admin.dashboard.range30 },
-  { key: "90d", label: t.admin.dashboard.range90 },
+/* المفاتيح أرقام لأن `?period=` بياخد أيام — Tabs بتشتغل بنصوص، فالتحويل
+   بيصير مرة وحدة بالمعالج تحت بدل ما ينتشر بالصفحة. */
+const PERIOD_TABS: TabItem[] = [
+  { key: "7", label: t.admin.dashboard.range7 },
+  { key: "30", label: t.admin.dashboard.range30 },
+  { key: "90", label: t.admin.dashboard.range90 },
 ];
 
 const TOP_STORE_COLUMNS = [
@@ -38,11 +49,17 @@ const TOP_STORE_COLUMNS = [
   t.admin.dashboard.colRevenue,
 ] as const;
 
+interface StatsView {
+  counters: StatsCounters;
+  charts: AdminStatsCharts;
+  topStores: TopStoreRow[];
+}
+
 export default function AdminOverviewPage() {
   const router = useRouter();
 
-  const [range, setRange] = useState<OverviewRange>("30d");
-  const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [period, setPeriod] = useState<StatsPeriod>(30);
+  const [view, setView] = useState<StatsView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -51,13 +68,22 @@ export default function AdminOverviewPage() {
     let cancelled = false;
 
     (async () => {
-      const res = await fetchOverview(range);
+      const res = await fetchStats(period);
       if (cancelled) return;
 
       setLoading(false);
 
-      if (res.success && res.overview) {
-        setOverview(res.overview);
+      /*
+        `stats` هو المفتاح الوحيد اللي بنشترطه. `charts` و`topStores` بيجوا
+        معه دايماً، بس لو نقص واحد منهن بنعرض الأرقام بدل ما نفشّل الشاشة
+        كلها — العدّادات هي أهم إشي بالصفحة.
+      */
+      if (res.success && res.stats) {
+        setView({
+          counters: res.stats,
+          charts: res.charts ?? { signups: [], orders: [] },
+          topStores: res.topStores ?? [],
+        });
         setError("");
         return;
       }
@@ -73,12 +99,12 @@ export default function AdminOverviewPage() {
     return () => {
       cancelled = true;
     };
-  }, [range, attempt]);
+  }, [period, attempt]);
 
-  const changeRange = (key: string) => {
+  const changePeriod = (key: string) => {
     setLoading(true);
     setError("");
-    setRange(key as OverviewRange);
+    setPeriod(Number(key) as StatsPeriod);
   };
 
   const retry = () => {
@@ -86,44 +112,70 @@ export default function AdminOverviewPage() {
     setAttempt((a) => a + 1);
   };
 
-  /* المؤشّرات الست المطلوبة: متاجر نشطة · بانتظار توثيق · عملاء · تجار ·
-     طلبات · قيمة إجمالية — وبلاغات مفتوحة كمؤشّر تشغيلي سابع. */
-  const stats = overview
+  const counters = view?.counters;
+
+  /* ⚠️ العدّادات تحت **إجماليات** — ما بتتغيّر مع المدى. أرقام الفترة
+     (newMerchants · inPeriod) محطوطة ببطاقة منفصلة عشان الفرق يبين. */
+  const stats = counters
     ? [
         {
           title: t.admin.dashboard.activeStores,
-          value: `${formatNumber(overview.activeStores)} ${t.admin.dashboard.storeUnit}`,
+          value: `${formatNumber(counters.stores.active)} ${t.admin.dashboard.storeUnit}`,
           icon: Store,
         },
         {
           title: t.admin.dashboard.pendingStores,
-          value: `${formatNumber(overview.pendingStores)} ${t.admin.dashboard.storeUnit}`,
+          value: `${formatNumber(counters.stores.pending)} ${t.admin.dashboard.storeUnit}`,
           icon: BarChart3,
         },
         {
+          title: t.admin.dashboard.rejectedStores,
+          value: `${formatNumber(counters.stores.rejected)} ${t.admin.dashboard.storeUnit}`,
+          icon: XCircle,
+        },
+        {
           title: t.admin.dashboard.customers,
-          value: `${formatNumber(overview.customers)} ${t.admin.dashboard.userUnit}`,
+          value: `${formatNumber(counters.users.customers)} ${t.admin.dashboard.userUnit}`,
           icon: Users,
         },
         {
           title: t.admin.dashboard.merchants,
-          value: `${formatNumber(overview.merchants)} ${t.admin.dashboard.userUnit}`,
+          value: `${formatNumber(counters.users.merchants)} ${t.admin.dashboard.userUnit}`,
           icon: UserRound,
         },
         {
           title: t.admin.dashboard.orders,
-          value: `${formatNumber(overview.orders.total)} ${t.admin.dashboard.orderUnit}`,
+          value: `${formatNumber(counters.orders.total)} ${t.admin.dashboard.orderUnit}`,
           icon: ShoppingBag,
         },
         {
           title: t.admin.dashboard.gmv,
-          value: formatCurrency(Number(overview.gmv)),
+          value: formatCurrency(Number(counters.revenue.total)),
           icon: TrendingUp,
         },
         {
           title: t.admin.dashboard.openReports,
-          value: `${formatNumber(overview.openReports)} ${t.admin.dashboard.reportUnit}`,
+          value: `${formatNumber(counters.reports.open)} ${t.admin.dashboard.reportUnit}`,
           icon: Flag,
+        },
+      ]
+    : [];
+
+  const periodRows = counters
+    ? [
+        {
+          label: t.admin.dashboard.newSignups,
+          value: `${formatNumber(
+            counters.users.newMerchants + counters.users.newCustomers,
+          )} ${t.admin.dashboard.userUnit}`,
+        },
+        {
+          label: t.admin.dashboard.ordersInPeriod,
+          value: `${formatNumber(counters.orders.inPeriod)} ${t.admin.dashboard.orderUnit}`,
+        },
+        {
+          label: t.admin.dashboard.revenueInPeriod,
+          value: formatCurrency(Number(counters.revenue.inPeriod)),
         },
       ]
     : [];
@@ -137,11 +189,20 @@ export default function AdminOverviewPage() {
 
       <ErrorBanner message={error} onRetry={retry} />
 
-      <Tabs items={RANGE_TABS} active={range} onChange={changeRange} />
+      <div className="flex flex-col gap-2">
+        <Tabs
+          items={PERIOD_TABS}
+          active={String(period)}
+          onChange={changePeriod}
+        />
+        <p className="text-xs text-text-secondary">
+          {t.admin.dashboard.rangeHint}
+        </p>
+      </div>
 
       {loading ? (
         <Spinner />
-      ) : !overview ? null : overview.totalStores === 0 ? (
+      ) : !view || !counters ? null : counters.stores.total === 0 ? (
         <Card className="overflow-hidden border border-border shadow-xs">
           <CardBody className="p-8">
             <EmptyState
@@ -164,11 +225,26 @@ export default function AdminOverviewPage() {
             ))}
           </div>
 
+          <Card variant="muted">
+            <CardBody className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {periodRows.map((row) => (
+                <div key={row.label} className="space-y-1">
+                  <p className="text-xs font-bold text-text-secondary">
+                    {row.label}
+                  </p>
+                  <p className="ltr-nums text-lg font-extrabold text-heading">
+                    {row.value}
+                  </p>
+                </div>
+              ))}
+            </CardBody>
+          </Card>
+
           <Card>
             <CardHeader title={t.admin.dashboard.growthTitle} />
             <CardBody>
               <TrendChart
-                data={overview.registrationGrowth}
+                data={view.charts.signups}
                 xKey="date"
                 series={[
                   {
@@ -190,11 +266,13 @@ export default function AdminOverviewPage() {
             <CardHeader title={t.admin.dashboard.ordersTrendTitle} />
             <CardBody>
               <TrendChart
-                data={overview.ordersTrend}
+                data={view.charts.orders}
                 xKey="date"
                 series={[
                   {
-                    key: "count",
+                    /* مفتاح السلسلة `orders` مش `count` — نفس اسم الحقل
+                       اللي بيبعثه السيرفر جوّا charts.orders */
+                    key: "orders",
                     label: t.admin.dashboard.ordersTrendSeries,
                     color: "var(--color-success)",
                   },
@@ -205,7 +283,7 @@ export default function AdminOverviewPage() {
 
           <Card className="overflow-hidden">
             <CardHeader title={t.admin.dashboard.topStores} />
-            {overview.topStores.length === 0 ? (
+            {view.topStores.length === 0 ? (
               <CardBody>
                 <p className="text-sm text-text-secondary">
                   {t.admin.dashboard.topStoresEmpty}
@@ -215,16 +293,26 @@ export default function AdminOverviewPage() {
               <TableShell minWidth="min-w-[480px]">
                 <Thead columns={TOP_STORE_COLUMNS} />
                 <tbody className="divide-y divide-border/60">
-                  {overview.topStores.map((store) => (
+                  {/* المتجر متداخل جوّا `store` — مش مفلطح زي باقي القوائم */}
+                  {view.topStores.map((row) => (
                     <tr
-                      key={store.id}
+                      key={row.store.id}
                       className="cursor-pointer bg-surface transition hover:bg-primary-soft/40"
-                      onClick={() => router.push(`/stores/${store.id}`)}
+                      onClick={() => router.push(`/stores/${row.store.id}`)}
                     >
-                      <Td className="font-bold text-heading">{store.name}</Td>
-                      <Td className="ltr-nums">{formatNumber(store.orders)}</Td>
+                      <Td>
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-heading">
+                            {isBrokenText(row.store.name)
+                              ? `${t.admin.stores.brokenName}${row.store.id}`
+                              : row.store.name}
+                          </span>
+                          <StatusBadge meta={STORE_STATUS[row.store.status]} />
+                        </span>
+                      </Td>
+                      <Td className="ltr-nums">{formatNumber(row.orders)}</Td>
                       <Td className="ltr-nums">
-                        {formatCurrency(Number(store.revenue))}
+                        {formatCurrency(Number(row.revenue))}
                       </Td>
                     </tr>
                   ))}

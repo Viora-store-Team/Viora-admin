@@ -1,17 +1,22 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { TriangleAlert } from "lucide-react";
-import { ADMIN_USING_MOCK } from "@/lib/admin/client";
+import { isLivePage } from "@/lib/admin/client";
 import { t } from "@/lib/strings";
 
 /**
- * تنبيه دائم إن الأرقام تجريبية.
+ * تنبيه إن أرقام **هالصفحة** تجريبية.
  *
- * موجود عشان ما حدا يقرأ "المتاجر النشطة: 19" ويحسبها حقيقية. بيختفي لحاله
- * أول ما ينحط NEXT_PUBLIC_ADMIN_MOCK=false — بلا تعديل ولا حذف يدوي.
+ * موجود عشان ما حدا يقرأ "البلاغات المفتوحة: 7" ويحسبها حقيقية. بيقرأ من
+ * `isLivePage` بدل علم عام، لأن القسم مربوط على مرحلتين: النظرة العامة
+ * والمتاجر بتقرأ من السيرفر، والباقي لسا تجريبي. أول ما ينضاف مسار جديد
+ * لـ `LIVE_PAGES` بالـ client، التنبيه بيختفي عن صفحته لحاله.
  */
 export default function MockNotice() {
-  if (!ADMIN_USING_MOCK) return null;
+  const pathname = usePathname();
+
+  if (isLivePage(pathname)) return null;
 
   return (
     <div

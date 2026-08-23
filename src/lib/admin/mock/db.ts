@@ -14,12 +14,12 @@ import type {
   Banner,
   DeliveryFailure,
   DeliveryHealth,
-  EntityStatus,
   HomeContent,
   ReportStatus,
   ReportTarget,
   Review,
   StaticPage,
+  StoreStatus,
 } from "../types";
 import {
   CITIES,
@@ -38,121 +38,125 @@ const ACTOR = "مالك المنصة";
 
 // ─── المتاجر ───────────────────────────────────────────────────
 
-function storeStatus(i: number): EntityStatus {
+/*
+  الشكل تحت **مطابق لرد /admin/stores الحقيقي** — مع إنه تجريبي.
+
+  القصد إن مفتاح الطوارئ NEXT_PUBLIC_ADMIN_MOCK=true يضل يخدم نفس الصفحات
+  بلا فرع خاص فيه. لو انحرف الشكل هون عن السيرفر، بيصير المفتاح يخفي أعطال
+  بدل ما يبيّنها — وهذا أسوأ من إنه ما يكون موجود.
+*/
+
+function storeStatus(i: number): StoreStatus {
   if (i % 9 === 4) return "PENDING";
-  if (i % 11 === 7) return "SUSPENDED";
-  return "ACTIVE";
+  if (i % 11 === 7) return "REJECTED";
+  return "APPROVED";
 }
 
 const stores: AdminStoreDetail[] = STORE_NAMES.map((name, i) => {
   const status = storeStatus(i);
   const products = spread(i, 40, 2);
   const orders = spread(i, 180, 5);
-  const reviews = spread(i, 30);
+  const reviewed = status !== "PENDING";
 
   return {
     id: i + 1,
     name,
     logoUrl: null,
     city: CITIES[i % CITIES.length],
-    ownerId: 100 + i,
-    ownerName: OWNER_NAMES[i % OWNER_NAMES.length],
     status,
-    isVerified: status === "ACTIVE" && i % 3 !== 0,
-    productsCount: products,
-    ordersCount: orders,
+    // مستقل عن قرار المراجعة — متجر مقبول وموقوف حالة واردة
+    isActive: i % 17 !== 9,
     createdAt: daysAgo(200 - i * 7),
-
-    description:
-      i % 4 === 0
-        ? null
-        : `متجر متخصّص بـ${name.split(" ").slice(-1)[0]} — توصيل لكل المحافظات.`,
-    address: `${CITIES[i % CITIES.length]}، شارع ${spread(i, 40, 3)}`,
-    phone: `059${String(1000000 + i * 13757).slice(0, 7)}`,
-    coverUrl: null,
-    categories: [
-      { id: 1, name: "ملابس رجالية" },
-      { id: 2, name: "ملابس نسائية" },
-    ].slice(0, (i % 2) + 1),
+    reviewedAt: reviewed ? daysAgo(150 - i * 5) : null,
     owner: {
       id: 100 + i,
       name: OWNER_NAMES[i % OWNER_NAMES.length],
       email: `owner${i + 1}@viora-demo.com`,
       phone: `059${String(2000000 + i * 91733).slice(0, 7)}`,
-      // مستقلة عن حالة المتجر عمداً — العلاقة بينهن لسا ما تحدّدت مع الباك إند
-      status: i % 13 === 5 ? "SUSPENDED" : "ACTIVE",
+      emailVerified: i % 5 !== 0,
+      isActive: i % 13 !== 5,
+      createdAt: daysAgo(201 - i * 7),
     },
-    stats: {
-      products,
-      orders,
-      revenue: (orders * 87.5).toFixed(2),
-      rating: reviews > 3 ? Number((3 + (i % 20) / 10).toFixed(1)) : null,
-      reviews,
-    },
-    verifiedAt: status === "ACTIVE" && i % 3 !== 0 ? daysAgo(150 - i * 5) : null,
-    suspension:
-      status === "SUSPENDED"
-        ? {
-            reason: "تكرار شكاوى الزبائن حول عدم مطابقة المنتجات للوصف المعروض.",
-            at: daysAgo(12),
-            by: ACTOR,
-          }
+    productsCount: products,
+    ordersCount: orders,
+
+    description:
+      i % 4 === 0
+        ? null
+        : `متجر متخصّص بـ${name.split(" ").slice(-1)[0]} — توصيل لكل المحافظات.`,
+    coverUrl: null,
+    phone: `059${String(1000000 + i * 13757).slice(0, 7)}`,
+    address: `${CITIES[i % CITIES.length]}، شارع ${spread(i, 40, 3)}`,
+    rejectionReason:
+      status === "REJECTED"
+        ? "صور المتجر مش واضحة والوصف ناقص — عدّلهن وقدّم الطلب من جديد."
         : null,
+    updatedAt: daysAgo(10 + (i % 30)),
+    reviewedBy: reviewed
+      ? { id: 398, name: ACTOR, email: "owner@viora.com" }
+      : null,
+    categories: [
+      { id: 1, name: "ملابس رجالية", slug: "mens-clothing", imageUrl: null },
+      { id: 2, name: "ملابس نسائية", slug: "womens-clothing", imageUrl: null },
+    ].slice(0, (i % 2) + 1),
+    revenue: (orders * 87.5).toFixed(2),
   };
 });
 
 // ─── المستخدمون ────────────────────────────────────────────────
 
+/*
+  مطابق لرد `/admin/users` الحقيقي: `isActive` بولياني بدل `status`،
+  والمتجر متداخل جوّا `store` بدل `storeId`/`storeName` مفلطحين. ما في
+  `suspension` ولا `lastLoginAt` — السيرفر ما بيرجّعهم.
+*/
+
 const merchants: AdminUserDetail[] = stores.map((store, i) => ({
-  id: store.ownerId,
-  name: store.ownerName,
+  id: store.owner.id,
+  name: store.owner.name,
   email: store.owner.email,
   phone: store.owner.phone,
+  avatarUrl: null,
   role: "MERCHANT",
-  status: store.owner.status,
-  emailVerified: i % 5 !== 0,
-  storeId: store.id,
-  storeName: store.name,
-  ordersCount: store.ordersCount,
+  emailVerified: store.owner.emailVerified,
+  isActive: store.owner.isActive,
   createdAt: store.createdAt,
+  store: {
+    id: store.id,
+    name: store.name,
+    status: store.status,
+    isActive: store.isActive,
+  },
+  ordersCount: store.ordersCount,
   updatedAt: daysAgo(spread(i, 30)),
-  lastLoginAt: i % 7 === 3 ? null : daysAgo(spread(i, 14)),
-  storeStatus: store.status,
-  suspension:
-    store.owner.status === "SUSPENDED"
-      ? {
-          reason: "استخدام بيانات تواصل مخالفة لشروط المنصة بعد تنبيه سابق.",
-          at: daysAgo(9),
-          by: ACTOR,
-        }
-      : null,
+  addressesCount: spread(i, 3),
+  hasPassword: i % 9 !== 4,
+  linkedGoogle: i % 5 === 2,
+  // التاجر بياخد `revenue` بس — بلا `totalSpent`
+  revenue: store.revenue,
 }));
 
 const customers: AdminUserDetail[] = CUSTOMER_NAMES.map((name, i) => {
-  const suspended = i % 8 === 6;
+  const orders = spread(i, 22);
   return {
     id: 500 + i,
     name,
     email: `customer${i + 1}@viora-demo.com`,
     // الزبون ما بنطلب منه رقم بالتسجيل — null هون طبيعي مش نقص بيانات
     phone: i % 3 === 0 ? null : `056${String(3000000 + i * 55217).slice(0, 7)}`,
+    avatarUrl: null,
     role: "CUSTOMER",
-    status: suspended ? "SUSPENDED" : "ACTIVE",
     emailVerified: i % 4 !== 1,
-    storeId: null,
-    storeName: null,
-    ordersCount: spread(i, 22),
+    isActive: i % 8 !== 6,
     createdAt: daysAgo(160 - i * 8),
+    store: null,
+    ordersCount: orders,
     updatedAt: daysAgo(spread(i, 25)),
-    lastLoginAt: i % 6 === 2 ? null : daysAgo(spread(i, 10)),
-    storeStatus: null,
-    suspension: suspended
-      ? {
-          reason: "إساءة متكرّرة بالتقييمات تجاه التجار رغم التنبيه.",
-          at: daysAgo(5),
-          by: ACTOR,
-        }
-      : null,
+    addressesCount: spread(i, 4, 1),
+    hasPassword: i % 7 !== 3,
+    linkedGoogle: i % 4 === 1,
+    // الزبون بياخد `totalSpent` بس — بلا `revenue`
+    totalSpent: (orders * 87.5).toFixed(2),
   };
 });
 

@@ -12,14 +12,15 @@
 import type { ApiResponse } from "@/lib/api";
 import { ADMIN_LIMITS } from "../types";
 import type {
-  AdminOverview,
+  AdminStatsCharts,
   BannerPayload,
   CategoryPayload,
-  GrowthPoint,
   OrdersPoint,
-  OverviewRange,
   ReportStatus,
+  SignupsPoint,
   StaticPageKey,
+  StatsCounters,
+  TopStoreRow,
 } from "../types";
 import { db } from "./db";
 import { daysAgo, spread } from "./seed";
@@ -98,55 +99,81 @@ const today = () => daysAgo(0);
 
 // ─── لوحة التحكم ───────────────────────────────────────────────
 
-const RANGE_DAYS: Record<OverviewRange, number> = {
-  "7d": 7,
-  "30d": 30,
-  "90d": 90,
-};
-
-function buildOverview(range: OverviewRange): AdminOverview {
-  const days = RANGE_DAYS[range] ?? 30;
-
-  const registrationGrowth: GrowthPoint[] = Array.from({ length: days }, (_, i) => {
+/**
+ * بيبني رد `/admin/stats` بنفس شكل السيرفر بالضبط — نفس أسماء المفاتيح،
+ * ونفس التداخل (`stats` · `topStores` · `charts` · `period` بالمستوى الأعلى).
+ */
+function buildStats(days: number) {
+  const signups: SignupsPoint[] = Array.from({ length: days }, (_, i) => {
     const back = days - 1 - i;
     return {
       date: daysAgo(back),
       // منحنى صاعد خفيف مع تذبذب حتمي — بيبيّن "نمو" بلا عشوائية
-      customers: 4 + Math.round((days - back) / 3) + spread(i, 6),
       merchants: 1 + Math.round((days - back) / 12) + (i % 3),
+      customers: 4 + Math.round((days - back) / 3) + spread(i, 6),
     };
   });
 
-  const ordersTrend: OrdersPoint[] = registrationGrowth.map((point, i) => {
+  const orders: OrdersPoint[] = signups.map((point, i) => {
     const count = 18 + spread(i, 24) + Math.round(i / 4);
-    return { date: point.date, count, value: (count * 87.5).toFixed(2) };
+    return {
+      date: point.date,
+      orders: count,
+      revenue: (count * 87.5).toFixed(2),
+    };
   });
 
   const totalOrders = db.stores.reduce((sum, s) => sum + s.ordersCount, 0);
+  const inPeriod = orders.reduce((sum, o) => sum + o.orders, 0);
 
-  return {
-    activeStores: db.stores.filter((s) => s.status === "ACTIVE").length,
-    totalStores: db.stores.length,
-    pendingStores: db.stores.filter((s) => s.status === "PENDING").length,
-    customers: db.users.filter((u) => u.role === "CUSTOMER").length,
-    merchants: db.users.filter((u) => u.role === "MERCHANT").length,
-    orders: {
-      total: totalOrders,
-      today: ordersTrend[ordersTrend.length - 1]?.count ?? 0,
+  const counters: StatsCounters = {
+    stores: {
+      active: db.stores.filter((s) => s.status === "APPROVED").length,
+      pending: db.stores.filter((s) => s.status === "PENDING").length,
+      rejected: db.stores.filter((s) => s.status === "REJECTED").length,
+      suspended: db.stores.filter((s) => !s.isActive).length,
+      total: db.stores.length,
     },
-    gmv: (totalOrders * 87.5).toFixed(2),
-    openReports: db.reports.filter((r) => r.status === "OPEN").length,
-    registrationGrowth,
-    ordersTrend,
-    topStores: [...db.stores]
-      .sort((a, b) => b.ordersCount - a.ordersCount)
-      .slice(0, 5)
-      .map((s) => ({
+    users: {
+      merchants: db.users.filter((u) => u.role === "MERCHANT").length,
+      customers: db.users.filter((u) => u.role === "CUSTOMER").length,
+      total: db.users.length,
+      newMerchants: signups.reduce((sum, p) => sum + p.merchants, 0),
+      newCustomers: signups.reduce((sum, p) => sum + p.customers, 0),
+    },
+    orders: { total: totalOrders, inPeriod },
+    revenue: {
+      total: (totalOrders * 87.5).toFixed(2),
+      inPeriod: (inPeriod * 87.5).toFixed(2),
+    },
+    reports: { open: db.reports.filter((r) => r.status === "OPEN").length },
+  };
+
+  const topStores: TopStoreRow[] = [...db.stores]
+    .sort((a, b) => b.ordersCount - a.ordersCount)
+    .slice(0, 5)
+    .map((s) => ({
+      store: {
         id: s.id,
         name: s.name,
-        orders: s.ordersCount,
-        revenue: s.stats.revenue,
-      })),
+        logoUrl: s.logoUrl,
+        status: s.status,
+      },
+      orders: s.ordersCount,
+      revenue: s.revenue,
+    }));
+
+  const charts: AdminStatsCharts = { signups, orders };
+
+  return {
+    period: {
+      days,
+      from: daysAgo(days),
+      to: daysAgo(0),
+    },
+    stats: counters,
+    topStores,
+    charts,
   };
 }
 
@@ -161,13 +188,13 @@ function storeListItem(s: (typeof db.stores)[number]) {
     name: s.name,
     logoUrl: s.logoUrl,
     city: s.city,
-    ownerId: s.ownerId,
-    ownerName: s.ownerName,
     status: s.status,
-    isVerified: s.isVerified,
+    isActive: s.isActive,
+    createdAt: s.createdAt,
+    reviewedAt: s.reviewedAt,
+    owner: s.owner,
     productsCount: s.productsCount,
     ordersCount: s.ordersCount,
-    createdAt: s.createdAt,
   };
 }
 
@@ -177,14 +204,31 @@ function userListItem(u: (typeof db.users)[number]) {
     name: u.name,
     email: u.email,
     phone: u.phone,
+    avatarUrl: u.avatarUrl,
     role: u.role,
-    status: u.status,
     emailVerified: u.emailVerified,
-    storeId: u.storeId,
-    storeName: u.storeName,
-    ordersCount: u.ordersCount,
+    isActive: u.isActive,
     createdAt: u.createdAt,
+    store: u.store,
+    ordersCount: u.ordersCount,
   };
+}
+
+/**
+ * بيوقف الحساب أو بيرجّعه، وبيزامن نسخة المالك جوّا صفّ المتجر.
+ *
+ * ⚠️ ما بيلمس `store.status` — قرار مراجعة المتجر مستقل عن حالة الحساب
+ * بالباك إند، وخلطهن كان بيخلّي إيقاف حساب يبيّن كأنه رفض للمتجر.
+ */
+function setUserActive(user: (typeof db.users)[number], isActive: boolean) {
+  user.isActive = isActive;
+
+  const store = db.stores.find((s) => s.owner.id === user.id);
+  if (!store) return;
+
+  store.owner.isActive = isActive;
+  // نسخة المتجر المتداخلة بصفّ المستخدم بتضل هي هي — حالة المتجر ما بتتغيّر
+  if (user.store) user.store.isActive = store.isActive;
 }
 
 function reportListItem(r: (typeof db.reports)[number]) {
@@ -234,9 +278,10 @@ export async function mockFetch(
   const id = Number(rawId);
 
   // ─── نظرة عامة ──────────────────────────────────────────────
-  if (resource === "overview") {
-    const range = (q.get("range") ?? "30d") as OverviewRange;
-    return ok({ overview: buildOverview(range) });
+  if (resource === "stats") {
+    // `period` بالأيام — نفس اسم المعامل تبع السيرفر، مش `range`
+    const days = Number(q.get("period") ?? 30) || 30;
+    return ok(buildStats(days));
   }
 
   // ─── المتاجر ────────────────────────────────────────────────
@@ -247,7 +292,7 @@ export async function mockFetch(
         ? []
         : db.stores
             .filter((s) => (status ? s.status === status : true))
-            .filter((s) => matches(search, s.name, s.city, s.ownerName))
+            .filter((s) => matches(search, s.name, s.city, s.owner.name))
             .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
       const { slice, pagination } = paginate(rows, page, limit);
@@ -259,31 +304,31 @@ export async function mockFetch(
 
     if (method === "GET") return ok({ store });
 
-    if (action === "verify") {
-      store.isVerified = method !== "DELETE";
-      store.verifiedAt = store.isVerified ? today() : null;
-      // متجر بانتظار التوثيق بيصير نشط أول ما ينوثّق
-      if (store.isVerified && store.status === "PENDING") store.status = "ACTIVE";
+    /*
+      القبول والرفض بس — ما في توثيق ولا إيقاف بالباك إند، والميثود PATCH
+      مش POST. القرار قابل للتبديل بالاتجاهين، فالرفض بيمسح أثر القبول
+      والعكس.
+    */
+    if (action === "approve" && method === "PATCH") {
+      store.status = "APPROVED";
+      // القبول بيمسح أثر الرفض السابق — انفحص على السيرفر
+      store.rejectionReason = null;
+      store.reviewedAt = today();
+      store.reviewedBy = { id: 398, name: db.actor, email: "owner@viora.com" };
       return ok({ store });
     }
 
-    if (action === "suspend") {
+    if (action === "reject" && method === "PATCH") {
       const body = readBody<{ reason: string }>(options);
+      /* ⚠️ شروط السبب على السيرفر الحقيقي ما انفحصت — المحاكاة هون بتفرض
+         نفس حدود الواجهة (10–500) كتخمين معقول، مش كعقد مؤكّد. */
       const invalid = checkReason(body.reason);
       if (invalid) return invalid;
 
-      store.status = "SUSPENDED";
-      store.suspension = {
-        reason: (body.reason ?? "").trim(),
-        at: today(),
-        by: db.actor,
-      };
-      return ok({ store });
-    }
-
-    if (action === "reactivate") {
-      store.status = "ACTIVE";
-      store.suspension = null;
+      store.status = "REJECTED";
+      store.rejectionReason = (body.reason ?? "").trim();
+      store.reviewedAt = today();
+      store.reviewedBy = { id: 398, name: db.actor, email: "owner@viora.com" };
       return ok({ store });
     }
   }
@@ -292,12 +337,15 @@ export async function mockFetch(
   if (resource === "users") {
     if (!rawId) {
       const role = q.get("role");
-      const status = q.get("status");
+      // `isActive` بولياني نصّي — نفس اسم وقيم فلتر السيرفر، مش `status`
+      const isActive = q.get("isActive");
       const rows = emptyMode
         ? []
         : db.users
             .filter((u) => (role ? u.role === role : true))
-            .filter((u) => (status ? u.status === status : true))
+            .filter((u) =>
+              isActive ? u.isActive === (isActive === "true") : true,
+            )
             .filter((u) => matches(search, u.name, u.email, u.phone))
             .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
@@ -310,28 +358,15 @@ export async function mockFetch(
 
     if (method === "GET") return ok({ user });
 
-    if (action === "suspend") {
-      const body = readBody<{ reason: string }>(options);
-      const invalid = checkReason(body.reason);
-      if (invalid) return invalid;
-
-      user.status = "SUSPENDED";
-      user.suspension = {
-        reason: (body.reason ?? "").trim(),
-        at: today(),
-        by: db.actor,
-      };
-      // حالة الحساب مستقلة عن حالة متجره — القرار لسا ما تحدّد مع الباك إند
-      const store = db.stores.find((s) => s.ownerId === user.id);
-      if (store) store.owner.status = "SUSPENDED";
+    /* بلا سبب — رد السيرفر ما فيه حقل يخزّنه. والميثود PATCH مش POST. */
+    if (action === "suspend" && method === "PATCH") {
+      setUserActive(user, false);
       return ok({ user });
     }
 
-    if (action === "reactivate") {
-      user.status = "ACTIVE";
-      user.suspension = null;
-      const store = db.stores.find((s) => s.ownerId === user.id);
-      if (store) store.owner.status = "ACTIVE";
+    // الاسم `activate` مش `reactivate` — انفحص على السيرفر
+    if (action === "activate" && method === "PATCH") {
+      setUserActive(user, true);
       return ok({ user });
     }
   }

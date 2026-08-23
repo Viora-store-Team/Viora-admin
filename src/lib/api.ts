@@ -13,7 +13,16 @@ const API_BASE_URL =
  */
 export type ApiErrors = Record<string, string>;
 
-export interface ApiResponse<T = any> {
+/**
+ * مغلّف الرد الموحّد.
+ *
+ * الفهرس `unknown` مش `any` عن قصد: الكيانات بترجع بالمستوى الأعلى بأسماء
+ * مختلفة لكل مسار (`stores` · `user` · `categories`…)، فما بنقدر نعدّهن هون.
+ * `unknown` بيخلّي كل قراءة لمفتاح غير معرّف تتطلب تأكيد نوع صريح — وهذا
+ * المقصود: الغلاف المكتوب بـ lib/admin/api.ts هو اللي بيسمّي الشكل، مش
+ * الصفحات وهي بتخمّن.
+ */
+export interface ApiResponse<T = unknown> {
   success: boolean;
   /** كود HTTP — 0 يعني فشل شبكة قبل ما يوصل الطلب أصلاً */
   status: number;
@@ -21,7 +30,7 @@ export interface ApiResponse<T = any> {
   message?: string;
   errors?: ApiErrors;
   token?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /** الحصول على التوكن من التخزين المحلي */
@@ -135,6 +144,23 @@ export const UPLOAD_LIMITS = {
   types: ["image/jpeg", "image/png", "image/webp"] as const,
 };
 
+/**
+ * بيقرأ أول مفتاح فيه نص غير فاضي من كائن مجهول الشكل.
+ *
+ * مسار الرفع ما استقرّ على اسم واحد للرابط (`url` · `path` · `location`)،
+ * وممكن يجي بالمستوى الأعلى أو جوّا `data`. بدل سلسلة `||` طويلة بتنكسر
+ * مع `unknown`، القراءة صارت مفحوصة النوع بمكان واحد.
+ */
+function readString(source: unknown, keys: string[]): string | null {
+  if (typeof source !== "object" || source === null) return null;
+  const record = source as Record<string, unknown>;
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value) return value;
+  }
+  return null;
+}
+
 /** نفس رسائل السيرفر بالضبط، بس بترجع فوراً بلا رحلة شبكة */
 function localFileError(file: File): string | null {
   if (!UPLOAD_LIMITS.types.includes(file.type as (typeof UPLOAD_LIMITS.types)[number])) {
@@ -164,7 +190,8 @@ export async function uploadMany(files: File[]): Promise<UploadResult> {
       });
 
       if (res.success) {
-        const url = res.url || res.data?.url || res.data?.path || res.path || res.location || res.data?.location;
+        const keys = ["url", "path", "location"];
+        const url = readString(res, keys) ?? readString(res.data, keys);
         if (url) return url;
         throw new Error("السيرفر رجّع نجاح بلا رابط صورة.");
       }

@@ -14,18 +14,21 @@ import Pagination from "@/components/ui/Pagination";
 import Button from "@/components/ui/Button";
 import StoresTable from "@/components/admin/StoresTable";
 import { fetchStores } from "@/lib/admin/api";
-import { ENTITY_STATUS, ENTITY_STATUS_KEYS } from "@/lib/admin/status";
-import type { AdminStoreListItem, EntityStatus } from "@/lib/admin/types";
+import { STORE_STATUS } from "@/lib/admin/status";
+import type { AdminStoreListItem, StoreStatus } from "@/lib/admin/types";
+import { STORE_STATUS_KEYS } from "@/lib/admin/types";
 import { useAdminList } from "@/lib/admin/useAdminList";
 import { formatNumber } from "@/lib/format";
 import { t } from "@/lib/strings";
 import type { ApiResponse } from "@/lib/api";
 
+/* القيم اللي بتنبعث بـ ?status= — نفس نصوص الباك إند حرفياً
+   (PENDING · APPROVED · REJECTED)، مش ACTIVE/SUSPENDED. */
 const STATUS_TABS: TabItem[] = [
   { key: "", label: t.admin.common.all },
-  ...ENTITY_STATUS_KEYS.map((key) => ({
+  ...STORE_STATUS_KEYS.map((key) => ({
     key,
-    label: ENTITY_STATUS[key].label,
+    label: STORE_STATUS[key].label,
   })),
 ];
 
@@ -34,7 +37,7 @@ export default function AdminStoresPage() {
 
   const fetcher = useCallback(
     ({ page, q, filters }: { page: number; q: string; filters: Record<string, string> }) =>
-      fetchStores({ page, q, status: filters.status as EntityStatus | "" }),
+      fetchStores({ page, q, status: filters.status as StoreStatus | "" }),
     [],
   );
 
