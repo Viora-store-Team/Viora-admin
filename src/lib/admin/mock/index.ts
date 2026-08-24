@@ -311,10 +311,16 @@ export async function mockFetch(
     */
     if (action === "approve" && method === "PATCH") {
       store.status = "APPROVED";
+      store.isActive = true;
       // القبول بيمسح أثر الرفض السابق — انفحص على السيرفر
       store.rejectionReason = null;
       store.reviewedAt = today();
       store.reviewedBy = { id: 398, name: db.actor, email: "owner@viora.com" };
+      const merchant = db.users.find((u) => u.store?.id === store.id);
+      if (merchant?.store) {
+        merchant.store.status = "APPROVED";
+        merchant.store.isActive = true;
+      }
       return ok({ store });
     }
 
@@ -326,9 +332,15 @@ export async function mockFetch(
       if (invalid) return invalid;
 
       store.status = "REJECTED";
+      store.isActive = false;
       store.rejectionReason = (body.reason ?? "").trim();
       store.reviewedAt = today();
       store.reviewedBy = { id: 398, name: db.actor, email: "owner@viora.com" };
+      const merchant = db.users.find((u) => u.store?.id === store.id);
+      if (merchant?.store) {
+        merchant.store.status = "REJECTED";
+        merchant.store.isActive = false;
+      }
       return ok({ store });
     }
   }

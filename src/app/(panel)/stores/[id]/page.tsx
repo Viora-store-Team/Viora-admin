@@ -4,13 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  Ban,
   Check,
   CircleCheck,
-  PowerOff,
+  RotateCcw,
   ShieldOff,
   Store as StoreIcon,
   TriangleAlert,
-  X,
 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
@@ -24,7 +24,7 @@ import Spinner from "@/components/ui/Spinner";
 import InfoGrid from "@/components/admin/InfoGrid";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { approveStore, fetchStore, rejectStore } from "@/lib/admin/api";
-import { STORE_STATUS } from "@/lib/admin/status";
+import { accountStatus, STORE_STATUS } from "@/lib/admin/status";
 import type { AdminStoreDetail } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
 import type { ApiResponse } from "@/lib/api";
@@ -34,11 +34,10 @@ import { useFlash } from "@/lib/useFlash";
 import { t } from "@/lib/strings";
 
 /** أي حوار مفتوح حالياً — واحد بس بأي لحظة */
-type Dialog = "approve" | "reject" | null;
+type Dialog = "approve" | "reject" | "rereview" | null;
 
 export default function AdminStoreDetailPage() {
   const router = useRouter();
-  // قراءة الـ param من العميل — نفس أسلوب صفحة تعديل المنتج
   const storeId = Number(useParams<{ id: string }>().id);
 
   const [store, setStore] = useState<AdminStoreDetail | null>(null);
@@ -69,11 +68,6 @@ export default function AdminStoreDetailPage() {
       }
 
       const failure = classifyStatus(res);
-      /*
-        رسالة السيرفر «المتجر غير موجود» بتنصنّف `noStore` مش `notFound`،
-        لأن classifyStatus بيفحص إذا الرسالة فيها كلمة "متجر" (قاعدة جاية
-        من نطاق المنتجات). الحالتين نفس الشي هون: الصفحة غير موجودة.
-      */
       if (failure.kind === "notFound" || failure.kind === "noStore") {
         setNotFound(true);
         return;
@@ -91,10 +85,9 @@ export default function AdminStoreDetailPage() {
   }, [storeId, attempt]);
 
   /**
-   * منفّذ موحّد للقبول والرفض.
+   * منفّذ موحّد للقبول والرفض وإعادة النظر.
    *
-   * كل رد نجاح بيرجّع المتجر كامل، فبنعيد بذر الحالة منه بدل إعادة جلب —
-   * نفس نمط applyProduct بصفحة تعديل المنتج.
+   * كل رد نجاح بيرجّع المتجر كامل، فبنعيد بذر الحالة منه بدل إعادة جلب.
    */
   const run = useCallback(
     async (
@@ -166,14 +159,7 @@ export default function AdminStoreDetailPage() {
     );
   }
 
-  /*
-    الزرّين بيضلّوا ظاهرين بكل الحالات — المسارين بيقبلوا تبديل القرار،
-    فمتجر مرفوض ممكن ينقبل والعكس. اللي بينمنع بس هو تكرار نفس القرار.
-  */
-  const reviewed = store.status !== "PENDING";
-
-  /* الترميز المكسور بيصيب حقول متعددة بنفس الصف، فبنفحصها كلها مرة وحدة
-     ونعرض تنبيه واحد فوق بدل ما نكرّر علامة جنب كل حقل. */
+  /* الترميز المكسور بيصيب حقول متعددة بنفس الصف، فبنفحصها كلها مرة وحدة */
   const broken =
     isBrokenText(store.name) ||
     isBrokenText(store.city) ||
@@ -216,8 +202,7 @@ export default function AdminStoreDetailPage() {
 
       <ErrorBanner message={error} />
 
-      {/* ⚠️ تنبيه ترميز — بيوضّح إن الفراغات تحت سببها بيانات تالفة
-          بقاعدة البيانات مش حقول ناقصة، وإنها مش قابلة للإصلاح من اللوحة */}
+      {/* ⚠️ تنبيه ترميز */}
       {broken && (
         <Card className="border-warning/20 bg-warning-soft/40">
           <CardBody className="space-y-1">
@@ -230,42 +215,69 @@ export default function AdminStoreDetailPage() {
         </Card>
       )}
 
-      {/* شريط الحالة والقرار */}
+      {/* شريط الحالة والإجراءات — موحّد مع نمط صفحة المستخدمين */}
       <Card>
         <CardBody className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge meta={STORE_STATUS[store.status]} />
-            {/* التوقّف حالة مستقلة عن القرار — ما في مسار بالباك إند يغيّرها */}
-            {!store.isActive && (
-              <Badge tone="danger">
-                <PowerOff className="size-3.5" aria-hidden="true" />
-                {t.admin.stores.inactive}
-              </Badge>
+            {store.status === "APPROVED" && (
+              <StatusBadge meta={accountStatus(store.isActive)} />
             )}
-            {reviewed && (
-              <span className="text-xs text-text-secondary">
-                {t.admin.stores.reReviewHint}
-              </span>
+            {store.status === "REJECTED" && (
+              <StatusBadge meta={accountStatus(false)} />
             )}
+            <Badge tone={store.owner.emailVerified ? "success" : "warning"}>
+              {store.owner.emailVerified
+                ? t.admin.users.emailVerified
+                : t.admin.users.emailNotVerified}
+            </Badge>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              disabled={busy || store.status === "APPROVED"}
-              onClick={() => setDialog("approve")}
-              icon={<CircleCheck className="size-4" aria-hidden="true" />}
-            >
-              {t.admin.stores.approve}
-            </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* في حالة الانتظار: زران للقبول والرفض */}
+            {store.status === "PENDING" && (
+              <>
+                <Button
+                  disabled={busy}
+                  onClick={() => setDialog("approve")}
+                  icon={<CircleCheck className="size-4" aria-hidden="true" />}
+                >
+                  {t.admin.stores.approve}
+                </Button>
 
-            <Button
-              variant="danger"
-              disabled={busy || store.status === "REJECTED"}
-              onClick={() => setDialog("reject")}
-              icon={<X className="size-4" aria-hidden="true" />}
-            >
-              {t.admin.stores.reject}
-            </Button>
+                <Button
+                  variant="danger"
+                  disabled={busy}
+                  onClick={() => setDialog("reject")}
+                  icon={<Ban className="size-4" aria-hidden="true" />}
+                >
+                  {t.admin.stores.reject}
+                </Button>
+              </>
+            )}
+
+            {/* في حالة المتجر المقبول: زر للرفض والإيقاف */}
+            {store.status === "APPROVED" && (
+              <Button
+                variant="danger"
+                disabled={busy}
+                onClick={() => setDialog("reject")}
+                icon={<Ban className="size-4" aria-hidden="true" />}
+              >
+                {t.admin.stores.reject}
+              </Button>
+            )}
+
+            {/* في حالة المتجر المرفوض: زر إعادة نظر وتنشيط */}
+            {store.status === "REJECTED" && (
+              <Button
+                disabled={busy}
+                onClick={() => setDialog("rereview")}
+                icon={<RotateCcw className="size-4" aria-hidden="true" />}
+              >
+                {t.admin.stores.reReview}
+              </Button>
+            )}
           </div>
         </CardBody>
       </Card>
@@ -324,7 +336,6 @@ export default function AdminStoreDetailPage() {
                   ),
                 },
                 {
-                  /* بيضل فاضي بكل الصفوف الحالية — الباك إند ما بيعبّيه لهلق */
                   label: t.admin.stores.reviewedBy,
                   value: store.reviewedBy?.name,
                 },
@@ -373,8 +384,6 @@ export default function AdminStoreDetailPage() {
                     ),
                   },
                   {
-                    /* رد /admin/stores ما فيه `status` للمالك — فيه العلمين
-                       دول، وهما اللي بيقرّروا إذا بيقدر يسجّل دخول أصلاً */
                     label: t.admin.stores.ownerEmailVerified,
                     value: (
                       <Badge
@@ -389,13 +398,7 @@ export default function AdminStoreDetailPage() {
                   {
                     label: t.admin.stores.ownerStatus,
                     value: (
-                      <Badge
-                        tone={store.owner.isActive ? "success" : "danger"}
-                      >
-                        {store.owner.isActive
-                          ? t.admin.status.active
-                          : t.admin.status.suspended}
-                      </Badge>
+                      <StatusBadge meta={accountStatus(store.owner.isActive)} />
                     ),
                   },
                 ]}
@@ -406,8 +409,6 @@ export default function AdminStoreDetailPage() {
           <Card>
             <CardHeader title={t.admin.stores.stats} />
             <CardBody>
-              {/* عدّادات مفلطحة على المتجر مباشرة — ما في كائن `stats`،
-                  وما في تقييمات بالعقد الحالي أصلاً */}
               <InfoGrid
                 rows={[
                   {
@@ -443,6 +444,7 @@ export default function AdminStoreDetailPage() {
         </div>
       </div>
 
+      {/* حوار القبول */}
       <ConfirmDialog
         open={dialog === "approve"}
         tone="primary"
@@ -456,7 +458,7 @@ export default function AdminStoreDetailPage() {
         onCancel={() => setDialog(null)}
       />
 
-      {/* الرفض بسبب — الواجهة بتفرض 10–500 حرف، والسيرفر بيعرض سببه لو رفض */}
+      {/* حوار الرفض والإيقاف بسبب */}
       <ReasonDialog
         open={dialog === "reject"}
         title={t.admin.stores.rejectTitle}
@@ -469,6 +471,21 @@ export default function AdminStoreDetailPage() {
         }
         onCancel={() => setDialog(null)}
       />
+
+      {/* حوار إعادة النظر والتنشيط */}
+      <ConfirmDialog
+        open={dialog === "rereview"}
+        tone="primary"
+        title={t.admin.stores.reReviewTitle}
+        body={t.admin.stores.reReviewBody}
+        confirmLabel={t.admin.stores.reReview}
+        loading={busy}
+        onConfirm={() =>
+          run(() => approveStore(storeId), t.admin.stores.didReactivate)
+        }
+        onCancel={() => setDialog(null)}
+      />
     </div>
   );
 }
+

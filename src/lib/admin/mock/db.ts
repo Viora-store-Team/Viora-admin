@@ -64,8 +64,8 @@ const stores: AdminStoreDetail[] = STORE_NAMES.map((name, i) => {
     logoUrl: null,
     city: CITIES[i % CITIES.length],
     status,
-    // مستقل عن قرار المراجعة — متجر مقبول وموقوف حالة واردة
-    isActive: i % 17 !== 9,
+    // المتجر المرفوض أو قيد المراجعة لا يكون نشطاً أبداً
+    isActive: status === "APPROVED" && i % 17 !== 9,
     createdAt: daysAgo(200 - i * 7),
     reviewedAt: reviewed ? daysAgo(150 - i * 5) : null,
     owner: {
