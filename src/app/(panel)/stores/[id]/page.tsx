@@ -23,11 +23,16 @@ import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
 import InfoGrid from "@/components/admin/InfoGrid";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { approveStore, fetchStore, rejectStore } from "@/lib/admin/api";
+import {
+  activateUser,
+  approveStore,
+  fetchStore,
+  rejectStore,
+  suspendUser,
+} from "@/lib/admin/api";
 import { accountStatus, STORE_STATUS } from "@/lib/admin/status";
 import type { AdminStoreDetail } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
-import type { ApiResponse } from "@/lib/api";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { isBrokenText, textOrNull } from "@/lib/brokenText";
 import { useFlash } from "@/lib/useFlash";
@@ -61,7 +66,16 @@ export default function AdminStoreDetailPage() {
       setLoading(false);
 
       if (res.success && res.store) {
-        setStore(res.store);
+        const isRejected = res.store.status === "REJECTED";
+        const normalizedStore: AdminStoreDetail = {
+          ...res.store,
+          isActive: isRejected ? false : res.store.isActive,
+          owner: {
+            ...res.store.owner,
+            isActive: isRejected ? false : res.store.owner.isActive,
+          },
+        };
+        setStore(normalizedStore);
         setNotFound(false);
         setError("");
         return;
@@ -85,45 +99,118 @@ export default function AdminStoreDetailPage() {
   }, [storeId, attempt]);
 
   /**
-   * منفّذ موحّد للقبول والرفض وإعادة النظر.
-   *
-   * كل رد نجاح بيرجّع المتجر كامل، فبنعيد بذر الحالة منه بدل إعادة جلب.
+   * قبول أو إعادة تنشيط المتجر وتنشيط حساب المالك
    */
-  const run = useCallback(
-    async (
-      call: () => Promise<ApiResponse & { store?: AdminStoreDetail }>,
-      success: string,
-    ) => {
+  const handleApprove = useCallback(
+    async (successMsg: string) => {
+      setBusy(true);
+      setError("");
+
+      const res = await approveStore(storeId);
+      if (!res.success) {
+        setBusy(false);
+        setDialog(null);
+        const failure = classifyStatus(res);
+        setError(
+          failure.kind === "unauthorized"
+            ? t.admin.common.sessionInvalid
+            : failure.message,
+        );
+        return;
+      }
+
+      // تفعيل حساب المالك لتمكينه من تسجيل الدخول
+      if (store?.owner?.id) {
+        await activateUser(store.owner.id);
+      }
+
+      const updatedStore: AdminStoreDetail = res.store
+        ? {
+            ...res.store,
+            isActive: true,
+            owner: {
+              ...res.store.owner,
+              isActive: true,
+            },
+          }
+        : {
+            ...store!,
+            status: "APPROVED",
+            isActive: true,
+            rejectionReason: null,
+            owner: {
+              ...store!.owner,
+              isActive: true,
+            },
+          };
+
+      setStore(updatedStore);
+      setBusy(false);
+      setDialog(null);
+      showFlash(successMsg);
+    },
+    [storeId, store, showFlash],
+  );
+
+  /**
+   * رفض وإيقاف المتجر وإيقاف حساب المالك لمنعه من تسجيل الدخول
+   */
+  const handleReject = useCallback(
+    async (reason: string) => {
       setBusy(true);
       setError("");
       setReasonError(undefined);
 
-      const res = await call();
-      setBusy(false);
-
-      if (res.success && res.store) {
-        setStore(res.store);
+      const res = await rejectStore(storeId, reason);
+      if (!res.success) {
+        setBusy(false);
+        const failure = classifyStatus(res);
+        if (failure.kind === "validation" && failure.errors?.reason) {
+          setReasonError(failure.errors.reason);
+          return;
+        }
         setDialog(null);
-        showFlash(success);
+        setError(
+          failure.kind === "unauthorized"
+            ? t.admin.common.sessionInvalid
+            : failure.message,
+        );
         return;
       }
 
-      const failure = classifyStatus(res);
-
-      // خطأ حقل السبب بيضل جوّا الحوار — إغلاقه بيضيّع اللي كتبه المستخدم
-      if (failure.kind === "validation" && failure.errors?.reason) {
-        setReasonError(failure.errors.reason);
-        return;
+      // إيقاف حساب المالك أيضاً لضمان منعه من الدخول
+      if (store?.owner?.id) {
+        await suspendUser(store.owner.id);
       }
 
+      const updatedStore: AdminStoreDetail = res.store
+        ? {
+            ...res.store,
+            status: "REJECTED",
+            isActive: false,
+            rejectionReason: reason,
+            owner: {
+              ...res.store.owner,
+              isActive: false,
+            },
+          }
+        : {
+            ...store!,
+            status: "REJECTED",
+            isActive: false,
+            rejectionReason: reason,
+            owner: {
+              ...store!.owner,
+              isActive: false,
+            },
+          };
+
+      setStore(updatedStore);
+      setBusy(false);
       setDialog(null);
-      setError(
-        failure.kind === "unauthorized"
-          ? t.admin.common.sessionInvalid
-          : failure.message,
-      );
+      showFlash(t.admin.stores.didReject);
     },
-    [showFlash],
+    [storeId, store, showFlash],
   );
 
   if (loading) return <Spinner />;
@@ -398,7 +485,13 @@ export default function AdminStoreDetailPage() {
                   {
                     label: t.admin.stores.ownerStatus,
                     value: (
-                      <StatusBadge meta={accountStatus(store.owner.isActive)} />
+                      <StatusBadge
+                        meta={accountStatus(
+                          store.status === "REJECTED"
+                            ? false
+                            : store.owner.isActive,
+                        )}
+                      />
                     ),
                   },
                 ]}
@@ -452,9 +545,7 @@ export default function AdminStoreDetailPage() {
         body={t.admin.stores.approveBody}
         confirmLabel={t.admin.stores.approve}
         loading={busy}
-        onConfirm={() =>
-          run(() => approveStore(storeId), t.admin.stores.didApprove)
-        }
+        onConfirm={() => handleApprove(t.admin.stores.didApprove)}
         onCancel={() => setDialog(null)}
       />
 
@@ -466,9 +557,7 @@ export default function AdminStoreDetailPage() {
         confirmLabel={t.admin.stores.reject}
         loading={busy}
         serverError={reasonError}
-        onConfirm={(reason) =>
-          run(() => rejectStore(storeId, reason), t.admin.stores.didReject)
-        }
+        onConfirm={(reason) => handleReject(reason)}
         onCancel={() => setDialog(null)}
       />
 
@@ -480,9 +569,7 @@ export default function AdminStoreDetailPage() {
         body={t.admin.stores.reReviewBody}
         confirmLabel={t.admin.stores.reReview}
         loading={busy}
-        onConfirm={() =>
-          run(() => approveStore(storeId), t.admin.stores.didReactivate)
-        }
+        onConfirm={() => handleApprove(t.admin.stores.didReactivate)}
         onCancel={() => setDialog(null)}
       />
     </div>

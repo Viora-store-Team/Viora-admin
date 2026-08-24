@@ -74,7 +74,7 @@ const stores: AdminStoreDetail[] = STORE_NAMES.map((name, i) => {
       email: `owner${i + 1}@viora-demo.com`,
       phone: `059${String(2000000 + i * 91733).slice(0, 7)}`,
       emailVerified: i % 5 !== 0,
-      isActive: i % 13 !== 5,
+      isActive: status === "APPROVED" && i % 13 !== 5,
       createdAt: daysAgo(201 - i * 7),
     },
     productsCount: products,
