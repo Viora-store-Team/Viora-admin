@@ -256,29 +256,72 @@ export interface AdminUserDetail extends AdminUserListItem {
   totalSpent?: string;
 }
 
-// ─── ٤ · التصنيفات ─────────────────────────────────────────────
+// ─── ٤ · التصنيفات ✅ ──────────────────────────────────────────
 
-/**
- * نفس شجرة `CategoryRoot` تبع المنتجات + عدّاد المنتجات.
- * التوسعة مقصودة مش نوع جديد — لازم تضل الشجرة متوافقة مع CategoryPicker
- * و/sizes?sizeGroup= حرفياً، وإلا بينكسر إنشاء المنتجات.
- */
-export interface AdminCategoryChild extends CategoryChild {
+/*
+  مطابق حرفياً لرد `/admin/categories`.
+
+  الشجرة **مستويين بس** — الباك إند بيرفض إضافة تصنيف تحت تصنيف فرعي
+  برسالة «الشجرة مستويين بس». الجذر بلا `sizeGroup` والفرعي إلزامي إله.
+*/
+
+/** الحقول المشتركة بين الجذر والفرعي — نفس الشكل بالضبط من السيرفر */
+export interface AdminCategoryNode {
+  id: number;
+  name: string;
+  /** بينتولّد من الاسم وقت الإنشاء، وما بينتغيّر مع إعادة التسمية */
+  slug: string;
+  imageUrl: string | null;
+  /** ترتيب العرض 0–9999 — الأصغر أول */
+  sortOrder: number;
+  /** `false` = مخفي عن الزبائن. بديل الحذف لما يكون التصنيف مربوط */
+  isActive: boolean;
+  /** `null` للجذر · إلزامي للفرعي */
+  sizeGroup: SizeGroup | null;
+  parentId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  childrenCount: number;
   productsCount: number;
+  /** عدد المتاجر المرتبطة — بيمنع الحذف زي المنتجات والأبناء */
+  storesCount: number;
 }
 
-export interface AdminCategoryRoot extends Omit<CategoryRoot, "children"> {
-  productsCount: number;
+/** الفرعي ما بيجي معه `children` — الشجرة مستويين */
+export type AdminCategoryChild = AdminCategoryNode;
+
+export interface AdminCategoryRoot extends AdminCategoryNode {
   children: AdminCategoryChild[];
 }
 
+/** جسم `POST /admin/categories` */
 export interface CategoryPayload {
   name: string;
   imageUrl?: string | null;
   /** موجود = تصنيف فرعي · غايب = تصنيف رئيسي */
   parentId?: number;
-  /** إلزامي للتصنيف الفرعي · ممنوع للرئيسي */
+  /** إلزامي للفرعي · **ممنوع** للجذر (بيرجّع 400) */
   sizeGroup?: SizeGroup;
+  sortOrder?: number;
+  isActive?: boolean;
+}
+
+/**
+ * جسم `PATCH /admin/categories/:id` — كل الحقول اختيارية.
+ *
+ * ⚠️ `sizeGroup` مستثنى: على الجذر بيرجّع 400 صراحة، وعلى الفرعي ما
+ * انفحص — وتغييره بيبطّل كل `variantSizeId` تحت التصنيف. التعديل من
+ * اللوحة بيضل بلا مجموعة مقاسات لحد ما يتأكد السلوك.
+ */
+export type CategoryUpdatePayload = Partial<
+  Pick<CategoryPayload, "name" | "imageUrl" | "sortOrder" | "isActive">
+>;
+
+/** تفاصيل الرفض 409 — بترجع مع رسالة السيرفر وبتشرح ليش ما انحذف */
+export interface CategoryDeleteBlock {
+  childrenCount: number;
+  productsCount: number;
+  storesCount: number;
 }
 
 // ─── ٥ · التقييمات والبلاغات ───────────────────────────────────

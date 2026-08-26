@@ -1,6 +1,7 @@
 import type { ApiResponse, Pagination } from "@/lib/api";
 import { adminFetch, query } from "./client";
 import type {
+  AdminCategoryNode,
   AdminCategoryRoot,
   AdminReportDetail,
   AdminReportListItem,
@@ -12,6 +13,7 @@ import type {
   Banner,
   BannerPayload,
   CategoryPayload,
+  CategoryUpdatePayload,
   DeliveryFailure,
   DeliveryHealth,
   AdminRole,
@@ -193,32 +195,89 @@ export function activateUser(
   return adminFetch(`/admin/users/${id}/activate`, { method: "PATCH" });
 }
 
-// ─── التصنيفات 🟡 ──────────────────────────────────────────────
+// ─── التصنيفات ✅ ──────────────────────────────────────────────
 
-/* كل عمليات التصنيفات بترجّع الشجرة الكاملة بعد التعديل — أبسط من إعادة
-   الجلب، وبيضمن إن الواجهة والسيرفر متفقين على الشكل النهائي. */
+/**
+ * ⚠️ **كل عمليات الكتابة بترجّع التصنيف الواحد `category` — مش الشجرة.**
+ *
+ * هاد أهم فرق عن التصميم القديم: كانت الصفحة بتعيد بذر شجرتها من رد
+ * العملية مباشرة. مع العقد الحقيقي هذا مستحيل — الرد فيه صف واحد بلا
+ * `children` وبلا العدّادات المحدّثة لباقي الشجرة، فالصفحة بتعيد الجلب
+ * بعد كل عملية ناجحة.
+ */
+type CategoryResponse = ApiResponse & { category?: AdminCategoryNode };
 
-export function fetchAdminCategories(): Promise<
-  ApiResponse & { categories?: AdminCategoryRoot[] }
+/**
+ * ✅ `GET /admin/categories`
+ *
+ * الافتراضي شجرة مستويين. `flat=true` بترجّع كل التصنيفات بمستوى واحد
+ * (38 صف حالياً)، و`parentId` بترجّع أبناء تصنيف واحد مسطّحين.
+ */
+export function fetchAdminCategories(
+  params: { flat?: boolean; parentId?: number; isActive?: boolean } = {},
+): Promise<
+  ApiResponse & { categories?: AdminCategoryRoot[]; count?: number; flat?: boolean }
 > {
-  return adminFetch("/admin/categories");
+  return adminFetch(
+    `/admin/categories${query({
+      flat: params.flat === undefined ? undefined : String(params.flat),
+      parentId: params.parentId,
+      isActive: params.isActive === undefined ? undefined : String(params.isActive),
+    })}`,
+  );
 }
 
+/** ✅ `GET /admin/categories/:id` — 404 «التصنيف غير موجود» */
+export function fetchCategory(id: number): Promise<CategoryResponse> {
+  return adminFetch(`/admin/categories/${id}`);
+}
+
+/**
+ * ✅ `POST /admin/categories` — 201
+ *
+ * قواعد التحقق كما رجّعها السيرفر:
+ * - `name` مطلوب. **ما في حد أدنى للطول ولا فحص تكرار** — حرف واحد بيمرّ،
+ *   واسم مكرّر بيمرّ. اللوحة بتفرض 2–60 من طرفها لأن السيرفر ما بيفرض.
+ * - `parentId` موجود ⇒ `sizeGroup` **إلزامي**، وممنوع يكون الأب فرعي.
+ * - جذر ⇒ `sizeGroup` **ممنوع**.
+ * - `imageUrl` لازم رابط http/https صحيح · `sortOrder` رقم 0–9999.
+ */
 export function createCategory(
   payload: CategoryPayload,
-): Promise<ApiResponse & { categories?: AdminCategoryRoot[] }> {
+): Promise<CategoryResponse> {
   return adminFetch("/admin/categories", { method: "POST", ...json(payload) });
 }
 
-/** ⚠️ الاسم والصورة بس — sizeGroup ما بينعدّل (بيبطّل الـ variantSizeId) */
+/** ✅ `PATCH /admin/categories/:id` — جسم فاضي بيرجّع 200 بلا تغيير */
 export function updateCategory(
   id: number,
-  payload: Pick<CategoryPayload, "name" | "imageUrl">,
-): Promise<ApiResponse & { categories?: AdminCategoryRoot[] }> {
+  payload: CategoryUpdatePayload,
+): Promise<CategoryResponse> {
   return adminFetch(`/admin/categories/${id}`, {
     method: "PATCH",
     ...json(payload),
   });
+}
+
+/**
+ * ✅ `DELETE /admin/categories/:id`
+ *
+ * ⚠️ بيرجّع **409** لو التصنيف مربوط، مع عدّادات تشرح السبب
+ * (`childrenCount` · `productsCount` · `storesCount`) ورسالة عربية جاهزة
+ * بتقترح الإخفاء بدل الحذف. الحذف بينجح بس لما تكون العدّادات الثلاثة صفر.
+ */
+export function deleteCategory(id: number): Promise<CategoryResponse> {
+  return adminFetch(`/admin/categories/${id}`, { method: "DELETE" });
+}
+
+/** ✅ `PATCH /admin/categories/:id/activate` — «التصنيف صار ظاهر» */
+export function activateCategory(id: number): Promise<CategoryResponse> {
+  return adminFetch(`/admin/categories/${id}/activate`, { method: "PATCH" });
+}
+
+/** ✅ `PATCH /admin/categories/:id/deactivate` — «التصنيف صار مخفي» */
+export function deactivateCategory(id: number): Promise<CategoryResponse> {
+  return adminFetch(`/admin/categories/${id}/deactivate`, { method: "PATCH" });
 }
 
 // ─── البلاغات والتقييمات 🟡 ────────────────────────────────────

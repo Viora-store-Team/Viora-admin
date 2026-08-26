@@ -18,6 +18,7 @@ import type {
   ReportStatus,
   ReportTarget,
   Review,
+  SizeGroup,
   StaticPage,
   StoreStatus,
 } from "../types";
@@ -165,74 +166,105 @@ const users: AdminUserDetail[] = [...merchants, ...customers];
 // ─── التصنيفات ─────────────────────────────────────────────────
 
 /**
- * ⚠️ نفس شكل GET /categories الحقيقي — الجذر sizeGroup: null والابن إلزامي.
- * أي خلل هون بينعكس مباشرة على CategoryPicker بصفحة إنشاء المنتج.
+ * ⚠️ نفس شكل `/admin/categories` الحقيقي بالضبط — بما فيه `sortOrder`
+ * و`isActive` و`parentId` والعدّادات التلاتة (`childrenCount` ·
+ * `productsCount` · `storesCount`). الجذر `sizeGroup: null` والابن إلزامي.
+ *
+ * البنّاء تحت بيعبّي الحقول المشتقّة بدل ما تنكتب يدوي على عشرين كائن —
+ * `childrenCount` بينحسب من المصفوفة نفسها فما بيقدر ينحرف عنها.
  */
-const categories: AdminCategoryRoot[] = [
+
+interface SeedChild {
+  id: number;
+  name: string;
+  slug: string;
+  sizeGroup: SizeGroup;
+  productsCount: number;
+  isActive?: boolean;
+}
+
+interface SeedRoot {
+  id: number;
+  name: string;
+  slug: string;
+  storesCount: number;
+  children: SeedChild[];
+}
+
+const CATEGORY_SEED: SeedRoot[] = [
   {
-    id: 1,
-    name: "ملابس رجالية",
-    slug: "mens-clothing",
-    imageUrl: null,
-    sizeGroup: null,
-    productsCount: 64,
+    id: 1, name: "ملابس رجالية", slug: "mens-clothing", storesCount: 14,
     children: [
-      { id: 11, name: "قمصان", slug: "shirts", imageUrl: null, sizeGroup: "CLOTHING", productsCount: 28 },
-      { id: 12, name: "بناطيل", slug: "pants", imageUrl: null, sizeGroup: "CLOTHING", productsCount: 21 },
-      { id: 13, name: "جاكيتات", slug: "jackets", imageUrl: null, sizeGroup: "CLOTHING", productsCount: 15 },
+      { id: 11, name: "قمصان", slug: "shirts", sizeGroup: "CLOTHING", productsCount: 28 },
+      { id: 12, name: "بناطيل", slug: "pants", sizeGroup: "CLOTHING", productsCount: 21 },
+      { id: 13, name: "جاكيتات", slug: "jackets", sizeGroup: "CLOTHING", productsCount: 15 },
     ],
   },
   {
-    id: 2,
-    name: "ملابس نسائية",
-    slug: "womens-clothing",
-    imageUrl: null,
-    sizeGroup: null,
-    productsCount: 82,
+    id: 2, name: "ملابس نسائية", slug: "womens-clothing", storesCount: 19,
     children: [
-      { id: 21, name: "فساتين", slug: "dresses", imageUrl: null, sizeGroup: "CLOTHING", productsCount: 34 },
-      { id: 22, name: "بلوزات", slug: "blouses", imageUrl: null, sizeGroup: "CLOTHING", productsCount: 26 },
-      { id: 23, name: "عبايات", slug: "abayas", imageUrl: null, sizeGroup: "CLOTHING", productsCount: 22 },
+      { id: 21, name: "فساتين", slug: "dresses", sizeGroup: "CLOTHING", productsCount: 34 },
+      { id: 22, name: "بلوزات", slug: "blouses", sizeGroup: "CLOTHING", productsCount: 26 },
+      { id: 23, name: "عبايات", slug: "abayas", sizeGroup: "CLOTHING", productsCount: 22 },
     ],
   },
   {
-    id: 3,
-    name: "أطفال",
-    slug: "kids",
-    imageUrl: null,
-    sizeGroup: null,
-    productsCount: 41,
+    id: 3, name: "أطفال", slug: "kids", storesCount: 8,
     children: [
-      { id: 31, name: "ملابس أولاد", slug: "boys", imageUrl: null, sizeGroup: "KIDS", productsCount: 23 },
-      { id: 32, name: "ملابس بنات", slug: "girls", imageUrl: null, sizeGroup: "KIDS", productsCount: 18 },
+      { id: 31, name: "ملابس أولاد", slug: "boys", sizeGroup: "KIDS", productsCount: 23 },
+      { id: 32, name: "ملابس بنات", slug: "girls", sizeGroup: "KIDS", productsCount: 18 },
     ],
   },
   {
-    id: 4,
-    name: "أحذية",
-    slug: "shoes",
-    imageUrl: null,
-    sizeGroup: null,
-    productsCount: 37,
+    id: 4, name: "أحذية", slug: "shoes", storesCount: 6,
     children: [
-      { id: 41, name: "أحذية رجالية", slug: "mens-shoes", imageUrl: null, sizeGroup: "SHOES", productsCount: 16 },
-      { id: 42, name: "أحذية نسائية", slug: "womens-shoes", imageUrl: null, sizeGroup: "SHOES", productsCount: 14 },
-      { id: 43, name: "أحذية أطفال", slug: "kids-shoes", imageUrl: null, sizeGroup: "SHOES", productsCount: 7 },
+      { id: 41, name: "أحذية رجالية", slug: "mens-shoes", sizeGroup: "SHOES", productsCount: 16 },
+      { id: 42, name: "أحذية نسائية", slug: "womens-shoes", sizeGroup: "SHOES", productsCount: 14 },
+      // مخفي عمداً — عشان حالة `isActive: false` تبيّن بالواجهة وقت التجربة
+      { id: 43, name: "أحذية أطفال", slug: "kids-shoes", sizeGroup: "SHOES", productsCount: 0, isActive: false },
     ],
   },
   {
-    id: 5,
-    name: "إكسسوارات",
-    slug: "accessories",
-    imageUrl: null,
-    sizeGroup: null,
-    productsCount: 19,
+    id: 5, name: "إكسسوارات", slug: "accessories", storesCount: 3,
     children: [
-      { id: 51, name: "حقائب", slug: "bags", imageUrl: null, sizeGroup: "ONE_SIZE", productsCount: 11 },
-      { id: 52, name: "أحزمة", slug: "belts", imageUrl: null, sizeGroup: "ONE_SIZE", productsCount: 8 },
+      { id: 51, name: "حقائب", slug: "bags", sizeGroup: "ONE_SIZE", productsCount: 11 },
+      // بلا منتجات ولا أبناء ولا متاجر — الصف الوحيد اللي الحذف بينجح عليه
+      { id: 52, name: "أحزمة", slug: "belts", sizeGroup: "ONE_SIZE", productsCount: 0 },
     ],
   },
 ];
+
+const categories: AdminCategoryRoot[] = CATEGORY_SEED.map((root, i) => ({
+  id: root.id,
+  name: root.name,
+  slug: root.slug,
+  imageUrl: null,
+  sortOrder: i,
+  isActive: true,
+  sizeGroup: null,
+  parentId: null,
+  createdAt: daysAgo(300 - i * 5),
+  updatedAt: daysAgo(30 - i),
+  childrenCount: root.children.length,
+  // الجذر ما بيحمل منتجات — بتنحط على الفرعي، زي السيرفر الحقيقي
+  productsCount: 0,
+  storesCount: root.storesCount,
+  children: root.children.map((child, j) => ({
+    id: child.id,
+    name: child.name,
+    slug: child.slug,
+    imageUrl: null,
+    sortOrder: j,
+    isActive: child.isActive ?? true,
+    sizeGroup: child.sizeGroup,
+    parentId: root.id,
+    createdAt: daysAgo(299 - i * 5),
+    updatedAt: daysAgo(29 - i),
+    childrenCount: 0,
+    productsCount: child.productsCount,
+    storesCount: 0,
+  })),
+}));
 
 // ─── منتجات مختصرة — لازمة فقط كلقطة داخل البلاغات ─────────────
 

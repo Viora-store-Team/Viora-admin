@@ -33,6 +33,29 @@ export interface ApiResponse<T = unknown> {
   [key: string]: unknown;
 }
 
+/**
+ * موت الجلسة — البلاغ اللي بيطلع من الـinterceptor لما يوصل `forceLogout`.
+ */
+export interface SessionDeath {
+  /** رسالة السيرفر جاهزة للعرض بشاشة الدخول */
+  message: string;
+  /** السبب إيقاف الحساب تحديداً — بتنعرض لوحة مخصصة بدل شريط عام */
+  accountSuspended: boolean;
+}
+
+/*
+  المشترك الوحيد هو AuthContext. `apiFetch` مش مكوّن React فما بيقدر
+  ينقّل، فبيمسح التوكن ويبلّغ من هون — والسياق هو اللي بيصفّر المستخدم
+  ويوجّه على `/login` مع الرسالة.
+*/
+let sessionDeathHandler: ((death: SessionDeath) => void) | null = null;
+
+export function setSessionDeathHandler(
+  handler: ((death: SessionDeath) => void) | null,
+): void {
+  sessionDeathHandler = handler;
+}
+
 /** الحصول على التوكن من التخزين المحلي */
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -105,21 +128,48 @@ export async function apiFetch(
   }
 
   /*
-    401 على توكن الجلسة = التوكن مات، فبنمسحه (التوجيه للوجين مسؤولية الصفحة).
-    بس 401 على توكن مؤقت معناها "انتهت الـ 30 دقيقة" — ما إلها علاقة بالجلسة،
-    ولو مسحنا التوكن هون بينطرد مستخدم جلسته صالحة.
-  */
-  if (response.status === 401 && usesSessionToken && typeof window !== "undefined") {
-    removeToken();
-  }
-
-  /*
     تحليل الـ JSON بمعزل عن الـ fetch.
     السيرفر على Render المجاني بيرجّع صفحة HTML (502/503) وهو بيصحى من النوم،
     ولو خلطنا الحالتين بنفس الـ catch بيطلع "خطأ اتصال" بلا status وبنخسر السبب.
   */
   try {
     const data = await response.json();
+
+    /*
+      🚪 موت الجلسة — الفرع الوحيد اللي بيمسح التوكن.
+
+      `forceLogout` علم بيبعثه السيرفر مع كل رد فشل بيوجب الطرد، وبيغطّي
+      أربع حالات كانت بتنلاحق وحدة وحدة: التوكن منتهي · الحساب انحذف ·
+      الحساب موقوف · كلمة المرور تغيّرت.
+
+      ⚠️ **مش** `status === 403`: الـ403 بيرجع لتلات أسباب مختلفة — حساب
+      موقوف (اطرد)، رفض دور (خليه مكانه)، وإيميل ما تأكّد (شاشة الكود).
+      الطرد على الـstatus كان بيرمي المستخدم برّا لما يفتح شاشة مش إله.
+
+      ⚠️ وكمان مش على الرسالة العربية — نص للعرض مش مُعرّف، وصياغته ممكن
+      تتغيّر بأي وقت بلا ما تنعتبر كسر عقد.
+    */
+    if (data.forceLogout === true && typeof window !== "undefined") {
+      removeToken();
+      sessionDeathHandler?.({
+        message: typeof data.message === "string" ? data.message : "",
+        accountSuspended: data.accountSuspended === true,
+      });
+    } else if (
+      /*
+        احتياط للمسارات اللي لسا ما بتبعث العلم: 401 على **توكن الجلسة**
+        معناها التوكن مات. توكنات الفلوهات المؤقتة (setup · pending ·
+        reset) بتمرّر Authorization خاص فيها، فـ`usesSessionToken` بتكون
+        false وما بينمسح توكن جلسة سليم — نفس الفخ اللي بيوقّع فيه
+        مستخدم بيصفّر كلمة مروره بتاب وجلسته مفتوحة بتاب تاني.
+      */
+      response.status === 401 &&
+      usesSessionToken &&
+      typeof window !== "undefined"
+    ) {
+      removeToken();
+    }
+
     return { ...data, status: response.status };
   } catch {
     return {

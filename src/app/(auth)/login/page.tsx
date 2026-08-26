@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, ShieldOff } from "lucide-react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import ErrorBanner from "@/components/ui/ErrorBanner";
@@ -20,16 +20,37 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [banner, setBanner] = useState("");
+  /** الدخول نفسه رجّع `accountSuspended` — 403 بلا `forceLogout` */
+  const [suspended, setSuspended] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  /* `notice` = رسالة الطرد الجاية من AuthContext (جلسة منتهية · حساب مش
-     أدمن · موقوف). بتنمسح أول ما المستخدم يحاول من جديد. */
-  const shownBanner = banner || notice || "";
+  /*
+    `notice` = سبب الطرد الجاي من AuthContext (جلسة منتهية · حساب مش أدمن ·
+    موقوف). بتنمسح أول ما المستخدم يحاول من جديد.
+
+    الحساب الموقوف بياخد لوحة مخصصة بدل شريط الخطأ — بيوصل من طريقين:
+    طرد أثناء الجلسة (`notice.accountSuspended`) أو رفض وقت الدخول
+    (`suspended`). الاتنين بينقاسوا على **العلم** مش على نص الرسالة.
+  */
+  const showSuspended = suspended || notice?.accountSuspended === true;
+  const shownBanner = showSuspended ? "" : banner || notice?.message || "";
+
+  /*
+    شرح اللوحة. رسالة السيرفر للحساب الموقوف هي «هذا الحساب موقوف» — نفس
+    عنوان اللوحة حرفياً، فعرضها كمان بينتج تكرار. بنعرضها بس لما تضيف
+    معلومة جديدة، وغير هيك بنعرض الشرح الثابت (وين يروح المستخدم بعدها).
+  */
+  const serverMessage = (suspended ? banner : notice?.message) ?? "";
+  const suspendedBody =
+    serverMessage && serverMessage.trim() !== t.auth.login.suspendedTitle
+      ? serverMessage
+      : t.auth.login.suspendedHint;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     setBanner("");
+    setSuspended(false);
     setNotice(null);
     setFieldErrors({});
 
@@ -70,7 +91,18 @@ export default function AdminLoginPage() {
       return;
     }
 
-    // 401 بيانات غلط · 403 موقوف · 429 محاولات كتير — الرسائل جاهزة بالعربي
+    /*
+      الحساب موقوف وقت الدخول: 403 مع `accountSuspended` وبلا `forceLogout`
+      (ما في جلسة عشان تنقتل أصلاً). التفريع على العلم مش على الـstatus —
+      نفس الـ403 بيرجع كمان لرفض الدور وللإيميل اللي ما تأكّد.
+    */
+    if (res.accountSuspended === true) {
+      setSuspended(true);
+      setBanner(res.message || "");
+      return;
+    }
+
+    // 401 بيانات غلط · 429 محاولات كتير — الرسائل جاهزة بالعربي
     setBanner(res.message || t.errors.genericTitle);
   };
 
@@ -87,7 +119,25 @@ export default function AdminLoginPage() {
           <p className="text-sm text-text-secondary">{t.auth.login.subtitle}</p>
         </div>
 
-        <ErrorBanner message={shownBanner} />
+        {/* لوحة الحساب الموقوف — بديل شريط الخطأ العام، مش زيادة عليه */}
+        {showSuspended ? (
+          <div
+            role="alert"
+            className="space-y-2 rounded-2xl border border-danger/20 bg-danger-soft/70 p-4 text-center"
+          >
+            <span className="mx-auto grid size-10 place-items-center rounded-xl bg-danger/10 text-danger">
+              <ShieldOff className="size-5" aria-hidden="true" />
+            </span>
+            <p className="text-sm font-extrabold text-danger">
+              {t.auth.login.suspendedTitle}
+            </p>
+            <p className="text-xs leading-relaxed text-heading">
+              {suspendedBody}
+            </p>
+          </div>
+        ) : (
+          <ErrorBanner message={shownBanner} />
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <Input

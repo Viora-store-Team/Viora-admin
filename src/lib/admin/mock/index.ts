@@ -12,9 +12,11 @@
 import type { ApiResponse } from "@/lib/api";
 import { ADMIN_LIMITS } from "../types";
 import type {
+  AdminCategoryNode,
   AdminStatsCharts,
   BannerPayload,
   CategoryPayload,
+  CategoryUpdatePayload,
   OrdersPoint,
   ReportStatus,
   SignupsPoint,
@@ -396,93 +398,151 @@ export async function mockFetch(
   }
   // ─── التصنيفات ──────────────────────────────────────────────
   if (resource === "categories") {
+    /*
+      بيحاكي عقد `/admin/categories` الحقيقي:
+      - الكتابة بترجّع **التصنيف الواحد** `category` مش الشجرة.
+      - الشجرة مستويين — ما بينضاف تحت فرعي.
+      - الحذف بيرجّع 409 مع العدّادات لو التصنيف مربوط.
+    */
+
+    /** بيلاقي أي عقدة بالشجرة مع أبوها — الشجرة مستويين فالبحث مستويين */
+    const locate = (nodeId: number) => {
+      const root = db.categories.find((c) => c.id === nodeId);
+      if (root) return { node: root as AdminCategoryNode, parent: null };
+      for (const parent of db.categories) {
+        const child = parent.children.find((c) => c.id === nodeId);
+        if (child) return { node: child as AdminCategoryNode, parent };
+      }
+      return null;
+    };
+
+    const missing = () => fail(404, "التصنيف غير موجود");
+
     if (method === "GET") {
-      return ok({ categories: emptyMode ? [] : db.categories });
+      if (rawId) {
+        const found = locate(id);
+        return found ? ok({ category: found.node }) : missing();
+      }
+      const rows = emptyMode ? [] : db.categories;
+      return ok({ categories: rows, count: rows.length, flat: false });
     }
 
-    if (method === "POST") {
+    if (method === "POST" && !rawId) {
       const body = readBody<CategoryPayload>(options);
       const name = (body.name ?? "").trim();
-      const errors: Record<string, string> = {};
 
-      if (
-        name.length < ADMIN_LIMITS.categoryNameMin ||
-        name.length > ADMIN_LIMITS.categoryNameMax
-      ) {
-        errors.name = "الاسم لازم يكون من حرفين لـ 60";
-      }
-      if (Object.keys(errors).length > 0) {
-        return fail(400, "بيانات غير صحيحة", errors);
+      if (!name) {
+        return fail(400, "بيانات غير صحيحة", { name: "اسم التصنيف مطلوب" });
       }
 
       const newId = ++db.nextCategoryId;
-      const slug = `cat-${newId}`;
+      const base = {
+        id: newId,
+        name,
+        slug: `category-${newId}`,
+        imageUrl: body.imageUrl ?? null,
+        sortOrder: body.sortOrder ?? 0,
+        isActive: body.isActive ?? true,
+        createdAt: today(),
+        updatedAt: today(),
+        childrenCount: 0,
+        productsCount: 0,
+        storesCount: 0,
+      };
 
       if (body.parentId) {
         const parent = db.categories.find((c) => c.id === body.parentId);
-        if (!parent) return notFound();
-
-        // التصنيف الفرعي بلا sizeGroup بيكسر اختيار المقاسات بصفحة المنتج
-        const sizeGroup = body.sizeGroup;
-        if (!sizeGroup) {
+        // الأب لازم يكون جذر — الشجرة مستويين بس
+        if (!parent) {
           return fail(400, "بيانات غير صحيحة", {
-            sizeGroup: "اختر مجموعة المقاسات",
+            parentId: "الشجرة مستويين بس",
+          });
+        }
+        if (!body.sizeGroup) {
+          return fail(400, "بيانات غير صحيحة", {
+            sizeGroup:
+              "مجموعة المقاسات مطلوبة للتصنيف الفرعي (CLOTHING · SHOES · KIDS · ONE_SIZE)",
           });
         }
 
-        parent.children.push({
-          id: newId,
-          name,
-          slug,
-          imageUrl: body.imageUrl ?? null,
-          sizeGroup,
-          productsCount: 0,
-        });
-      } else {
-        db.categories.push({
-          id: newId,
-          name,
-          slug,
-          imageUrl: body.imageUrl ?? null,
-          sizeGroup: null,
-          productsCount: 0,
-          children: [],
+        const child = { ...base, sizeGroup: body.sizeGroup, parentId: parent.id };
+        parent.children.push(child);
+        parent.childrenCount = parent.children.length;
+        return { ...ok({ category: child }), status: 201 };
+      }
+
+      if (body.sizeGroup) {
+        return fail(400, "بيانات غير صحيحة", {
+          sizeGroup: "التصنيف الرئيسي ما بياخد مجموعة مقاسات — المنتجات بتنحط على الفرعي",
         });
       }
 
-      return ok({ categories: db.categories });
+      const root = { ...base, sizeGroup: null, parentId: null, children: [] };
+      db.categories.push(root);
+      return { ...ok({ category: root }), status: 201 };
     }
 
-    if (method === "PATCH") {
-      const body = readBody<CategoryPayload>(options);
-      const name = (body.name ?? "").trim();
-      if (
-        name.length < ADMIN_LIMITS.categoryNameMin ||
-        name.length > ADMIN_LIMITS.categoryNameMax
-      ) {
-        return fail(400, "بيانات غير صحيحة", {
-          name: "الاسم لازم يكون من حرفين لـ 60",
-        });
-      }
+    if (rawId) {
+      const found = locate(id);
+      if (!found) return missing();
+      const { node, parent } = found;
 
-      const root = db.categories.find((c) => c.id === id);
-      if (root) {
-        root.name = name;
-        root.imageUrl = body.imageUrl ?? root.imageUrl;
-        return ok({ categories: db.categories });
-      }
+      if (method === "PATCH" && !action) {
+        const body = readBody<CategoryUpdatePayload>(options);
 
-      for (const parent of db.categories) {
-        const child = parent.children.find((c) => c.id === id);
-        if (child) {
-          child.name = name;
-          child.imageUrl = body.imageUrl ?? child.imageUrl;
-          // ⚠️ sizeGroup ما بينعدّل — تغييره بيبطّل كل variantSizeId تحت التصنيف
-          return ok({ categories: db.categories });
+        if (body.name !== undefined) {
+          const name = body.name.trim();
+          if (!name) {
+            return fail(400, "بيانات غير صحيحة", { name: "اسم التصنيف مطلوب" });
+          }
+          node.name = name; // ⚠️ الـslug ما بيتغيّر مع إعادة التسمية — زي السيرفر
         }
+        if (body.imageUrl !== undefined) node.imageUrl = body.imageUrl;
+        if (body.sortOrder !== undefined) {
+          if (!Number.isInteger(body.sortOrder) || body.sortOrder < 0 || body.sortOrder > 9999) {
+            return fail(400, "بيانات غير صحيحة", {
+              sortOrder: "الترتيب لازم يكون رقم من 0 لـ 9999",
+            });
+          }
+          node.sortOrder = body.sortOrder;
+        }
+        if (body.isActive !== undefined) node.isActive = body.isActive;
+
+        node.updatedAt = today();
+        return ok({ category: node });
       }
 
-      return notFound();
+      if (method === "PATCH" && (action === "activate" || action === "deactivate")) {
+        node.isActive = action === "activate";
+        node.updatedAt = today();
+        return ok({ category: node });
+      }
+
+      if (method === "DELETE") {
+        // نفس شرط السيرفر: الحذف بينجح بس لما العدّادات التلاتة صفر
+        if (node.childrenCount > 0 || node.productsCount > 0 || node.storesCount > 0) {
+          const reason =
+            node.childrenCount > 0
+              ? `${node.childrenCount} تصنيف فرعي`
+              : node.productsCount > 0
+                ? `${node.productsCount} منتج`
+                : `${node.storesCount} متجر`;
+          return {
+            ...fail(409, `ما بينحذف — مربوط فيه ${reason}. اخفيه بدل ما تحذفه`),
+            childrenCount: node.childrenCount,
+            productsCount: node.productsCount,
+            storesCount: node.storesCount,
+          };
+        }
+
+        if (parent) {
+          parent.children = parent.children.filter((c) => c.id !== id);
+          parent.childrenCount = parent.children.length;
+        } else {
+          db.categories = db.categories.filter((c) => c.id !== id);
+        }
+        return ok({ category: { id: node.id, name: node.name } });
+      }
     }
   }
 

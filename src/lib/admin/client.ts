@@ -7,8 +7,9 @@ import { mockFetch } from "./mock";
  * القسم مربوط على مرحلتين لأن الباك إند وصّل جزء من المسارات بس. بدل ما
  * القسم كله يكون تجريبي أو كله حقيقي، كل مسار بيروح على مصدره:
  *
- * - `/admin/stats` · `/admin/stores*` · `/admin/users*` → السيرفر الحقيقي
- * - الباقي (تصنيفات · بلاغات · محتوى · توصيل) → mock/
+ * - `/admin/stats` · `/admin/stores*` · `/admin/users*` · `/admin/categories*`
+ *   → السيرفر الحقيقي
+ * - الباقي (بلاغات · محتوى · توصيل) → mock/
  *
  * لما يوصل أي مسار جديد من الباك إند: ضيف بادئته لـ `LIVE_PREFIXES` وضيف
  * صفحته لـ `LIVE_PAGES`. لما توصل كلها: احذف mock/ وخلّي الجسم `apiFetch`
@@ -18,13 +19,14 @@ const LIVE_PREFIXES = [
   "/admin/stats",
   "/admin/stores",
   "/admin/users",
+  "/admin/categories",
 ] as const;
 
 /**
  * مسارات الصفحات اللي بتقرأ من السيرفر الحقيقي — بتغذّي شريط التنبيه بس.
  * مطابقة **بادئة**: `/stores/18` بتنحسب تحت `/stores`.
  */
-const LIVE_PAGES = ["/", "/stores", "/users"] as const;
+const LIVE_PAGES = ["/", "/stores", "/users", "/categories"] as const;
 
 /**
  * مفتاح طوارئ: `NEXT_PUBLIC_ADMIN_MOCK=true` بيرجّع **كل** المسارات

@@ -18,6 +18,8 @@ export type FailureKind =
   /** 404 على إنشاء منتج = «ما عندك متجر» — خاص بنطاق المنتجات */
   | "noStore"
   | "notFound"
+  /** 409 — العملية مرفوضة لأن المورد مربوط (حذف تصنيف عليه منتجات) */
+  | "conflict"
   | "network"
   | "unknown";
 
@@ -41,6 +43,8 @@ export function classifyStatus(
   if (res.status === 400) {
     return { kind: "validation", message, errors: res.errors };
   }
+
+  if (res.status === 409) return { kind: "conflict", message };
 
   if (res.status === 404) {
     if (opts.isCreate || message.includes("متجر")) {

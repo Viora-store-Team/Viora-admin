@@ -10,7 +10,14 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { apiFetch, getToken, removeToken, setToken } from "@/lib/api";
+import {
+  apiFetch,
+  getToken,
+  removeToken,
+  setSessionDeathHandler,
+  setToken,
+  type SessionDeath,
+} from "@/lib/api";
 import { ADMIN_ROLE, getMe } from "@/lib/auth/api";
 import type { AuthUser } from "@/lib/auth/types";
 import { t } from "@/lib/strings";
@@ -26,17 +33,27 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   /**
-   * رسالة بتنعرض على شاشة الدخول بعد طرد المستخدم (جلسة منتهية · حساب مش
-   * أدمن · حساب موقوف). بتعيش بالذاكرة بس — بتختفي مع إعادة تحميل الصفحة.
+   * بتنعرض على شاشة الدخول بعد طرد المستخدم (جلسة منتهية · حساب مش أدمن ·
+   * حساب موقوف). بتعيش بالذاكرة بس — بتختفي مع إعادة تحميل الصفحة.
    */
-  notice: string | null;
-  setNotice: (message: string | null) => void;
+  notice: AuthNotice | null;
+  setNotice: (notice: AuthNotice | null) => void;
   loginUser: (userData: User, token: string, options?: LoginOptions) => void;
   logout: () => void;
   refetchUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/** سبب الطرد كما بيوصل لشاشة الدخول */
+export interface AuthNotice {
+  message: string;
+  /**
+   * السبب إيقاف الحساب تحديداً (`accountSuspended` من السيرفر) — بتنعرض
+   * لوحة «حسابك موقوف» بدل شريط خطأ عام.
+   */
+  accountSuspended: boolean;
+}
 
 /**
  * المسارات اللي ما بتحتاج تسجيل دخول.
@@ -64,7 +81,7 @@ function isPublic(pathname: string): boolean {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<AuthNotice | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -87,14 +104,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /** طرد: امسح التوكن، صفّر المستخدم، ورجّعه للدخول برسالة تشرح ليش */
   const eject = useCallback(
-    (message: string | null) => {
+    (message: string, accountSuspended = false) => {
       removeToken();
       setUser(null);
-      setNotice(message);
+      setNotice({ message, accountSuspended });
       if (!publicRef.current) router.push("/login");
     },
     [router],
   );
+
+  /*
+    🚪 اشتراك بموت الجلسة — المصدر الوحيد للطرد التلقائي.
+
+    `apiFetch` بيمسح التوكن أول ما يشوف `forceLogout` بأي رد، ومن هون
+    بنصفّر المستخدم ونوجّهه. يعني أي طلب بأي صفحة بيطرد المستخدم لما
+    الجلسة تموت — مش بس `/admin/me` وقت الإقلاع.
+  */
+  useEffect(() => {
+    const onDeath = ({ message, accountSuspended }: SessionDeath) => {
+      setUser(null);
+      setNotice({ message: message || t.auth.sessionExpired, accountSuspended });
+      if (!publicRef.current) router.push("/login");
+    };
+
+    setSessionDeathHandler(onDeath);
+    return () => setSessionDeathHandler(null);
+  }, [router]);
 
   // ── جلب بيانات المستخدم الحالي GET /api/admin/me ────────────────
   const refetchUser = useCallback(async () => {
@@ -127,10 +162,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(fetched);
         setNotice(null);
       } else if (res.status === 401) {
-        // التوكن مرفوض صراحة (منتهي · الحساب انحذف · كلمة المرور تغيّرت)
+        /*
+          احتياط: 401 بلا `forceLogout` (مسار لسا ما بيبعث العلم). لو كان
+          العلم موجود، المشترك فوق سبق وطرد وهاد بيصير تكرار غير ضار.
+
+          ⚠️ ما في فرع لـ403 هون عن قصد. الحساب الموقوف بيوصل بـ
+          `forceLogout` مش بالـstatus، ورفض الدور كمان 403 — والطرد عليه
+          كان بيرمي برّا مستخدم جلسته سليمة.
+        */
         eject(res.message || t.auth.sessionExpired);
-      } else if (res.status === 403) {
-        eject(res.message || t.auth.suspended);
       } else {
         // خطأ شبكة أو خادم ناشئ/نائم — لا نمسح التوكن
         console.warn("تعذّر الاتصال بخادم المصادقة حالياً:", res.message);
