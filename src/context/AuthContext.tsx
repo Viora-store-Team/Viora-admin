@@ -161,16 +161,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setUser(fetched);
         setNotice(null);
-      } else if (res.status === 401) {
+      } else if (res.status === 401 || res.status === 403) {
         /*
-          احتياط: 401 بلا `forceLogout` (مسار لسا ما بيبعث العلم). لو كان
-          العلم موجود، المشترك فوق سبق وطرد وهاد بيصير تكرار غير ضار.
-
-          ⚠️ ما في فرع لـ403 هون عن قصد. الحساب الموقوف بيوصل بـ
-          `forceLogout` مش بالـstatus، ورفض الدور كمان 403 — والطرد عليه
-          كان بيرمي برّا مستخدم جلسته سليمة.
+          401 (توكن منتهي/غير صالح) أو 403 (الحساب ليس أدمن / لا يملك صلاحية):
+          نطرد المستخدم ونمسح التوكن ونوجّهه لشاشة الدخول مع الرسالة المناسبة.
         */
-        eject(res.message || t.auth.sessionExpired);
+        eject(
+          res.message ||
+            (res.status === 403 ? t.auth.notAdmin : t.auth.sessionExpired),
+        );
       } else {
         // خطأ شبكة أو خادم ناشئ/نائم — لا نمسح التوكن
         console.warn("تعذّر الاتصال بخادم المصادقة حالياً:", res.message);
