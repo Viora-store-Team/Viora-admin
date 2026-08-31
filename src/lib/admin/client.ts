@@ -20,6 +20,8 @@ const LIVE_PREFIXES = [
   "/admin/stores",
   "/admin/users",
   "/admin/categories",
+  "/admin/occasions",
+  "/admin/collections",
 ] as const;
 
 /**

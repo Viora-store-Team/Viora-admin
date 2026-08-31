@@ -33,6 +33,7 @@ interface CategoryTreeProps {
   disabled?: boolean;
   searchQuery?: string;
   statusFilter?: "all" | "active" | "hidden";
+  onSelectNode?: (node: AdminCategoryNode, parentName?: string) => void;
   onAddChild: (root: AdminCategoryRoot) => void;
   onEdit: (node: AdminCategoryNode) => void;
   onToggleActive: (node: AdminCategoryNode) => void;
@@ -168,6 +169,7 @@ export default function CategoryTree({
   disabled = false,
   searchQuery = "",
   statusFilter = "all",
+  onSelectNode,
   onAddChild,
   onEdit,
   onToggleActive,
@@ -253,29 +255,29 @@ export default function CategoryTree({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* شريط التحكم السريع بالتوسيع والطي */}
-      <div className="flex items-center justify-between px-1">
-        <span className="text-xs font-semibold text-text-secondary">
-          عرض {formatNumber(filteredRoots.length)} تصنيف رئيسي
+      {/* شريط الإجراءات الجماعية */}
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold text-text-secondary">
+          {formatNumber(filteredRoots.length)} {t.admin.categories.count} رئيسي
         </span>
+
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={expandAll}
-            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold text-text-secondary hover:bg-field-bg hover:text-heading transition"
+            icon={<ChevronDown className="size-3.5" aria-hidden="true" />}
           >
-            <ChevronDown className="size-3.5" />
             {t.admin.categories.expandAll}
-          </button>
-          <span className="text-border">|</span>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={collapseAll}
-            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold text-text-secondary hover:bg-field-bg hover:text-heading transition"
+            icon={<ChevronUp className="size-3.5" aria-hidden="true" />}
           >
-            <ChevronUp className="size-3.5" />
             {t.admin.categories.collapseAll}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -315,7 +317,10 @@ export default function CategoryTree({
                   </button>
 
                   {/* صورة التصنيف الرئيسي */}
-                  <div className="relative size-12 shrink-0 overflow-hidden rounded-xl border border-border bg-field-bg shadow-2xs">
+                  <div
+                    onClick={() => onSelectNode?.(root)}
+                    className="relative size-12 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-border bg-field-bg shadow-2xs transition hover:opacity-80"
+                  >
                     {root.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -330,9 +335,12 @@ export default function CategoryTree({
                     )}
                   </div>
 
-                  <div className="min-w-0 flex-1">
+                  <div
+                    onClick={() => onSelectNode?.(root)}
+                    className="min-w-0 flex-1 cursor-pointer"
+                  >
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="truncate text-base font-extrabold text-heading">
+                      <h3 className="truncate text-base font-extrabold text-heading hover:text-primary transition">
                         {root.name}
                       </h3>
                       <span className="ltr-nums inline-block rounded-md bg-field-bg px-2 py-0.5 text-[11px] font-semibold text-text-secondary">
@@ -411,7 +419,10 @@ export default function CategoryTree({
                             !child.isActive && "opacity-75 bg-surface/60",
                           )}
                         >
-                          <div className="flex items-start gap-2.5">
+                          <div
+                            onClick={() => onSelectNode?.(child, root.name)}
+                            className="flex items-start gap-2.5 cursor-pointer"
+                          >
                             {/* صورة الفرعي */}
                             <div className="size-10 shrink-0 overflow-hidden rounded-lg border border-border bg-field-bg shadow-2xs">
                               {child.imageUrl ? (
@@ -429,7 +440,7 @@ export default function CategoryTree({
                             </div>
 
                             <div className="min-w-0 flex-1">
-                              <h4 className="truncate text-sm font-bold text-heading">
+                              <h4 className="truncate text-sm font-bold text-heading hover:text-primary transition">
                                 {child.name}
                               </h4>
                               <p className="ltr-nums truncate text-[11px] text-text-secondary">

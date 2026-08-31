@@ -16,8 +16,12 @@ import type {
   CategoryUpdatePayload,
   DeliveryFailure,
   DeliveryHealth,
+  FeaturedCollection,
+  FeaturedCollectionPayload,
   AdminRole,
   HomeContent,
+  OccasionFilter,
+  OccasionFilterPayload,
   ReportStatus,
   ReportTarget,
   Review,
@@ -400,3 +404,58 @@ export function fetchDeliveryFailures(
     })}`,
   );
 }
+
+// ─── وسوم وفلاتر المناسبات 🟡 ─────────────────────────────────
+
+export function fetchOccasionFilters(): Promise<
+  ApiResponse & { occasions?: OccasionFilter[] }
+> {
+  return adminFetch("/admin/occasions");
+}
+
+export function createOccasionFilter(
+  payload: OccasionFilterPayload,
+): Promise<ApiResponse & { occasions?: OccasionFilter[] }> {
+  return adminFetch("/admin/occasions", { method: "POST", ...json(payload) });
+}
+
+export function updateOccasionFilter(
+  id: number,
+  payload: Partial<OccasionFilterPayload>,
+): Promise<ApiResponse & { occasions?: OccasionFilter[] }> {
+  return adminFetch(`/admin/occasions/${id}`, { method: "PATCH", ...json(payload) });
+}
+
+export function deleteOccasionFilter(
+  id: number,
+): Promise<ApiResponse & { occasions?: OccasionFilter[] }> {
+  return adminFetch(`/admin/occasions/${id}`, { method: "DELETE" });
+}
+
+// ─── المجموعات المميزة 🟡 ──────────────────────────────────────
+
+export function fetchFeaturedCollections(): Promise<
+  ApiResponse & { collections?: FeaturedCollection[] }
+> {
+  return adminFetch("/admin/collections");
+}
+
+export function createFeaturedCollection(
+  payload: FeaturedCollectionPayload,
+): Promise<ApiResponse & { collections?: FeaturedCollection[] }> {
+  return adminFetch("/admin/collections", { method: "POST", ...json(payload) });
+}
+
+export function updateFeaturedCollection(
+  id: number,
+  payload: Partial<FeaturedCollectionPayload>,
+): Promise<ApiResponse & { collections?: FeaturedCollection[] }> {
+  return adminFetch(`/admin/collections/${id}`, { method: "PATCH", ...json(payload) });
+}
+
+export function deleteFeaturedCollection(
+  id: number,
+): Promise<ApiResponse & { collections?: FeaturedCollection[] }> {
+  return adminFetch(`/admin/collections/${id}`, { method: "DELETE" });
+}
+

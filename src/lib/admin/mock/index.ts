@@ -17,6 +17,8 @@ import type {
   BannerPayload,
   CategoryPayload,
   CategoryUpdatePayload,
+  FeaturedCollectionPayload,
+  OccasionFilterPayload,
   OrdersPoint,
   ReportStatus,
   SignupsPoint,
@@ -693,6 +695,101 @@ export async function mockFetch(
     if (method === "DELETE") {
       db.banners.splice(index, 1);
       return ok({ banners: db.banners });
+    }
+  }
+
+  // ─── وسوم وفلاتر المناسبات ───────────────────────────────────
+  if (resource === "occasions") {
+    if (!rawId) {
+      if (method === "GET") {
+        const rows = emptyMode
+          ? []
+          : [...db.occasions].sort((a, b) => a.sortOrder - b.sortOrder);
+        return ok({ occasions: rows });
+      }
+
+      if (method === "POST") {
+        const body = readBody<OccasionFilterPayload>(options);
+        const name = (body.name ?? "").trim();
+        if (!name) return fail(400, "بيانات غير صحيحة", { name: "اسم الفلتر مطلوب" });
+
+        const newId = ++db.nextOccasionId;
+        const newOccasion = {
+          id: newId,
+          name,
+          slug: body.slug?.trim() || `occasion-${newId}`,
+          icon: body.icon || "sparkles",
+          description: body.description?.trim() || "",
+          productsCount: 0,
+          isActive: body.isActive ?? true,
+          isFeaturedOnHome: body.isFeaturedOnHome ?? false,
+          sortOrder: body.sortOrder ?? db.occasions.length + 1,
+          targetCategories: body.targetCategories || [],
+        };
+        db.occasions.push(newOccasion);
+        return ok({ occasions: db.occasions });
+      }
+    }
+
+    const index = db.occasions.findIndex((o) => o.id === id);
+    if (index === -1) return notFound();
+
+    if (method === "PATCH") {
+      const body = readBody<Partial<OccasionFilterPayload>>(options);
+      db.occasions[index] = { ...db.occasions[index], ...body, id };
+      return ok({ occasions: db.occasions });
+    }
+
+    if (method === "DELETE") {
+      db.occasions.splice(index, 1);
+      return ok({ occasions: db.occasions });
+    }
+  }
+
+  // ─── المجموعات المميزة ──────────────────────────────────────────
+  if (resource === "collections") {
+    if (!rawId) {
+      if (method === "GET") {
+        const rows = emptyMode
+          ? []
+          : [...db.collections].sort((a, b) => a.sortOrder - b.sortOrder);
+        return ok({ collections: rows });
+      }
+
+      if (method === "POST") {
+        const body = readBody<FeaturedCollectionPayload>(options);
+        const title = (body.title ?? "").trim();
+        if (!title) return fail(400, "بيانات غير صحيحة", { title: "عنوان المجموعة مطلوب" });
+
+        const newId = ++db.nextCollectionId;
+        const newCollection = {
+          id: newId,
+          title,
+          slug: body.slug?.trim() || `collection-${newId}`,
+          subtitle: body.subtitle?.trim() || "",
+          badge: body.badge?.trim() || null,
+          imageUrl: body.imageUrl || null,
+          productsCount: 0,
+          isActive: body.isActive ?? true,
+          sortOrder: body.sortOrder ?? db.collections.length + 1,
+        };
+        db.collections.push(newCollection);
+        return ok({ collections: db.collections });
+      }
+    }
+
+    const index = db.collections.findIndex((c) => c.id === id);
+    if (index === -1) return notFound();
+
+    if (method === "PATCH") {
+      const body = readBody<Partial<FeaturedCollectionPayload>>(options);
+      db.collections[index] = { ...db.collections[index], ...body, id };
+      return ok({ collections: db.collections });
+    }
+
+    if (method === "DELETE") {
+      db.collections.splice(index, 1);
+      return ok({ collections: db.collections });
     }
   }
 
