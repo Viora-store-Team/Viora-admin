@@ -3,6 +3,7 @@
 import {
   ChevronLeft,
   PowerOff,
+  Star,
   Store as StoreIcon,
   TriangleAlert,
 } from "lucide-react";
@@ -75,6 +76,15 @@ export default function StoresTable({
                   ) : (
                     <span className="truncate font-bold text-heading">
                       {store.name}
+                    </span>
+                  )}
+                  {store.isFeatured && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-md bg-warning/10 px-1.5 py-0.5 text-xs font-bold text-warning"
+                      title={t.admin.stores.featured}
+                    >
+                      <Star className="size-3 fill-warning text-warning" aria-hidden="true" />
+                      <span>{t.admin.stores.featuredBadge}</span>
                     </span>
                   )}
                   {/* التوقّف مستقل عن قرار المراجعة — متجر مقبول وموقوف

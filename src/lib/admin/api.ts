@@ -13,6 +13,7 @@ import type {
   Banner,
   BannerPayload,
   CategoryPayload,
+  CategoryReorderPayload,
   CategoryUpdatePayload,
   DeliveryFailure,
   DeliveryHealth,
@@ -79,20 +80,27 @@ export type StatsResponse = ApiResponse & {
   charts?: AdminStatsCharts;
 };
 
-export function fetchStats(period: StatsPeriod): Promise<StatsResponse> {
-  return adminFetch(`/admin/stats${query({ period })}`);
+export function fetchStats(
+  period: StatsPeriod,
+  limit?: number,
+): Promise<StatsResponse> {
+  return adminFetch(`/admin/stats${query({ period, limit })}`);
 }
 
 // ─── المتاجر ✅ ────────────────────────────────────────────────
 
 /**
- * ✅ `GET /admin/stores?page&limit&q&status`
+ * ✅ `GET /admin/stores?page&limit&q&status&isActive`
  *
- * `status` من قيم `StoreStatus` (PENDING · APPROVED · REJECTED) —
- * **مش** ACTIVE/SUSPENDED. `q` بيبحث بالاسم والمدينة والمالك.
+ * `status` من قيم `StoreStatus` (PENDING · APPROVED · REJECTED).
+ * `isActive` الحظر ("true" | "false").
+ * `q` بيبحث بالاسم والمدينة والمالك.
  */
 export function fetchStores(
-  params: ListParams & { status?: StoreStatus | "" } = {},
+  params: ListParams & {
+    status?: StoreStatus | "";
+    isActive?: "true" | "false" | "";
+  } = {},
 ): Promise<Paged<"stores", AdminStoreListItem>> {
   return adminFetch(
     `/admin/stores${query({
@@ -100,6 +108,7 @@ export function fetchStores(
       limit: params.limit ?? ADMIN_LIMITS.pageLimit,
       q: params.q,
       status: params.status,
+      isActive: params.isActive,
     })}`,
   );
 }
@@ -125,9 +134,7 @@ export function approveStore(
 /**
  * ✅ `PATCH /admin/stores/:id/reject`
  *
- * ⚠️ شروط `reason` على السيرفر **ما انفحصت** — التحقق بيصير بعد ما يلاقي
- * المتجر، فما بينقاس على معرّف وهمي. الواجهة بتفرض 10–500 حرف من طرفها،
- * وأي خطأ 400 راجع بمفتاح `reason` بينعرض جوّا الحوار متل ما هو.
+ * ⚠️ سبب الرفض إلزامي عملياً ليراه التاجر (حد 255 حرف).
  */
 export function rejectStore(
   id: number,
@@ -137,6 +144,46 @@ export function rejectStore(
     method: "PATCH",
     ...json({ reason }),
   });
+}
+
+/**
+ * ✅ `PATCH /admin/stores/:id/suspend` — حظر المتجر (isActive: false)
+ */
+export function suspendStore(
+  id: number,
+): Promise<ApiResponse & { store?: AdminStoreDetail }> {
+  return adminFetch(`/admin/stores/${id}/suspend`, { method: "PATCH" });
+}
+
+/**
+ * ✅ `PATCH /admin/stores/:id/activate` — رفع الحظر عن المتجر (isActive: true)
+ */
+export function activateStore(
+  id: number,
+): Promise<ApiResponse & { store?: AdminStoreDetail }> {
+  return adminFetch(`/admin/stores/${id}/activate`, { method: "PATCH" });
+}
+
+/**
+ * ✅ `PATCH /admin/stores/:id/feature` — تمييز المتجر في قسم «المتاجر المميزة»
+ */
+export function featureStore(
+  id: number,
+  payload?: { order?: number },
+): Promise<ApiResponse & { store?: AdminStoreDetail }> {
+  return adminFetch(`/admin/stores/${id}/feature`, {
+    method: "PATCH",
+    ...(payload ? json(payload) : {}),
+  });
+}
+
+/**
+ * ✅ `PATCH /admin/stores/:id/unfeature` — إلغاء تمييز المتجر
+ */
+export function unfeatureStore(
+  id: number,
+): Promise<ApiResponse & { store?: AdminStoreDetail }> {
+  return adminFetch(`/admin/stores/${id}/unfeature`, { method: "PATCH" });
 }
 
 // ─── المستخدمون ✅ ─────────────────────────────────────────────
@@ -282,6 +329,20 @@ export function activateCategory(id: number): Promise<CategoryResponse> {
 /** ✅ `PATCH /admin/categories/:id/deactivate` — «التصنيف صار مخفي» */
 export function deactivateCategory(id: number): Promise<CategoryResponse> {
   return adminFetch(`/admin/categories/${id}/deactivate`, { method: "PATCH" });
+}
+
+/**
+ * ✅ `PATCH /admin/categories/reorder`
+ *
+ * إعادة ترتيب الإخوة بالسحب والإفلات — يستقبل `{ parentId, ids }`
+ */
+export function reorderCategories(
+  payload: CategoryReorderPayload,
+): Promise<ApiResponse> {
+  return adminFetch("/admin/categories/reorder", {
+    method: "PATCH",
+    ...json(payload),
+  });
 }
 
 // ─── البلاغات والتقييمات 🟡 ────────────────────────────────────

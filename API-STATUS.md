@@ -16,26 +16,32 @@ POST /api/admin/login   { "email": "owner@viora.com", "password": "admin@admin" 
 
 ما في `POST /admin/logout` (404) — الخروج محلي بمسح التوكن.
 
-## المسارات الموجودة فعلاً (18)
+## المسارات الموجودة فعلاً (23)
 
 | المسار | الحالة |
 |---|---|
 | `POST /admin/login` | ✅ مربوط · شاشة `/login` |
 | `GET /admin/me` | ✅ مربوط · `AuthContext` |
 | `GET /auth/me` | ✅ شغّال بتوكن الأدمن — مش مستعمل |
-| `GET /admin/stats?period=7\|30\|90` | ✅ مربوط · صفحة `/` |
-| `GET /admin/stores?page&limit&q&status` | ✅ مربوط · صفحة `/stores` |
-| `GET /admin/stores/:id` | ✅ مربوط · `/stores/[id]` · 404 «المتجر غير موجود» |
+| `GET /admin/stats?period=7\|30\|90&limit` | ✅ مربوط · صفحة `/` |
+| `GET /admin/stores?page&limit&q&status&isActive` | ✅ مربوط · صفحة `/stores` (5 تبويبات) |
+| `GET /admin/stores/:id` | ✅ مربوط · `/stores/[id]` |
 | `PATCH /admin/stores/:id/approve` | ✅ مربوط ومفحوص end-to-end |
-| `PATCH /admin/stores/:id/reject` | ✅ مربوط ومفحوص end-to-end |
+| `PATCH /admin/stores/:id/reject` | ✅ مربوط ومفحوص end-to-end (حد 255 حرف) |
+| `PATCH /admin/stores/:id/suspend` | ✅ مربوط · حظر المتجر |
+| `PATCH /admin/stores/:id/activate` | ✅ مربوط · رفع الحظر عن المتجر |
+| `PATCH /admin/stores/:id/feature` | ✅ مربوط · تمييز المتجر |
+| `PATCH /admin/stores/:id/unfeature` | ✅ مربوط · إلغاء تمييز المتجر |
 | `GET /admin/users?page&limit&q&role&isActive` | ✅ مربوط · صفحة `/users` |
-| `GET /admin/users/:id` | ✅ مربوط · 404 «المستخدم غير موجود» |
+| `GET /admin/users/:id` | ✅ مربوط · تفاصيل المستخدم (مع غوغل والعناوين) |
 | `PATCH /admin/users/:id/suspend` | ✅ مربوط ومفحوص end-to-end |
 | `PATCH /admin/users/:id/activate` | ✅ مربوط ومفحوص end-to-end |
 | `GET /admin/categories?flat&parentId&isActive` | ✅ مربوط · صفحة `/categories` |
-| `GET /admin/categories/:id` | ✅ موجود — مش مستعمل (الشجرة بتكفي) |
+| `GET /admin/categories/:id` | ✅ موجود |
+| `POST /uploads` | ✅ مربوط لرفع صور التصنيفات |
 | `POST /admin/categories` | ✅ مربوط ومفحوص · 201 |
 | `PATCH /admin/categories/:id` | ✅ مربوط ومفحوص |
+| `PATCH /admin/categories/reorder` | ✅ مربوط · ترتيب التصنيفات |
 | `DELETE /admin/categories/:id` | ✅ مربوط ومفحوص · 409 لو مربوط |
 | `PATCH /admin/categories/:id/activate` · `/deactivate` | ✅ مربوط ومفحوص |
 

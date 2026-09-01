@@ -7,8 +7,12 @@ import {
   Ban,
   Check,
   CircleCheck,
+  Power,
+  PowerOff,
   RotateCcw,
   ShieldOff,
+  Star,
+  StarOff,
   Store as StoreIcon,
   TriangleAlert,
 } from "lucide-react";
@@ -24,11 +28,15 @@ import Spinner from "@/components/ui/Spinner";
 import InfoGrid from "@/components/admin/InfoGrid";
 import StatusBadge from "@/components/admin/StatusBadge";
 import {
+  activateStore,
   activateUser,
   approveStore,
+  featureStore,
   fetchStore,
   rejectStore,
+  suspendStore,
   suspendUser,
+  unfeatureStore,
 } from "@/lib/admin/api";
 import { accountStatus, STORE_STATUS } from "@/lib/admin/status";
 import type { AdminStoreDetail, StoreOwner } from "@/lib/admin/types";
@@ -39,7 +47,15 @@ import { useFlash } from "@/lib/useFlash";
 import { t } from "@/lib/strings";
 
 /** أي حوار مفتوح حالياً — واحد بس بأي لحظة */
-type Dialog = "approve" | "reject" | "rereview" | null;
+type Dialog =
+  | "approve"
+  | "reject"
+  | "rereview"
+  | "suspend"
+  | "activate"
+  | "feature"
+  | "unfeature"
+  | null;
 
 export default function AdminStoreDetailPage({
   params: paramsPromise,
@@ -252,6 +268,112 @@ export default function AdminStoreDetailPage({
     [storeId, store, showFlash],
   );
 
+  /**
+   * حظر المتجر
+   */
+  const handleSuspendStore = useCallback(async () => {
+    setBusy(true);
+    setError("");
+
+    const res = await suspendStore(storeId);
+    if (!res.success) {
+      setBusy(false);
+      setDialog(null);
+      const failure = classifyStatus(res);
+      setError(
+        failure.kind === "unauthorized"
+          ? t.admin.common.sessionInvalid
+          : failure.message,
+      );
+      return;
+    }
+
+    setStore((prev) => (prev ? { ...prev, isActive: false } : null));
+    setBusy(false);
+    setDialog(null);
+    showFlash(t.admin.stores.didSuspend);
+  }, [storeId, showFlash]);
+
+  /**
+   * رفع الحظر وتفعيل المتجر
+   */
+  const handleActivateStore = useCallback(async () => {
+    setBusy(true);
+    setError("");
+
+    const res = await activateStore(storeId);
+    if (!res.success) {
+      setBusy(false);
+      setDialog(null);
+      const failure = classifyStatus(res);
+      setError(
+        failure.kind === "unauthorized"
+          ? t.admin.common.sessionInvalid
+          : failure.message,
+      );
+      return;
+    }
+
+    setStore((prev) => (prev ? { ...prev, isActive: true } : null));
+    setBusy(false);
+    setDialog(null);
+    showFlash(t.admin.stores.didActivate);
+  }, [storeId, showFlash]);
+
+  /**
+   * تمييز المتجر في قسم المتاجر المميزة
+   */
+  const handleFeatureStore = useCallback(async () => {
+    setBusy(true);
+    setError("");
+
+    const res = await featureStore(storeId);
+    if (!res.success) {
+      setBusy(false);
+      setDialog(null);
+      const failure = classifyStatus(res);
+      setError(
+        failure.kind === "unauthorized"
+          ? t.admin.common.sessionInvalid
+          : failure.message,
+      );
+      return;
+    }
+
+    setStore((prev) => (prev ? { ...prev, isFeatured: true } : null));
+    setBusy(false);
+    setDialog(null);
+    showFlash(t.admin.stores.didFeature);
+  }, [storeId, showFlash]);
+
+  /**
+   * إلغاء تمييز المتجر
+   */
+  const handleUnfeatureStore = useCallback(async () => {
+    setBusy(true);
+    setError("");
+
+    const res = await unfeatureStore(storeId);
+    if (!res.success) {
+      setBusy(false);
+      setDialog(null);
+      const failure = classifyStatus(res);
+      setError(
+        failure.kind === "unauthorized"
+          ? t.admin.common.sessionInvalid
+          : failure.message,
+      );
+      return;
+    }
+
+    setStore((prev) =>
+      prev ? { ...prev, isFeatured: false, featuredOrder: null } : null,
+    );
+    setBusy(false);
+    setDialog(null);
+    showFlash(t.admin.stores.didUnfeature);
+  }, [storeId, showFlash]);
+
   if (loading) return <Spinner />;
 
   if (notFound) {
@@ -352,6 +474,12 @@ export default function AdminStoreDetailPage({
             {store.status === "REJECTED" && (
               <StatusBadge meta={accountStatus(false)} />
             )}
+            {store.isFeatured && (
+              <span className="inline-flex items-center gap-1.5 rounded-xl border border-warning/20 bg-warning/10 px-3 py-1 text-xs font-bold text-warning">
+                <Star className="size-3.5 fill-warning text-warning" aria-hidden="true" />
+                <span>{t.admin.stores.featuredBadge}</span>
+              </span>
+            )}
             <Badge tone={store.owner.emailVerified ? "success" : "warning"}>
               {store.owner.emailVerified
                 ? t.admin.users.emailVerified
@@ -382,16 +510,59 @@ export default function AdminStoreDetailPage({
               </>
             )}
 
-            {/* في حالة المتجر المقبول: زر للرفض والإيقاف */}
+            {/* في حالة المتجر المقبول */}
             {store.status === "APPROVED" && (
-              <Button
-                variant="danger"
-                disabled={busy}
-                onClick={() => setDialog("reject")}
-                icon={<Ban className="size-4" aria-hidden="true" />}
-              >
-                {t.admin.stores.reject}
-              </Button>
+              <>
+                {/* تمييز / إلغاء تمييز */}
+                {store.isFeatured ? (
+                  <Button
+                    variant="secondary"
+                    disabled={busy}
+                    onClick={() => setDialog("unfeature")}
+                    icon={<StarOff className="size-4" aria-hidden="true" />}
+                  >
+                    {t.admin.stores.unfeature}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    disabled={busy}
+                    onClick={() => setDialog("feature")}
+                    icon={<Star className="size-4" aria-hidden="true" />}
+                  >
+                    {t.admin.stores.feature}
+                  </Button>
+                )}
+
+                {/* حظر / رفع الحظر */}
+                {store.isActive ? (
+                  <Button
+                    variant="danger"
+                    disabled={busy}
+                    onClick={() => setDialog("suspend")}
+                    icon={<PowerOff className="size-4" aria-hidden="true" />}
+                  >
+                    {t.admin.stores.suspend}
+                  </Button>
+                ) : (
+                  <Button
+                    disabled={busy}
+                    onClick={() => setDialog("activate")}
+                    icon={<Power className="size-4" aria-hidden="true" />}
+                  >
+                    {t.admin.stores.activate}
+                  </Button>
+                )}
+
+                <Button
+                  variant="danger"
+                  disabled={busy}
+                  onClick={() => setDialog("reject")}
+                  icon={<Ban className="size-4" aria-hidden="true" />}
+                >
+                  {t.admin.stores.reject}
+                </Button>
+              </>
             )}
 
             {/* في حالة المتجر المرفوض: زر إعادة نظر وتنشيط */}
@@ -611,6 +782,54 @@ export default function AdminStoreDetailPage({
         confirmLabel={t.admin.stores.reReview}
         loading={busy}
         onConfirm={() => handleApprove(t.admin.stores.didReactivate)}
+        onCancel={() => setDialog(null)}
+      />
+
+      {/* حوار حظر المتجر */}
+      <ConfirmDialog
+        open={dialog === "suspend"}
+        tone="danger"
+        title={t.admin.stores.suspendTitle}
+        body={t.admin.stores.suspendBody}
+        confirmLabel={t.admin.stores.suspend}
+        loading={busy}
+        onConfirm={handleSuspendStore}
+        onCancel={() => setDialog(null)}
+      />
+
+      {/* حوار رفع الحظر عن المتجر */}
+      <ConfirmDialog
+        open={dialog === "activate"}
+        tone="primary"
+        title={t.admin.stores.activateTitle}
+        body={t.admin.stores.activateBody}
+        confirmLabel={t.admin.stores.activate}
+        loading={busy}
+        onConfirm={handleActivateStore}
+        onCancel={() => setDialog(null)}
+      />
+
+      {/* حوار تمييز المتجر */}
+      <ConfirmDialog
+        open={dialog === "feature"}
+        tone="primary"
+        title={t.admin.stores.feature}
+        body="سيظهر المتجر في قسم «المتاجر المميزة» للمستخدمين في التطبيق."
+        confirmLabel={t.admin.stores.feature}
+        loading={busy}
+        onConfirm={handleFeatureStore}
+        onCancel={() => setDialog(null)}
+      />
+
+      {/* حوار إلغاء تمييز المتجر */}
+      <ConfirmDialog
+        open={dialog === "unfeature"}
+        tone="danger"
+        title={t.admin.stores.unfeature}
+        body="سيتم إزالة المتجر من قسم «المتاجر المميزة»."
+        confirmLabel={t.admin.stores.unfeature}
+        loading={busy}
+        onConfirm={handleUnfeatureStore}
         onCancel={() => setDialog(null)}
       />
     </div>

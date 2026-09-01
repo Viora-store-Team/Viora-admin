@@ -22,22 +22,55 @@ import { formatNumber } from "@/lib/format";
 import { t } from "@/lib/strings";
 import type { ApiResponse } from "@/lib/api";
 
-/* القيم اللي بتنبعث بـ ?status= — نفس نصوص الباك إند حرفياً
-   (PENDING · APPROVED · REJECTED)، مش ACTIVE/SUSPENDED. */
+/* التبويبات الرسمية الخمسة من الباك إند:
+   1. الكل (بلا فلتر)
+   2. نشط (status=APPROVED & isActive=true)
+   3. بانتظار التوثيق (status=PENDING)
+   4. موقوف (isActive=false)
+   5. مرفوض (status=REJECTED) */
 const STATUS_TABS: TabItem[] = [
-  { key: "", label: t.admin.common.all },
-  ...STORE_STATUS_KEYS.map((key) => ({
-    key,
-    label: STORE_STATUS[key].label,
-  })),
+  { key: "all", label: t.admin.stores.tabAll },
+  { key: "active", label: t.admin.stores.tabActive },
+  { key: "pending", label: t.admin.stores.tabPending },
+  { key: "suspended", label: t.admin.stores.tabSuspended },
+  { key: "rejected", label: t.admin.stores.tabRejected },
 ];
+
+function getTabFilters(tab: string): {
+  status?: StoreStatus | "";
+  isActive?: "true" | "false" | "";
+} {
+  switch (tab) {
+    case "active":
+      return { status: "APPROVED", isActive: "true" };
+    case "pending":
+      return { status: "PENDING", isActive: "" };
+    case "suspended":
+      return { status: "", isActive: "false" };
+    case "rejected":
+      return { status: "REJECTED", isActive: "" };
+    case "all":
+    default:
+      return { status: "", isActive: "" };
+  }
+}
 
 export default function AdminStoresPage() {
   const router = useRouter();
 
   const fetcher = useCallback(
-    ({ page, q, filters }: { page: number; q: string; filters: Record<string, string> }) =>
-      fetchStores({ page, q, status: filters.status as StoreStatus | "" }),
+    ({
+      page,
+      q,
+      filters,
+    }: {
+      page: number;
+      q: string;
+      filters: Record<string, string>;
+    }) => {
+      const { status, isActive } = getTabFilters(filters.tab || "all");
+      return fetchStores({ page, q, status, isActive });
+    },
     [],
   );
 
@@ -49,7 +82,7 @@ export default function AdminStoresPage() {
   const list = useAdminList<AdminStoreListItem>({
     fetcher,
     select,
-    initialFilters: { status: "" },
+    initialFilters: { tab: "all" },
   });
 
   const total = list.pagination?.total ?? 0;
@@ -79,8 +112,8 @@ export default function AdminStoresPage() {
         />
         <Tabs
           items={STATUS_TABS}
-          active={list.filters.status ?? ""}
-          onChange={(key) => list.changeFilter("status", key)}
+          active={list.filters.tab || "all"}
+          onChange={(key) => list.changeFilter("tab", key)}
         />
       </div>
 

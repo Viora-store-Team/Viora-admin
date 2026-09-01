@@ -175,6 +175,8 @@ export interface AdminStoreListItem {
   city: string | null;
   status: StoreStatus;
   isActive: boolean;
+  isFeatured?: boolean;
+  featuredOrder?: number | null;
   createdAt: string;
   /** وقت قرار المراجعة — null يعني لسا ما انراجع */
   reviewedAt: string | null;
@@ -316,6 +318,12 @@ export interface CategoryPayload {
 export type CategoryUpdatePayload = Partial<
   Pick<CategoryPayload, "name" | "imageUrl" | "sortOrder" | "isActive">
 >;
+
+/** جسم `PATCH /admin/categories/reorder` */
+export interface CategoryReorderPayload {
+  parentId: number | null;
+  ids: number[];
+}
 
 /** تفاصيل الرفض 409 — بترجع مع رسالة السيرفر وبتشرح ليش ما انحذف */
 export interface CategoryDeleteBlock {
@@ -496,6 +504,7 @@ export const ADMIN_LIMITS = {
   /** أقصر سبب مقبول — بيمنع "لا" و"." كسبب إيقاف */
   reasonMin: 10,
   reasonMax: 500,
+  storeRejectReasonMax: 255,
   categoryNameMin: 2,
   categoryNameMax: 60,
   bannerTitleMax: 100,

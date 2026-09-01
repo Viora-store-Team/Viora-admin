@@ -359,6 +359,29 @@ export async function mockFetch(
       }
       return ok({ store });
     }
+
+    if (action === "suspend" && method === "PATCH") {
+      store.isActive = false;
+      return ok({ store });
+    }
+
+    if (action === "activate" && method === "PATCH") {
+      store.isActive = true;
+      return ok({ store });
+    }
+
+    if (action === "feature" && method === "PATCH") {
+      const body = readBody<{ order?: number }>(options);
+      store.isFeatured = true;
+      if (body.order !== undefined) store.featuredOrder = body.order;
+      return ok({ store });
+    }
+
+    if (action === "unfeature" && method === "PATCH") {
+      store.isFeatured = false;
+      store.featuredOrder = null;
+      return ok({ store });
+    }
   }
 
   // ─── المستخدمون ─────────────────────────────────────────────
@@ -419,6 +442,10 @@ export async function mockFetch(
     };
 
     const missing = () => fail(404, "التصنيف غير موجود");
+
+    if (rawId === "reorder" && method === "PATCH") {
+      return ok({ message: "تمت إعادة الترتيب بنجاح" });
+    }
 
     if (method === "GET") {
       if (rawId) {
