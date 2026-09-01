@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Check, Eye, EyeOff, Flag, XCircle } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
@@ -29,9 +29,28 @@ import { t } from "@/lib/strings";
 
 type Dialog = "hide" | "unhide" | "resolve" | "dismiss" | null;
 
-export default function AdminReportDetailPage() {
+export default function AdminReportDetailPage({
+  params: paramsPromise,
+}: {
+  params?: Promise<{ id: string }>;
+} = {}) {
   const router = useRouter();
-  const reportId = Number(useParams<{ id: string }>().id);
+  const routeParams = useParams<{ id: string }>();
+
+  let rawId: string | undefined = Array.isArray(routeParams?.id)
+    ? routeParams.id[0]
+    : routeParams?.id;
+
+  if (!rawId && paramsPromise) {
+    try {
+      const resolved = use(paramsPromise);
+      rawId = Array.isArray(resolved?.id) ? resolved.id[0] : resolved?.id;
+    } catch {
+      // fallback
+    }
+  }
+
+  const reportId = rawId ? Number(rawId) : NaN;
 
   const [report, setReport] = useState<AdminReportDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +64,14 @@ export default function AdminReportDetailPage() {
   const [flash, showFlash] = useFlash();
 
   useEffect(() => {
+    if (!reportId || Number.isNaN(reportId) || reportId <= 0) {
+      return;
+    }
+
     let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
+    setError("");
 
     (async () => {
       const res = await fetchReport(reportId);
@@ -61,7 +87,7 @@ export default function AdminReportDetailPage() {
       }
 
       const failure = classifyStatus(res);
-      if (failure.kind === "notFound") {
+      if (failure.kind === "notFound" || failure.kind === "noStore") {
         setNotFound(true);
         return;
       }

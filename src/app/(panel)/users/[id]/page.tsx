@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, use } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -32,9 +32,28 @@ import { t } from "@/lib/strings";
 
 type Dialog = "suspend" | "activate" | null;
 
-export default function AdminUserDetailPage() {
+export default function AdminUserDetailPage({
+  params: paramsPromise,
+}: {
+  params?: Promise<{ id: string }>;
+} = {}) {
   const router = useRouter();
-  const userId = Number(useParams<{ id: string }>().id);
+  const routeParams = useParams<{ id: string }>();
+
+  let rawId: string | undefined = Array.isArray(routeParams?.id)
+    ? routeParams.id[0]
+    : routeParams?.id;
+
+  if (!rawId && paramsPromise) {
+    try {
+      const resolved = use(paramsPromise);
+      rawId = Array.isArray(resolved?.id) ? resolved.id[0] : resolved?.id;
+    } catch {
+      // fallback
+    }
+  }
+
+  const userId = rawId ? Number(rawId) : NaN;
 
   const [user, setUser] = useState<AdminUserDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,7 +66,14 @@ export default function AdminUserDetailPage() {
   const [flash, showFlash] = useFlash();
 
   useEffect(() => {
+    if (!userId || Number.isNaN(userId) || userId <= 0) {
+      return;
+    }
+
     let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
+    setError("");
 
     (async () => {
       const res = await fetchUser(userId);
@@ -63,7 +89,7 @@ export default function AdminUserDetailPage() {
       }
 
       const failure = classifyStatus(res);
-      if (failure.kind === "notFound") {
+      if (failure.kind === "notFound" || failure.kind === "noStore") {
         setNotFound(true);
         return;
       }
@@ -265,11 +291,12 @@ export default function AdminUserDetailPage() {
                 },
                 {
                   label: moneyLabel,
-                  value: money && (
-                    <span className="ltr-nums">
-                      {formatCurrency(Number(money))}
-                    </span>
-                  ),
+                  value:
+                    money !== undefined && money !== null ? (
+                      <span className="ltr-nums">
+                        {formatCurrency(Number(money))}
+                      </span>
+                    ) : undefined,
                 },
                 {
                   label: t.admin.common.createdAt,

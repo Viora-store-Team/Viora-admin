@@ -47,7 +47,7 @@ export function classifyStatus(
   if (res.status === 409) return { kind: "conflict", message };
 
   if (res.status === 404) {
-    if (opts.isCreate || message.includes("متجر")) {
+    if (opts.isCreate) {
       return { kind: "noStore", message };
     }
     return { kind: "notFound", message };

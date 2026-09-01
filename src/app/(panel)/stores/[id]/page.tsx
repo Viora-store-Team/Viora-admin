@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, use } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -31,7 +31,7 @@ import {
   suspendUser,
 } from "@/lib/admin/api";
 import { accountStatus, STORE_STATUS } from "@/lib/admin/status";
-import type { AdminStoreDetail } from "@/lib/admin/types";
+import type { AdminStoreDetail, StoreOwner } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { isBrokenText, textOrNull } from "@/lib/brokenText";
@@ -41,9 +41,28 @@ import { t } from "@/lib/strings";
 /** أي حوار مفتوح حالياً — واحد بس بأي لحظة */
 type Dialog = "approve" | "reject" | "rereview" | null;
 
-export default function AdminStoreDetailPage() {
+export default function AdminStoreDetailPage({
+  params: paramsPromise,
+}: {
+  params?: Promise<{ id: string }>;
+} = {}) {
   const router = useRouter();
-  const storeId = Number(useParams<{ id: string }>().id);
+  const routeParams = useParams<{ id: string }>();
+
+  let rawId: string | undefined = Array.isArray(routeParams?.id)
+    ? routeParams.id[0]
+    : routeParams?.id;
+
+  if (!rawId && paramsPromise) {
+    try {
+      const resolved = use(paramsPromise);
+      rawId = Array.isArray(resolved?.id) ? resolved.id[0] : resolved?.id;
+    } catch {
+      // fallback
+    }
+  }
+
+  const storeId = rawId ? Number(rawId) : NaN;
 
   const [store, setStore] = useState<AdminStoreDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,7 +76,14 @@ export default function AdminStoreDetailPage() {
   const [flash, showFlash] = useFlash();
 
   useEffect(() => {
+    if (!storeId || Number.isNaN(storeId) || storeId <= 0) {
+      return;
+    }
+
     let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
+    setError("");
 
     (async () => {
       const res = await fetchStore(storeId);
@@ -70,10 +96,23 @@ export default function AdminStoreDetailPage() {
         const normalizedStore: AdminStoreDetail = {
           ...res.store,
           isActive: isRejected ? false : res.store.isActive,
-          owner: {
-            ...res.store.owner,
-            isActive: isRejected ? false : res.store.owner.isActive,
-          },
+          owner: res.store.owner
+            ? {
+                ...res.store.owner,
+                isActive: isRejected ? false : res.store.owner.isActive,
+              }
+            : ({
+                id: 0,
+                name: "",
+                email: "",
+                phone: null,
+                emailVerified: false,
+                isActive: false,
+                createdAt: "",
+              } as StoreOwner),
+          categories: Array.isArray(res.store.categories)
+            ? res.store.categories
+            : [],
         };
         setStore(normalizedStore);
         setNotFound(false);
@@ -250,7 +289,7 @@ export default function AdminStoreDetailPage() {
   const broken =
     isBrokenText(store.name) ||
     isBrokenText(store.city) ||
-    isBrokenText(store.owner.name) ||
+    isBrokenText(store.owner?.name) ||
     isBrokenText(store.description) ||
     isBrokenText(store.address);
 
@@ -410,7 +449,7 @@ export default function AdminStoreDetailPage() {
                 },
                 {
                   label: t.admin.stores.categories,
-                  value: store.categories.map((c) => c.name).join("، "),
+                  value: store.categories?.map((c) => c.name).join("، ") ?? "",
                 },
                 {
                   label: t.admin.stores.reviewedAt,
@@ -444,13 +483,15 @@ export default function AdminStoreDetailPage() {
             <CardHeader
               title={t.admin.stores.ownerInfo}
               action={
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push(`/users/${store.owner.id}`)}
-                >
-                  {t.admin.stores.viewOwner}
-                </Button>
+                store.owner?.id ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push(`/users/${store.owner.id}`)}
+                  >
+                    {t.admin.stores.viewOwner}
+                  </Button>
+                ) : undefined
               }
             />
             <CardBody>
@@ -458,15 +499,15 @@ export default function AdminStoreDetailPage() {
                 rows={[
                   {
                     label: t.admin.users.colUser,
-                    value: textOrNull(store.owner.name),
+                    value: textOrNull(store.owner?.name),
                   },
                   {
                     label: t.admin.stores.email,
-                    value: <span className="ltr-nums">{store.owner.email}</span>,
+                    value: <span className="ltr-nums">{store.owner?.email}</span>,
                   },
                   {
                     label: t.admin.stores.phone,
-                    value: store.owner.phone && (
+                    value: store.owner?.phone && (
                       <span className="ltr-nums">{store.owner.phone}</span>
                     ),
                   },
@@ -474,9 +515,9 @@ export default function AdminStoreDetailPage() {
                     label: t.admin.stores.ownerEmailVerified,
                     value: (
                       <Badge
-                        tone={store.owner.emailVerified ? "success" : "warning"}
+                        tone={store.owner?.emailVerified ? "success" : "warning"}
                       >
-                        {store.owner.emailVerified
+                        {store.owner?.emailVerified
                           ? t.admin.stores.ownerVerified
                           : t.admin.stores.ownerUnverified}
                       </Badge>
@@ -489,7 +530,7 @@ export default function AdminStoreDetailPage() {
                         meta={accountStatus(
                           store.status === "REJECTED"
                             ? false
-                            : store.owner.isActive,
+                            : (store.owner?.isActive ?? false),
                         )}
                       />
                     ),
