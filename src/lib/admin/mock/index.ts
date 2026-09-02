@@ -20,10 +20,16 @@ import type {
   FeaturedCollectionPayload,
   OccasionFilterPayload,
   OrdersPoint,
+  ProductReview,
   ReportStatus,
+  ReviewsOverviewStats,
   SignupsPoint,
   StaticPageKey,
   StatsCounters,
+  StoreOrder,
+  StoreOrderItem,
+  StoreOrderStatus,
+  StoreRatingSummary,
   TopStoreRow,
 } from "../types";
 import { db } from "./db";
@@ -248,6 +254,222 @@ function reportListItem(r: (typeof db.reports)[number]) {
   };
 }
 
+function generateStoreOrders(storeId: number): StoreOrder[] {
+  const customerList = [
+    { name: "أحمد حسن", phone: "0599112233", email: "ahmad.h@example.com", city: "غزة", address: "غزة - الرمال" },
+    { name: "رائد علي", phone: "0598774411", email: "raed.ali@example.com", city: "خانيونس", address: "خانيونس - الكتيبة" },
+    { name: "محمود الخالدي", phone: "0592334455", email: "m.khaldi@example.com", city: "رام الله", address: "رام الله - الماصيون" },
+    { name: "سارة عودة", phone: "0595667788", email: "sara.odeh@example.com", city: "نابلس", address: "نابلس - رفيديا" },
+    { name: "هبة النجار", phone: "0594112299", email: "heba.n@example.com", city: "الخليل", address: "الخليل - عين سارة" },
+    { name: "عمر الخطيب", phone: "0597889900", email: "omar.k@example.com", city: "غزة", address: "غزة - تل الهوا" },
+    { name: "ليلى قاسم", phone: "0593445566", email: "laila.q@example.com", city: "بيت لحم", address: "بيت لحم - شارع المهد" },
+    { name: "يوسف إبراهيم", phone: "0591223344", email: "yousef.i@example.com", city: "جنين", address: "جنين - الدوار الرئيسي" },
+  ];
+
+  const sampleProducts = [
+    { name: "فستان سهرة كلاسيك", price: 180 },
+    { name: "قميص صيفي قطني", price: 65 },
+    { name: "بنطال جينز كاجوال", price: 110 },
+    { name: "حذاء رياضي جلد", price: 135 },
+    { name: "حقيبة يد جلدية فاخرة", price: 160 },
+    { name: "شال كشمير أنيق", price: 45 },
+  ];
+
+  const statuses: StoreOrderStatus[] = [
+    "NEW", "NEW",
+    "PROCESSING", "PROCESSING", "PROCESSING",
+    "READY", "READY",
+    "SHIPPED", "SHIPPED",
+    "COMPLETED", "COMPLETED", "COMPLETED", "COMPLETED", "COMPLETED", "COMPLETED",
+    "CANCELLED"
+  ];
+
+  return Array.from({ length: 23 }, (_, idx) => {
+    const cust = customerList[idx % customerList.length];
+    const status = statuses[idx % statuses.length];
+    const orderNum = 1049 - idx;
+    const itemsCount = idx === 0 ? 3 : idx === 1 ? 10 : idx === 2 ? 10 : (idx % 4) + 1;
+    const prod = sampleProducts[idx % sampleProducts.length];
+    const unitPrice = prod.price;
+    const totalCalc = (unitPrice * (itemsCount > 3 ? 2 : itemsCount) + (idx % 3 === 0 ? 16.5 : 0)).toFixed(2);
+
+    const items: StoreOrderItem[] = Array.from({ length: Math.min(itemsCount, 3) }, (__, pIdx) => ({
+      id: pIdx + 1,
+      productName: sampleProducts[(idx + pIdx) % sampleProducts.length].name,
+      variant: pIdx === 0 ? "لون أسود" : "لون كحلي",
+      size: pIdx === 0 ? "L" : "M",
+      quantity: Math.max(1, Math.floor(itemsCount / 2)),
+      price: sampleProducts[(idx + pIdx) % sampleProducts.length].price.toFixed(2),
+    }));
+
+    return {
+      id: idx + 1,
+      orderNumber: `#VIO-${orderNum}`,
+      customerName: cust.name,
+      customerPhone: cust.phone,
+      customerEmail: cust.email,
+      itemsCount,
+      items,
+      city: cust.city,
+      address: cust.address,
+      createdAt: daysAgo(idx),
+      total: idx === 0 ? "346.50" : idx === 1 ? "310.00" : idx === 2 ? "60.00" : totalCalc,
+      shippingFee: idx % 2 === 0 ? "15.00" : "0.00",
+      paymentMethod: idx % 2 === 0 ? "ONLINE" : "CASH_ON_DELIVERY",
+      status,
+    };
+  });
+}
+
+const MOCK_PRODUCT_REVIEWS_SEED: ProductReview[] = [
+  {
+    id: 1,
+    productId: 101,
+    productName: "فستان سهرة كلاسيك حريري",
+    productImage: null,
+    productPrice: "240.00",
+    orderId: 1049,
+    orderNumber: "#VIO-1049",
+    storeId: 1,
+    storeName: "متجر الهدى للأزياء",
+    storeLogoUrl: null,
+    storeCity: "غزة",
+    storeAverageRating: 4.8,
+    storeTotalReviews: 38,
+    customerId: 501,
+    customerName: "رغد الأغا",
+    customerPhone: "0599112233",
+    rating: 5,
+    comment: "الخامة ممتازة جداً وتفاصيل القماش فخمة والمقاس جاء مضبوط تماماً بعد الاستلام! التوصيل كان سريع والتغليف راقي.",
+    isHidden: false,
+    hiddenReason: null,
+    hiddenAt: null,
+    createdAt: daysAgo(2),
+  },
+  {
+    id: 2,
+    productId: 102,
+    productName: "قميص قطن صيفي كاجوال",
+    productImage: null,
+    productPrice: "85.00",
+    orderId: 1048,
+    orderNumber: "#VIO-1048",
+    storeId: 2,
+    storeName: "إيليت فاشن",
+    storeLogoUrl: null,
+    storeCity: "رام الله",
+    storeAverageRating: 4.6,
+    storeTotalReviews: 29,
+    customerId: 502,
+    customerName: "أحمد حسن",
+    customerPhone: "0598774411",
+    rating: 5,
+    comment: "وصل الطلب بحالة ممتازة وجودة القماش قطنية 100% ومريح جداً باللبس. تجربة ممتازة وسأكرر الشراء.",
+    isHidden: false,
+    hiddenReason: null,
+    hiddenAt: null,
+    createdAt: daysAgo(3),
+  },
+  {
+    id: 3,
+    productId: 103,
+    productName: "حذاء كلاسيك جلد طبيعي",
+    productImage: null,
+    productPrice: "160.00",
+    orderId: 1045,
+    orderNumber: "#VIO-1045",
+    storeId: 1,
+    storeName: "متجر الهدى للأزياء",
+    storeLogoUrl: null,
+    storeCity: "غزة",
+    storeAverageRating: 4.8,
+    storeTotalReviews: 38,
+    customerId: 503,
+    customerName: "محمود الخالدي",
+    customerPhone: "0592334455",
+    rating: 4,
+    comment: "الحذاء أنيق ومريح في المشي، فقط النعل يحتاج يومين ليلين. الجودة عموماً تستحق السعر.",
+    isHidden: false,
+    hiddenReason: null,
+    hiddenAt: null,
+    createdAt: daysAgo(5),
+  },
+  {
+    id: 4,
+    productId: 104,
+    productName: "حقيبة كتف جلدية فاخرة",
+    productImage: null,
+    productPrice: "130.00",
+    orderId: 1042,
+    orderNumber: "#VIO-1042",
+    storeId: 3,
+    storeName: "جاردينيا بوتيك",
+    storeLogoUrl: null,
+    storeCity: "نابلس",
+    storeAverageRating: 4.9,
+    storeTotalReviews: 44,
+    customerId: 504,
+    customerName: "مريم النجار",
+    customerPhone: "0595667788",
+    rating: 5,
+    comment: "الحقيبة أجمل بكثير من الصور والتقسيمات الداخلية واسعة والجلد طبيعي رائع! شكراً للمتجر على الهدية البسيطة المرفقة.",
+    isHidden: false,
+    hiddenReason: null,
+    hiddenAt: null,
+    createdAt: daysAgo(7),
+  },
+  {
+    id: 5,
+    productId: 105,
+    productName: "شال كشمير صوف ناعم",
+    productImage: null,
+    productPrice: "55.00",
+    orderId: 1039,
+    orderNumber: "#VIO-1039",
+    storeId: 2,
+    storeName: "إيليت فاشن",
+    storeLogoUrl: null,
+    storeCity: "رام الله",
+    storeAverageRating: 4.6,
+    storeTotalReviews: 29,
+    customerId: 505,
+    customerName: "سارة عودة",
+    customerPhone: "0594112299",
+    rating: 3,
+    comment: "اللون بالواقع أغمق قليلاً من الصورة في التطبيق، لكن الجودة جيدة ودافئ.",
+    isHidden: false,
+    hiddenReason: null,
+    hiddenAt: null,
+    createdAt: daysAgo(10),
+  },
+  {
+    id: 6,
+    productId: 106,
+    productName: "ساعة يد كلاسيكية مقاومة للماء",
+    productImage: null,
+    productPrice: "190.00",
+    orderId: 1035,
+    orderNumber: "#VIO-1035",
+    storeId: 4,
+    storeName: "متجر الرحمة",
+    storeLogoUrl: null,
+    storeCity: "الخليل",
+    storeAverageRating: 4.2,
+    storeTotalReviews: 18,
+    customerId: 506,
+    customerName: "عمر الخطيب",
+    customerPhone: "0597889900",
+    rating: 1,
+    comment: "تعليق غير لائق يحتوي على عبارات مسيئة وغير مقبولة ضد المتجر.",
+    isHidden: true,
+    hiddenReason: "مخالفة سياسة النشر واستخدام ألفاظ غير لائقة.",
+    hiddenAt: daysAgo(12),
+    createdAt: daysAgo(14),
+  },
+];
+
+let liveProductReviews = [...MOCK_PRODUCT_REVIEWS_SEED];
+
 // ─── الموجّه ───────────────────────────────────────────────────
 
 export async function mockFetch(
@@ -381,6 +603,44 @@ export async function mockFetch(
       store.isFeatured = false;
       store.featuredOrder = null;
       return ok({ store });
+    }
+
+    if (action === "orders" && method === "GET") {
+      const allOrders = generateStoreOrders(id);
+      const statusFilter = q.get("status");
+      const sort = q.get("sort") || "newest";
+
+      // Calculate status counts
+      const counts: Record<string, number> = {
+        all: allOrders.length,
+        NEW: allOrders.filter((o) => o.status === "NEW").length,
+        PROCESSING: allOrders.filter((o) => o.status === "PROCESSING").length,
+        READY: allOrders.filter((o) => o.status === "READY").length,
+        SHIPPED: allOrders.filter((o) => o.status === "SHIPPED").length,
+        COMPLETED: allOrders.filter((o) => o.status === "COMPLETED").length,
+        CANCELLED: allOrders.filter((o) => o.status === "CANCELLED").length,
+      };
+
+      let filtered = allOrders;
+      if (statusFilter && statusFilter !== "all") {
+        filtered = filtered.filter((o) => o.status === statusFilter);
+      }
+      if (search) {
+        filtered = filtered.filter((o) =>
+          matches(search, o.orderNumber, o.customerName, o.city, o.address, o.createdAt),
+        );
+      }
+
+      if (sort === "oldest") {
+        filtered.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      } else if (sort === "highest") {
+        filtered.sort((a, b) => Number(b.total) - Number(a.total));
+      } else {
+        filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      }
+
+      const { slice, pagination } = paginate(filtered, page, limit);
+      return ok({ orders: slice, pagination, counts });
     }
   }
 
@@ -612,10 +872,132 @@ export async function mockFetch(
 
   // ─── التقييمات ──────────────────────────────────────────────
   if (resource === "reviews") {
-    const review = db.reviews.find((r) => r.id === id);
+    // 1. Overview stats
+    if (rawId === "overview" && method === "GET") {
+      const all = liveProductReviews;
+      const totalReviews = all.length;
+      const avg = totalReviews > 0 ? (all.reduce((s, r) => s + r.rating, 0) / totalReviews) : 0;
+      const positiveCount = all.filter((r) => r.rating >= 4).length;
+      const positivePercentage = totalReviews > 0 ? Math.round((positiveCount / totalReviews) * 100) : 0;
+      const hiddenCount = all.filter((r) => r.isHidden).length;
+
+      const starCounts = {
+        5: all.filter((r) => r.rating === 5).length,
+        4: all.filter((r) => r.rating === 4).length,
+        3: all.filter((r) => r.rating === 3).length,
+        2: all.filter((r) => r.rating === 2).length,
+        1: all.filter((r) => r.rating === 1).length,
+      };
+
+      const overview: ReviewsOverviewStats = {
+        platformAverage: Number(avg.toFixed(1)),
+        totalReviews,
+        positivePercentage,
+        hiddenCount,
+        starCounts,
+      };
+
+      return ok({ overview });
+    }
+
+    // 2. Store ratings list
+    if (rawId === "stores" && method === "GET") {
+      const storesMap = new Map<number, { name: string; city: string | null; ratings: number[] }>();
+      for (const r of liveProductReviews) {
+        const sId = r.storeId ?? r.store?.id ?? 1;
+        const sName = r.storeName ?? r.store?.name ?? "متجر";
+        const sCity = r.storeCity ?? r.store?.city ?? null;
+        if (!storesMap.has(sId)) {
+          storesMap.set(sId, { name: sName, city: sCity, ratings: [] });
+        }
+        storesMap.get(sId)!.ratings.push(r.rating);
+      }
+
+      const storeSummaries: StoreRatingSummary[] = Array.from(storesMap.entries()).map(([storeId, val]) => {
+        const total = val.ratings.length;
+        const avg = total > 0 ? val.ratings.reduce((a, b) => a + b, 0) / total : 0;
+        return {
+          storeId,
+          storeName: val.name,
+          storeLogoUrl: null,
+          city: val.city,
+          averageRating: Number(avg.toFixed(1)),
+          totalReviews: total,
+          ratingDistribution: {
+            5: val.ratings.filter((r) => r === 5).length,
+            4: val.ratings.filter((r) => r === 4).length,
+            3: val.ratings.filter((r) => r === 3).length,
+            2: val.ratings.filter((r) => r === 2).length,
+            1: val.ratings.filter((r) => r === 1).length,
+          },
+        };
+      });
+
+      const { slice, pagination } = paginate(storeSummaries, page, limit);
+      return ok({ stores: slice, pagination });
+    }
+
+    // 3. Product Reviews list
+    if (!rawId && method === "GET") {
+      const ratingFilter = q.get("rating") ? Number(q.get("rating")) : undefined;
+      const storeIdFilter = q.get("storeId") ? Number(q.get("storeId")) : undefined;
+      const isHiddenFilter = q.get("isHidden");
+      const sort = q.get("sort") || "newest";
+
+      let rows = [...liveProductReviews];
+
+      if (ratingFilter) {
+        rows = rows.filter((r) => r.rating === ratingFilter);
+      }
+      if (storeIdFilter) {
+        rows = rows.filter((r) => r.storeId === storeIdFilter);
+      }
+      if (isHiddenFilter !== null && isHiddenFilter !== undefined && isHiddenFilter !== "") {
+        rows = rows.filter((r) => r.isHidden === (isHiddenFilter === "true"));
+      }
+      if (search) {
+        rows = rows.filter((r) =>
+          matches(search, r.productName, r.storeName, r.customerName, r.orderNumber, r.comment ?? ""),
+        );
+      }
+
+      if (sort === "highest") {
+        rows.sort((a, b) => b.rating - a.rating || b.createdAt.localeCompare(a.createdAt));
+      } else if (sort === "lowest") {
+        rows.sort((a, b) => a.rating - b.rating || b.createdAt.localeCompare(a.createdAt));
+      } else {
+        rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      }
+
+      const totalReviews = liveProductReviews.length;
+      const avg = totalReviews > 0 ? (liveProductReviews.reduce((s, r) => s + r.rating, 0) / totalReviews) : 0;
+      const positiveCount = liveProductReviews.filter((r) => r.rating >= 4).length;
+      const positivePercentage = totalReviews > 0 ? Math.round((positiveCount / totalReviews) * 100) : 0;
+      const hiddenCount = liveProductReviews.filter((r) => r.isHidden).length;
+
+      const overview: ReviewsOverviewStats = {
+        platformAverage: Number(avg.toFixed(1)),
+        totalReviews,
+        positivePercentage,
+        hiddenCount,
+        starCounts: {
+          5: liveProductReviews.filter((r) => r.rating === 5).length,
+          4: liveProductReviews.filter((r) => r.rating === 4).length,
+          3: liveProductReviews.filter((r) => r.rating === 3).length,
+          2: liveProductReviews.filter((r) => r.rating === 2).length,
+          1: liveProductReviews.filter((r) => r.rating === 1).length,
+        },
+      };
+
+      const { slice, pagination } = paginate(rows, page, limit);
+      return ok({ reviews: slice, pagination, overview });
+    }
+
+    // 4. Single review actions
+    const review = liveProductReviews.find((r) => r.id === id);
     if (!review) return notFound();
 
-    if (action === "hide") {
+    if (action === "hide" && method === "POST") {
       const body = readBody<{ reason: string }>(options);
       const invalid = checkReason(body.reason);
       if (invalid) return invalid;
@@ -626,7 +1008,7 @@ export async function mockFetch(
       return ok({ review });
     }
 
-    if (action === "unhide") {
+    if (action === "unhide" && method === "POST") {
       review.isHidden = false;
       review.hiddenReason = null;
       review.hiddenAt = null;

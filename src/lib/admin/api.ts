@@ -23,14 +23,21 @@ import type {
   HomeContent,
   OccasionFilter,
   OccasionFilterPayload,
+  ProductReview,
+  AdminRatingItem,
   ReportStatus,
   ReportTarget,
   Review,
+  ReviewsOverviewStats,
   StaticPage,
   StaticPageKey,
   StatsCounters,
   StatsPeriod,
   StatsPeriodInfo,
+  StoreOrder,
+  StoreOrderItem,
+  StoreOrderStatus,
+  StoreRatingSummary,
   StoreStatus,
   TopStoreRow,
 } from "./types";
@@ -184,6 +191,29 @@ export function unfeatureStore(
   id: number,
 ): Promise<ApiResponse & { store?: AdminStoreDetail }> {
   return adminFetch(`/admin/stores/${id}/unfeature`, { method: "PATCH" });
+}
+
+/**
+ * `GET /admin/stores/:id/orders`
+ *
+ * قائمة طلبات المتجر مع الفلترة حسب الحالة والبحث والترتيب
+ */
+export function fetchStoreOrders(
+  storeId: number,
+  params: ListParams & {
+    status?: StoreOrderStatus | "";
+    sort?: "newest" | "oldest" | "highest" | "";
+  } = {},
+): Promise<Paged<"orders", StoreOrder> & { counts?: Record<string, number> }> {
+  return adminFetch(
+    `/admin/stores/${storeId}/orders${query({
+      page: params.page ?? 1,
+      limit: params.limit ?? 20,
+      q: params.q,
+      status: params.status,
+      sort: params.sort,
+    })}`,
+  );
 }
 
 // ─── المستخدمون ✅ ─────────────────────────────────────────────
@@ -374,10 +404,102 @@ export function updateReport(
   return adminFetch(`/admin/reports/${id}`, { method: "PATCH", ...json(payload) });
 }
 
+// ─── ٥ · التقييمات ومراجعات الطلبات ✅ ─────────────────────────
+
 /**
- * ⚠️ الإخفاء بيحجب التقييم **عن الزبون بس** — التاجر بيضل يشوفه.
- * السبب إلزامي وبينحفظ بسجل التدقيق.
+ * ✅ `GET /admin/ratings?page&limit&hidden`
+ *
+ * كل التقييمات للمراجعة — مع المنتج ومتجره والمقيّم بالإيميل والطلب.
  */
+export function fetchRatings(
+  params: ListParams & {
+    hidden?: boolean | string;
+  } = {},
+): Promise<Paged<"ratings", AdminRatingItem>> {
+  return adminFetch(
+    `/admin/ratings${query({
+      page: params.page ?? 1,
+      limit: params.limit ?? 20,
+      hidden:
+        params.hidden !== "" && params.hidden !== undefined
+          ? String(params.hidden)
+          : undefined,
+    })}`,
+  );
+}
+
+/**
+ * ✅ `PATCH /admin/ratings/:id/hide` — إخفاء تعليق مسيء
+ */
+export function hideRating(
+  id: number,
+): Promise<ApiResponse & { rating?: AdminRatingItem }> {
+  return adminFetch(`/admin/ratings/${id}/hide`, { method: "PATCH" });
+}
+
+/**
+ * ✅ `PATCH /admin/ratings/:id/unhide` — إرجاع التقييم للعرض
+ */
+export function unhideRating(
+  id: number,
+): Promise<ApiResponse & { rating?: AdminRatingItem }> {
+  return adminFetch(`/admin/ratings/${id}/unhide`, { method: "PATCH" });
+}
+
+export function fetchProductReviews(
+  params: ListParams & {
+    rating?: number | "";
+    storeId?: number;
+    productId?: number;
+    isHidden?: boolean | "";
+    sort?: "newest" | "highest" | "lowest" | "";
+  } = {},
+): Promise<Paged<"reviews", ProductReview> & { overview?: ReviewsOverviewStats }> {
+  return adminFetch(
+    `/admin/reviews${query({
+      page: params.page ?? 1,
+      limit: params.limit ?? 10,
+      q: params.q,
+      rating: params.rating,
+      storeId: params.storeId,
+      productId: params.productId,
+      isHidden: params.isHidden !== "" && params.isHidden !== undefined ? String(params.isHidden) : undefined,
+      sort: params.sort,
+    })}`,
+  );
+}
+
+export function fetchReviewsOverview(): Promise<
+  ApiResponse & { overview?: ReviewsOverviewStats }
+> {
+  return adminFetch("/admin/reviews/overview");
+}
+
+export function fetchStoreRatings(
+  params: ListParams = {},
+): Promise<Paged<"stores", StoreRatingSummary>> {
+  return adminFetch(
+    `/admin/reviews/stores${query({
+      page: params.page ?? 1,
+      limit: params.limit ?? 10,
+      q: params.q,
+    })}`,
+  );
+}
+
+export function hideProductReview(
+  id: number,
+  reason: string,
+): Promise<ApiResponse & { review?: ProductReview }> {
+  return hideRating(id);
+}
+
+export function unhideProductReview(
+  id: number,
+): Promise<ApiResponse & { review?: ProductReview }> {
+  return unhideRating(id);
+}
+
 export function hideReview(
   id: number,
   reason: string,

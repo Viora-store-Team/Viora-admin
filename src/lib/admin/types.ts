@@ -209,6 +209,54 @@ export interface AdminStoreDetail extends AdminStoreListItem {
   revenue: string;
 }
 
+// ─── ٢.١ · طلبات المتجر ────────────────────────────────────────
+
+export type StoreOrderStatus =
+  | "NEW"
+  | "PROCESSING"
+  | "READY"
+  | "SHIPPED"
+  | "COMPLETED"
+  | "CANCELLED";
+
+export const STORE_ORDER_STATUS_KEYS = [
+  "NEW",
+  "PROCESSING",
+  "READY",
+  "SHIPPED",
+  "COMPLETED",
+  "CANCELLED",
+] as const satisfies readonly StoreOrderStatus[];
+
+export type PaymentMethod = "ONLINE" | "CASH_ON_DELIVERY";
+
+export interface StoreOrderItem {
+  id: number;
+  productName: string;
+  productImage?: string | null;
+  variant?: string | null;
+  size?: string | null;
+  quantity: number;
+  price: string;
+}
+
+export interface StoreOrder {
+  id: number;
+  orderNumber: string;
+  customerName: string;
+  customerPhone?: string | null;
+  customerEmail?: string | null;
+  itemsCount: number;
+  items?: StoreOrderItem[];
+  city: string;
+  address: string;
+  createdAt: string;
+  total: string;
+  shippingFee?: string;
+  paymentMethod: PaymentMethod;
+  status: StoreOrderStatus;
+}
+
 // ─── ٣ · المستخدمون ────────────────────────────────────────────
 
 /*
@@ -332,7 +380,88 @@ export interface CategoryDeleteBlock {
   storesCount: number;
 }
 
-// ─── ٥ · التقييمات والبلاغات ───────────────────────────────────
+// ─── ٥ · تقييمات المنتجات وطلبات المتاجر ──────────────────────
+
+export interface AdminRatingItem {
+  id: number;
+  productId?: number;
+  product?: {
+    id: number;
+    name: string;
+    imageUrl?: string | null;
+    price?: string;
+  } | null;
+  productName?: string;
+  productImage?: string | null;
+  productPrice?: string | null;
+  storeId?: number;
+  store?: {
+    id: number;
+    name: string;
+    city?: string | null;
+    logoUrl?: string | null;
+  } | null;
+  storeName?: string;
+  storeLogoUrl?: string | null;
+  storeCity?: string | null;
+  storeAverageRating?: number;
+  storeTotalReviews?: number;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+    phone?: string | null;
+  } | null;
+  customerName?: string;
+  customerPhone?: string | null;
+  customerId?: number;
+  orderId?: number;
+  order?: {
+    id: number;
+    orderNumber?: string;
+  } | null;
+  orderNumber?: string;
+  rating: number;
+  comment: string | null;
+  images?: string[];
+  isHidden?: boolean;
+  hidden?: boolean;
+  hiddenReason?: string | null;
+  hiddenAt?: string | null;
+  createdAt: string;
+}
+
+export type ProductReview = AdminRatingItem;
+
+export interface StoreRatingSummary {
+  storeId: number;
+  storeName: string;
+  storeLogoUrl: string | null;
+  city: string | null;
+  averageRating: number;
+  totalReviews: number;
+  ratingDistribution: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
+}
+
+export interface ReviewsOverviewStats {
+  platformAverage: number;
+  totalReviews: number;
+  positivePercentage: number;
+  hiddenCount: number;
+  starCounts: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
+}
 
 export type ReviewTarget = "PRODUCT" | "STORE";
 

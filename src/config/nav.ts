@@ -1,8 +1,8 @@
 import {
   FileText,
-  Flag,
   FolderTree,
   LayoutDashboard,
+  Star,
   Store,
   Truck,
   Users,
@@ -22,7 +22,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/stores", label: t.admin.nav.stores, icon: Store },
   { href: "/users", label: t.admin.nav.users, icon: Users },
   { href: "/categories", label: t.admin.nav.categories, icon: FolderTree },
-  { href: "/reports", label: t.admin.nav.reports, icon: Flag },
+  { href: "/reviews", label: t.admin.nav.reviews, icon: Star },
   { href: "/content", label: t.admin.nav.content, icon: FileText },
   { href: "/delivery", label: t.admin.nav.delivery, icon: Truck },
 ];

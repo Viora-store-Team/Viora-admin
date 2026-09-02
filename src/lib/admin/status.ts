@@ -5,6 +5,7 @@ import type {
   ReportStatus,
   ReportTarget,
   ReviewTarget,
+  StoreOrderStatus,
   StoreStatus,
 } from "./types";
 
@@ -41,6 +42,15 @@ export const STORE_STATUS: Record<StoreStatus, StatusMeta> = {
   PENDING: { label: t.admin.status.storePending, tone: "warning" },
   APPROVED: { label: t.admin.status.storeApproved, tone: "success" },
   REJECTED: { label: t.admin.status.storeRejected, tone: "danger" },
+};
+
+export const STORE_ORDER_STATUS: Record<StoreOrderStatus, StatusMeta> = {
+  NEW: { label: t.admin.orders.statusNew, tone: "info" },
+  PROCESSING: { label: t.admin.orders.statusProcessing, tone: "warning" },
+  READY: { label: t.admin.orders.statusReady, tone: "primary" },
+  SHIPPED: { label: t.admin.orders.statusShipped, tone: "neutral" },
+  COMPLETED: { label: t.admin.orders.statusCompleted, tone: "success" },
+  CANCELLED: { label: t.admin.orders.statusCancelled, tone: "danger" },
 };
 
 export const REPORT_STATUS: Record<ReportStatus, StatusMeta> = {

@@ -9,32 +9,32 @@
   مع @custom-variant dark (&:where(.dark, .dark *)) عشان تشتغل utilities الـ dark:
 */
 @theme {
-  /* ── الهوية ─────────────────────────────────────── */
-  --color-primary: #253745;
-  --color-primary-hover: #1b2a35;
-  --color-primary-soft: #e9edef;
+  /* ── الهوية (Soft Burgundy & Baby Blue Accents) ──── */
+  --color-primary: #7d1d29;
+  --color-primary-hover: #651520;
+  --color-primary-soft: #fdf0f2;
   --color-icon: #ffffff;
 
   /* ── النصوص ─────────────────────────────────────── */
-  --color-heading: #111827;
-  --color-text-secondary: #6b7280;
-  --color-field-label: #374151;
-  --color-placeholder: #9ca3af;
+  --color-heading: #291518;
+  --color-text-secondary: #7d6a65;
+  --color-field-label: #52433f;
+  --color-placeholder: #a89b96;
 
-  /* ── الأسطح ─────────────────────────────────────── */
-  --color-app-bg: #ffffff;
+  /* ── الأسطح (Light Airy Cream & Pure White) ──────── */
+  --color-app-bg: #faf7f2;
   --color-surface: #ffffff;
-  --color-field-bg: #f3f4f6;
-  --color-border: #e5e7eb;
+  --color-field-bg: #f4ede5;
+  --color-border: #eae1d6;
 
-  /* ── الحالات ────────────────────────────────────── */
+  /* ── الحالات (مع Baby Blue المميز) ───────────────── */
   --color-success: #16a34a;
-  --color-success-soft: #dcfce7;
-  --color-warning: #ca8a04;
-  --color-warning-soft: #fef9c3;
-  --color-info: #2563eb;
-  --color-info-soft: #dbeafe;
-  --color-danger: #ef4444;
+  --color-success-soft: #eaf7ee;
+  --color-warning: #b45309;
+  --color-warning-soft: #fef3c7;
+  --color-info: #0284c7;
+  --color-info-soft: #e0f2fe;
+  --color-danger: #dc2626;
   --color-danger-soft: #fee2e2;
 
   /* ── الخط ───────────────────────────────────────── */

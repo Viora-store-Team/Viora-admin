@@ -56,7 +56,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [mobileOpen]);
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex min-h-dvh bg-app-bg">
       <Sidebar
         collapsed={collapsed}
         onToggleCollapse={() => setCollapsed((v) => !v)}

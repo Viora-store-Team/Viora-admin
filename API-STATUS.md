@@ -16,7 +16,7 @@ POST /api/admin/login   { "email": "owner@viora.com", "password": "admin@admin" 
 
 ما في `POST /admin/logout` (404) — الخروج محلي بمسح التوكن.
 
-## المسارات الموجودة فعلاً (23)
+## المسارات الموجودة فعلاً (26)
 
 | المسار | الحالة |
 |---|---|
@@ -36,6 +36,9 @@ POST /api/admin/login   { "email": "owner@viora.com", "password": "admin@admin" 
 | `GET /admin/users/:id` | ✅ مربوط · تفاصيل المستخدم (مع غوغل والعناوين) |
 | `PATCH /admin/users/:id/suspend` | ✅ مربوط ومفحوص end-to-end |
 | `PATCH /admin/users/:id/activate` | ✅ مربوط ومفحوص end-to-end |
+| `GET /admin/ratings?page&limit&hidden` | ✅ مربوط ومفحوص · صفحة `/reviews` |
+| `PATCH /admin/ratings/:id/hide` | ✅ مربوط ومفحوص · حجب التقييم |
+| `PATCH /admin/ratings/:id/unhide` | ✅ مربوط ومفحوص · إظهار التقييم |
 | `GET /admin/categories?flat&parentId&isActive` | ✅ مربوط · صفحة `/categories` |
 | `GET /admin/categories/:id` | ✅ موجود |
 | `POST /uploads` | ✅ مربوط لرفع صور التصنيفات |
