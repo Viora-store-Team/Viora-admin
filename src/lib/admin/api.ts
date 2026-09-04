@@ -546,6 +546,38 @@ export function saveStaticPage(
   });
 }
 
+/**
+ * 📜 مسار الشروط والأحكام المخصص للـ MVP
+ * `GET /admin/terms` و `PUT /admin/terms`
+ */
+export interface TermsContentPayload {
+  title: string;
+  content: string;
+}
+
+export interface TermsContentData {
+  key: string;
+  title: string;
+  content: string;
+  updatedAt: string;
+}
+
+export function fetchTermsContent(): Promise<
+  ApiResponse & { data?: TermsContentData }
+> {
+  return adminFetch("/admin/terms") as Promise<ApiResponse & { data?: TermsContentData }>;
+}
+
+export function saveTermsContent(
+  payload: TermsContentPayload,
+): Promise<
+  ApiResponse & { data?: TermsContentData }
+> {
+  return adminFetch("/admin/terms", { method: "PUT", ...json(payload) }) as Promise<
+    ApiResponse & { data?: TermsContentData }
+  >;
+}
+
 export function fetchBanners(): Promise<ApiResponse & { banners?: Banner[] }> {
   return adminFetch("/admin/banners");
 }
