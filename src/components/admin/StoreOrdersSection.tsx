@@ -50,12 +50,11 @@ interface TabConfig {
 
 const TABS: TabConfig[] = [
   { key: "all", label: t.admin.orders.tabAll, status: "" },
-  { key: "NEW", label: t.admin.orders.statusNew, status: "NEW" },
-  { key: "PROCESSING", label: t.admin.orders.statusProcessing, status: "PROCESSING" },
-  { key: "READY", label: t.admin.orders.statusReady, status: "READY" },
-  { key: "SHIPPED", label: t.admin.orders.statusShipped, status: "SHIPPED" },
-  { key: "COMPLETED", label: t.admin.orders.statusCompleted, status: "COMPLETED" },
-  { key: "CANCELLED", label: t.admin.orders.statusCancelled, status: "CANCELLED" },
+  { key: "PENDING", label: "بانتظار الموافقة", status: "PENDING" },
+  { key: "ACCEPTED", label: "قيد التجهيز", status: "ACCEPTED" },
+  { key: "DELIVERED", label: "تم التوصيل", status: "DELIVERED" },
+  { key: "CANCELLED", label: "ملغي", status: "CANCELLED" },
+  { key: "REJECTED", label: "مرفوض", status: "REJECTED" },
 ];
 
 export default function StoreOrdersSection({ storeId }: { storeId: number }) {
@@ -88,9 +87,66 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
     setLoading(false);
 
     if (res.success) {
-      setOrders(res.orders || []);
-      if (res.counts) setCounts(res.counts);
-      if (res.pagination) setPagination(res.pagination);
+      const rawList: any[] = Array.isArray(res.orders)
+        ? res.orders
+        : Array.isArray((res as any).data?.orders)
+          ? (res as any).data.orders
+          : Array.isArray((res as any).data)
+            ? (res as any).data
+            : [];
+
+      const normalized: StoreOrder[] = rawList.map((o: any) => ({
+        id: o.id ?? 0,
+        orderNumber: o.orderNumber || o.code || (o.id ? `#${o.id}` : "—"),
+        customerName: o.customerName || o.user?.name || o.customer?.name || "عميل فيورا",
+        customerPhone: o.customerPhone || o.user?.phone || o.phone || null,
+        customerEmail: o.customerEmail || o.user?.email || o.email || null,
+        itemsCount: o.itemsCount ?? (Array.isArray(o.items) ? o.items.length : Array.isArray(o.orderItems) ? o.orderItems.length : 1),
+        items: (o.items || o.orderItems || []).map((it: any) => ({
+          id: it.id ?? 0,
+          productName: it.productName || it.product?.name || "منتج",
+          productImage: it.productImage || it.product?.imageUrl || it.product?.image || null,
+          variant: it.variant || it.color || null,
+          size: it.size || null,
+          quantity: it.quantity ?? 1,
+          price: String(it.price ?? 0),
+        })),
+        city: o.city || o.address?.city || "—",
+        address: o.address?.street || (typeof o.address === "string" ? o.address : o.city || "—"),
+        createdAt: o.createdAt || new Date().toISOString(),
+        total: String(o.total ?? o.totalPrice ?? o.amount ?? 0),
+        shippingFee: o.shippingFee ? String(o.shippingFee) : undefined,
+        paymentMethod: o.paymentMethod || (o.paymentType === "COD" ? "CASH_ON_DELIVERY" : "ONLINE"),
+        status: o.status || "NEW",
+      }));
+
+      setOrders(normalized);
+
+      const rawCounts =
+        (res as any).statusCounts ||
+        res.counts ||
+        (res as any).data?.statusCounts ||
+        (res as any).data?.counts;
+
+      if (rawCounts) {
+        const total =
+          res.pagination?.total ??
+          (res as any).data?.pagination?.total ??
+          Object.values(rawCounts).reduce(
+            (acc: number, val: any) => acc + (Number(val) || 0),
+            0,
+          );
+        setCounts({ ...rawCounts, all: total });
+      } else {
+        const computed: Record<string, number> = { all: normalized.length };
+        normalized.forEach((ord) => {
+          computed[ord.status] = (computed[ord.status] || 0) + 1;
+        });
+        setCounts(computed);
+      }
+
+      const rawPagination = res.pagination || (res as any).data?.pagination;
+      if (rawPagination) setPagination(rawPagination);
     } else {
       setError(res.message || t.admin.common.loadFailed);
     }

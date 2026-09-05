@@ -1213,6 +1213,40 @@ export async function mockFetch(
     }
   }
 
+  // ─── الشروط والأحكام ─────────────────────────────────────────
+  if (resource === "terms") {
+    if (method === "GET") {
+      const page = db.pages.find((p) => p.key === "terms");
+      return ok({
+        data: {
+          title: page?.title || "شروط وأحكام استخدام منصة فيورا (Terms & Conditions)",
+          content: page?.body || "",
+          updatedAt: page?.updatedAt || "2026-09-04T12:00:00Z",
+        },
+      });
+    }
+    if (method === "PUT") {
+      const body = readBody<{ title?: string; content?: string }>(options);
+      const pageIndex = db.pages.findIndex((p) => p.key === "terms");
+      const updatedAt = new Date().toISOString();
+      if (pageIndex !== -1) {
+        db.pages[pageIndex] = {
+          ...db.pages[pageIndex],
+          title: body.title || db.pages[pageIndex].title,
+          body: body.content || db.pages[pageIndex].body,
+          updatedAt,
+        };
+      }
+      return ok({
+        data: {
+          title: body.title || "شروط وأحكام استخدام منصة فيورا (Terms & Conditions)",
+          content: body.content || "",
+          updatedAt,
+        },
+      });
+    }
+  }
+
   return notFound();
 }
 

@@ -212,20 +212,28 @@ export interface AdminStoreDetail extends AdminStoreListItem {
 // ─── ٢.١ · طلبات المتجر ────────────────────────────────────────
 
 export type StoreOrderStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "DELIVERED"
+  | "CANCELLED"
   | "NEW"
   | "PROCESSING"
   | "READY"
   | "SHIPPED"
-  | "COMPLETED"
-  | "CANCELLED";
+  | "COMPLETED";
 
 export const STORE_ORDER_STATUS_KEYS = [
+  "PENDING",
+  "ACCEPTED",
+  "REJECTED",
+  "DELIVERED",
+  "CANCELLED",
   "NEW",
   "PROCESSING",
   "READY",
   "SHIPPED",
   "COMPLETED",
-  "CANCELLED",
 ] as const satisfies readonly StoreOrderStatus[];
 
 export type PaymentMethod = "ONLINE" | "CASH_ON_DELIVERY";

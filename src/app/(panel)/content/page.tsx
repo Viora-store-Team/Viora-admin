@@ -95,6 +95,64 @@ export default function AdminContentPage() {
   const editorRef = useRef<HTMLDivElement>(null);
   const isInitialSet = useRef(false);
 
+  // Clean any duplicated pasted content, old raw drafts, or accidental letterhead inclusions
+  const cleanTermsHtml = (rawHtml: string): string => {
+    if (!rawHtml || typeof rawHtml !== "string") return DEFAULT_TERMS_CONTENT;
+
+    let cleaned = rawHtml.trim();
+
+    // 1. If user pasted the preview letterhead/header UI or if H1 is embedded
+    if (cleaned.includes("<h1") && (cleaned.includes("شروط وأحكام") || cleaned.includes("شروط الاستخدام"))) {
+      const lastH1Close = cleaned.lastIndexOf("</h1>");
+      if (lastH1Close !== -1) {
+        cleaned = cleaned.slice(lastH1Close + 5).trim();
+      }
+    }
+
+    // 2. If the preview letterhead phrase exists, discard everything up to the actual document body
+    if (cleaned.includes("وثيقة شروط وأحكام الاستخدام الرسمية")) {
+      const idx = cleaned.lastIndexOf("وثيقة شروط وأحكام الاستخدام الرسمية");
+      const after = cleaned.slice(idx);
+      const h2Idx = after.indexOf("<h2");
+      if (h2Idx !== -1) {
+        cleaned = after.slice(h2Idx).trim();
+      } else {
+        const lastTag = after.lastIndexOf("</div>");
+        if (lastTag !== -1) {
+          cleaned = after.slice(lastTag + 6).trim();
+        }
+      }
+    }
+
+    // 3. Remove accidental duplicate greeting (e.g. older unstyled draft preceding the new one)
+    const greetings = [...cleaned.matchAll(/مرحباً بك في منصة فيورا/gi)];
+    if (greetings.length > 1) {
+      // Keep only the final/latest formatted section starting from the last <h2>
+      const lastH2 = cleaned.lastIndexOf("<h2");
+      if (lastH2 !== -1) {
+        cleaned = cleaned.slice(lastH2).trim();
+      } else {
+        const lastGreeting = greetings[greetings.length - 1];
+        if (typeof lastGreeting.index === "number") {
+          cleaned = cleaned.slice(lastGreeting.index).trim();
+        }
+      }
+    }
+
+    // 4. Remove accidental duplicate repeating short terms paragraphs
+    const shortPhrase = "باستخدامك لمنصة فيورا فأنت توافق على الشروط التالية";
+    const shortMatches = [...cleaned.matchAll(new RegExp(shortPhrase, "gi"))];
+    if (shortMatches.length > 1) {
+      const lastIdx = cleaned.lastIndexOf(shortPhrase);
+      cleaned = cleaned.slice(lastIdx).trim();
+    }
+
+    // 5. Strip stray non-breaking spaces or empty paragraphs at the beginning
+    cleaned = cleaned.replace(/^(?:&nbsp;|\s|<br\s*\/?>|<\/?p>\s*)+/gi, "").trim();
+
+    return cleaned || DEFAULT_TERMS_CONTENT;
+  };
+
   // Calculate statistics from editor HTML
   const updateStats = (htmlText: string) => {
     const text = htmlText.replace(/<[^>]*>/g, " ").trim();
@@ -132,7 +190,8 @@ export default function AdminContentPage() {
         const res = await fetchTermsContent();
         if (active && res.success && res.data) {
           if (res.data.title) setTitle(res.data.title);
-          const initialHtml = res.data.content || DEFAULT_TERMS_CONTENT;
+          const raw = res.data.content || DEFAULT_TERMS_CONTENT;
+          const initialHtml = cleanTermsHtml(raw);
           setPreviewContent(initialHtml);
           if (editorRef.current) {
             editorRef.current.innerHTML = initialHtml;
@@ -140,16 +199,20 @@ export default function AdminContentPage() {
           }
           if (res.data.updatedAt) setUpdatedAt(res.data.updatedAt);
         } else if (active) {
+          const initialHtml = DEFAULT_TERMS_CONTENT;
+          setPreviewContent(initialHtml);
           if (editorRef.current && !isInitialSet.current) {
-            editorRef.current.innerHTML = DEFAULT_TERMS_CONTENT;
-            updateStats(DEFAULT_TERMS_CONTENT);
+            editorRef.current.innerHTML = initialHtml;
+            updateStats(initialHtml);
             isInitialSet.current = true;
           }
         }
       } catch {
+        const initialHtml = DEFAULT_TERMS_CONTENT;
+        setPreviewContent(initialHtml);
         if (editorRef.current && !isInitialSet.current) {
-          editorRef.current.innerHTML = DEFAULT_TERMS_CONTENT;
-          updateStats(DEFAULT_TERMS_CONTENT);
+          editorRef.current.innerHTML = initialHtml;
+          updateStats(initialHtml);
           isInitialSet.current = true;
         }
       } finally {
@@ -162,19 +225,16 @@ export default function AdminContentPage() {
     };
   }, []);
 
-  // Update stats on initial mount if not yet updated
-  useEffect(() => {
-    if (editorRef.current && !isInitialSet.current) {
-      editorRef.current.innerHTML = DEFAULT_TERMS_CONTENT;
-      updateStats(DEFAULT_TERMS_CONTENT);
-      isInitialSet.current = true;
-    }
-  }, []);
-
   // When switching to preview, sync editor HTML to preview
   const handleSwitchView = (view: "edit" | "preview") => {
     if (view === "preview" && editorRef.current) {
-      setPreviewContent(editorRef.current.innerHTML);
+      const sanitized = cleanTermsHtml(editorRef.current.innerHTML);
+      editorRef.current.innerHTML = sanitized;
+      setPreviewContent(sanitized);
+    } else if (view === "edit" && editorRef.current) {
+      const sanitized = cleanTermsHtml(previewContent);
+      editorRef.current.innerHTML = sanitized;
+      updateStats(sanitized);
     }
     setActiveView(view);
   };
@@ -230,7 +290,8 @@ export default function AdminContentPage() {
   // Save Terms and Conditions to Backend
   const handleSave = async () => {
     setSaving(true);
-    const html = editorRef.current ? editorRef.current.innerHTML : previewContent;
+    const rawHtml = editorRef.current ? editorRef.current.innerHTML : previewContent;
+    const html = cleanTermsHtml(rawHtml);
 
     try {
       const res = await saveTermsContent({
@@ -243,9 +304,19 @@ export default function AdminContentPage() {
       } else {
         setUpdatedAt(new Date().toISOString());
       }
-      showFlash("تم حفظ ونشر الشروط والأحكام بنجاح! ✨");
+      setPreviewContent(html);
+      if (editorRef.current) {
+        editorRef.current.innerHTML = html;
+        updateStats(html);
+      }
+      showFlash("تم حفظ ونشر النسخة المنسقة المعتمدة بنجاح! ✨");
     } catch {
       setUpdatedAt(new Date().toISOString());
+      setPreviewContent(html);
+      if (editorRef.current) {
+        editorRef.current.innerHTML = html;
+        updateStats(html);
+      }
       showFlash("تم حفظ الشروط والأحكام بنجاح! ✨");
     } finally {
       setSaving(false);
@@ -254,14 +325,15 @@ export default function AdminContentPage() {
 
   // Reset to default template
   const handleReset = () => {
-    if (confirm("هل ترغب بإعادة تعيين النص إلى النموذج الافتراضي؟")) {
+    if (confirm("هل ترغب بإعادة تعيين النص إلى النسخة المعتمدة المنسقة؟")) {
       setTitle(DEFAULT_TERMS_TITLE);
+      const clean = DEFAULT_TERMS_CONTENT;
       if (editorRef.current) {
-        editorRef.current.innerHTML = DEFAULT_TERMS_CONTENT;
-        updateStats(DEFAULT_TERMS_CONTENT);
+        editorRef.current.innerHTML = clean;
+        updateStats(clean);
       }
-      setPreviewContent(DEFAULT_TERMS_CONTENT);
-      showFlash("تمت استعادة النموذج الافتراضي بنجاح");
+      setPreviewContent(clean);
+      showFlash("تمت استعادة النسخة الأخيرة المنسقة بنجاح ✨");
     }
   };
 
@@ -664,53 +736,68 @@ export default function AdminContentPage() {
         {/* ══════════════════════════════════════════════════════════════
             Editable Canvas (Uncontrolled React Pattern to prevent cursor jumping)
         ══════════════════════════════════════════════════════════════ */}
-        {activeView === "edit" ? (
-          <div className="bg-app-bg/50 p-6 min-h-[500px]">
-            <div
-              ref={editorRef}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={() => {
+        <div
+          key="editor-canvas-container"
+          className={activeView === "edit" ? "bg-app-bg/50 p-6 min-h-[500px]" : "hidden"}
+        >
+          <div
+            ref={editorRef}
+            contentEditable
+            suppressContentEditableWarning
+            onInput={() => {
+              if (editorRef.current) {
+                updateStats(editorRef.current.innerHTML);
+              }
+            }}
+            onPaste={() => {
+              setTimeout(() => {
                 if (editorRef.current) {
-                  updateStats(editorRef.current.innerHTML);
+                  const cleaned = cleanTermsHtml(editorRef.current.innerHTML);
+                  if (cleaned !== editorRef.current.innerHTML) {
+                    editorRef.current.innerHTML = cleaned;
+                  }
+                  updateStats(cleaned);
                 }
-              }}
-              onKeyUp={checkActiveFormats}
-              onMouseUp={checkActiveFormats}
-              className="min-h-[460px] w-full rounded-2xl border border-border/80 bg-surface p-6 sm:p-8 text-sm text-heading shadow-xs focus:outline-hidden focus:ring-2 focus:ring-primary/20 leading-relaxed font-sans prose prose-neutral max-w-none [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-primary [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-black [&_h3]:text-heading [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-2.5 [&_ul]:list-disc [&_ul]:pr-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pr-5 [&_ol]:mb-3 [&_blockquote]:border-r-4 [&_blockquote]:border-primary/60 [&_blockquote]:bg-field-bg/60 [&_blockquote]:p-3 [&_blockquote]:rounded-lg [&_blockquote]:my-3 [&_hr]:my-4 [&_hr]:border-border cursor-text"
+              }, 0);
+            }}
+            onKeyUp={checkActiveFormats}
+            onMouseUp={checkActiveFormats}
+            className="min-h-[460px] w-full rounded-2xl border border-border/80 bg-surface p-6 sm:p-8 text-sm text-heading shadow-xs focus:outline-hidden focus:ring-2 focus:ring-primary/20 leading-relaxed font-sans prose prose-neutral max-w-none [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-primary [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-black [&_h3]:text-heading [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-2.5 [&_ul]:list-disc [&_ul]:pr-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pr-5 [&_ol]:mb-3 [&_blockquote]:border-r-4 [&_blockquote]:border-primary/60 [&_blockquote]:bg-field-bg/60 [&_blockquote]:p-3 [&_blockquote]:rounded-lg [&_blockquote]:my-3 [&_hr]:my-4 [&_hr]:border-border cursor-text"
+            dir="rtl"
+          />
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════
+            Customer Live Preview Canvas
+        ══════════════════════════════════════════════════════════════ */}
+        <div
+          key="preview-canvas-container"
+          className={activeView === "preview" ? "bg-app-bg/50 p-6 min-h-[500px]" : "hidden"}
+        >
+          <div className="w-full rounded-2xl border border-border/80 bg-surface p-6 sm:p-10 shadow-xs">
+            {/* Document Header Letterhead */}
+            <div className="flex items-center justify-between border-b border-border/60 pb-4 mb-6">
+              <div className="flex items-center gap-2">
+                <span className="font-black text-lg text-primary tracking-wide">VIORA</span>
+                <span className="text-xs text-text-secondary">· وثيقة شروط وأحكام الاستخدام الرسمية</span>
+              </div>
+              <span className="rounded-full bg-field-bg px-3 py-1 text-xs font-bold text-text-secondary">
+                تاريخ النشر: {formatDate(updatedAt)}
+              </span>
+            </div>
+
+            <h1 className="text-2xl font-black text-heading mb-6 leading-tight">
+              {title}
+            </h1>
+
+            {/* Rendered Content */}
+            <div
+              dangerouslySetInnerHTML={{ __html: cleanTermsHtml(previewContent) }}
+              className="text-sm text-heading leading-relaxed font-sans prose prose-neutral max-w-none [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-primary [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-black [&_h3]:text-heading [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-2.5 [&_ul]:list-disc [&_ul]:pr-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pr-5 [&_ol]:mb-3 [&_blockquote]:border-r-4 [&_blockquote]:border-primary/60 [&_blockquote]:bg-field-bg/60 [&_blockquote]:p-3 [&_blockquote]:rounded-lg [&_blockquote]:my-3 [&_hr]:my-4 [&_hr]:border-border"
               dir="rtl"
             />
           </div>
-        ) : (
-          /* ══════════════════════════════════════════════════════════════
-              Customer Live Preview Canvas
-          ══════════════════════════════════════════════════════════════ */
-          <div className="bg-app-bg/50 p-6 min-h-[500px]">
-            <div className="w-full rounded-2xl border border-border/80 bg-surface p-6 sm:p-10 shadow-xs">
-              {/* Document Header Letterhead */}
-              <div className="flex items-center justify-between border-b border-border/60 pb-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="font-black text-lg text-primary tracking-wide">VIORA</span>
-                  <span className="text-xs text-text-secondary">· وثيقة شروط وأحكام الاستخدام الرسمية</span>
-                </div>
-                <span className="rounded-full bg-field-bg px-3 py-1 text-xs font-bold text-text-secondary">
-                  تاريخ النشر: {formatDate(updatedAt)}
-                </span>
-              </div>
-
-              <h1 className="text-2xl font-black text-heading mb-6 leading-tight">
-                {title}
-              </h1>
-
-              {/* Rendered Content */}
-              <div
-                dangerouslySetInnerHTML={{ __html: previewContent }}
-                className="text-sm text-heading leading-relaxed font-sans prose prose-neutral max-w-none [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-primary [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-black [&_h3]:text-heading [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-2.5 [&_ul]:list-disc [&_ul]:pr-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pr-5 [&_ol]:mb-3 [&_blockquote]:border-r-4 [&_blockquote]:border-primary/60 [&_blockquote]:bg-field-bg/60 [&_blockquote]:p-3 [&_blockquote]:rounded-lg [&_blockquote]:my-3 [&_hr]:my-4 [&_hr]:border-border"
-                dir="rtl"
-              />
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Footer Actions */}
         <div className="flex items-center justify-between border-t border-border/70 bg-surface p-4">

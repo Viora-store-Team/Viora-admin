@@ -45,12 +45,16 @@ export const STORE_STATUS: Record<StoreStatus, StatusMeta> = {
 };
 
 export const STORE_ORDER_STATUS: Record<StoreOrderStatus, StatusMeta> = {
+  PENDING: { label: "بانتظار الموافقة", tone: "warning" },
+  ACCEPTED: { label: "قيد التجهيز", tone: "info" },
+  REJECTED: { label: "مرفوض", tone: "danger" },
+  DELIVERED: { label: "تم التوصيل", tone: "success" },
+  CANCELLED: { label: t.admin.orders.statusCancelled, tone: "danger" },
   NEW: { label: t.admin.orders.statusNew, tone: "info" },
   PROCESSING: { label: t.admin.orders.statusProcessing, tone: "warning" },
   READY: { label: t.admin.orders.statusReady, tone: "primary" },
   SHIPPED: { label: t.admin.orders.statusShipped, tone: "neutral" },
   COMPLETED: { label: t.admin.orders.statusCompleted, tone: "success" },
-  CANCELLED: { label: t.admin.orders.statusCancelled, tone: "danger" },
 };
 
 export const REPORT_STATUS: Record<ReportStatus, StatusMeta> = {
