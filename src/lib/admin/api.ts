@@ -40,6 +40,12 @@ import type {
   StoreRatingSummary,
   StoreStatus,
   TopStoreRow,
+  AdminContentAuthor,
+  AdminContentKey,
+  AdminContentPageDetail,
+  AdminContentPageListItem,
+  AdminContentPagePayload,
+  AdminOrderDetail,
 } from "./types";
 import { ADMIN_LIMITS } from "./types";
 
@@ -214,6 +220,17 @@ export function fetchStoreOrders(
       sort: params.sort,
     })}`,
   );
+}
+
+/**
+ * ✅ `GET /admin/orders/:id`
+ *
+ * تفاصيل طلب واحد بمنظور إداري شامل (الزبون، المتجر، الطلبية الأم ومتاجرها الأخرى).
+ */
+export function fetchAdminOrderDetail(
+  orderId: number,
+): Promise<ApiResponse & { order?: AdminOrderDetail }> {
+  return adminFetch(`/admin/orders/${orderId}`);
 }
 
 // ─── المستخدمون ✅ ─────────────────────────────────────────────
@@ -547,9 +564,34 @@ export function saveStaticPage(
 }
 
 /**
- * 📜 مسار الشروط والأحكام المخصص للـ MVP
- * `GET /admin/terms` و `PUT /admin/terms`
+ * 📜 إدارة المحتوى والصفحات الثابتة (شروط وأحكام · خصوصية · من نحن)
+ * `GET /admin/content`
+ * `GET /admin/content/:key`
+ * `PUT /admin/content/:key`
  */
+export function fetchAdminContentPages(): Promise<
+  ApiResponse & { pages?: AdminContentPageListItem[] }
+> {
+  return adminFetch("/admin/content");
+}
+
+export function fetchAdminContentPage(
+  key: string,
+): Promise<ApiResponse & { page?: AdminContentPageDetail }> {
+  return adminFetch(`/admin/content/${key}`);
+}
+
+export function saveAdminContentPage(
+  key: string,
+  payload: AdminContentPagePayload,
+): Promise<ApiResponse & { page?: AdminContentPageDetail }> {
+  return adminFetch(`/admin/content/${key}`, {
+    method: "PUT",
+    ...json(payload),
+  });
+}
+
+// ─── توافقية سابقة للمسار القديم ───
 export interface TermsContentPayload {
   title: string;
   content: string;
@@ -562,20 +604,41 @@ export interface TermsContentData {
   updatedAt: string;
 }
 
-export function fetchTermsContent(): Promise<
+export async function fetchTermsContent(): Promise<
   ApiResponse & { data?: TermsContentData }
 > {
-  return adminFetch("/admin/terms") as Promise<ApiResponse & { data?: TermsContentData }>;
+  const res = await fetchAdminContentPage("terms");
+  return {
+    ...res,
+    data: res.page
+      ? {
+          key: res.page.key,
+          title: res.page.title,
+          content: res.page.html,
+          updatedAt: res.page.updatedAt || "",
+        }
+      : undefined,
+  };
 }
 
-export function saveTermsContent(
+export async function saveTermsContent(
   payload: TermsContentPayload,
-): Promise<
-  ApiResponse & { data?: TermsContentData }
-> {
-  return adminFetch("/admin/terms", { method: "PUT", ...json(payload) }) as Promise<
-    ApiResponse & { data?: TermsContentData }
-  >;
+): Promise<ApiResponse & { data?: TermsContentData }> {
+  const res = await saveAdminContentPage("terms", {
+    title: payload.title,
+    html: payload.content,
+  });
+  return {
+    ...res,
+    data: res.page
+      ? {
+          key: res.page.key,
+          title: res.page.title,
+          content: res.page.html,
+          updatedAt: res.page.updatedAt || "",
+        }
+      : undefined,
+  };
 }
 
 export function fetchBanners(): Promise<ApiResponse & { banners?: Banner[] }> {

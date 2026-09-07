@@ -265,6 +265,66 @@ export interface StoreOrder {
   status: StoreOrderStatus;
 }
 
+export interface AdminOrderCustomer {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string | null;
+}
+
+export interface AdminOrderStoreOwner {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string | null;
+}
+
+export interface AdminOrderStore {
+  id: number;
+  name: string;
+  slug?: string;
+  logoUrl?: string | null;
+  owner?: AdminOrderStoreOwner | null;
+}
+
+export interface AdminOrderGroupSibling {
+  id: number;
+  orderNumber: string;
+  storeId: number;
+  storeName?: string;
+  status: StoreOrderStatus;
+  subtotal?: string;
+  total: string;
+}
+
+export interface AdminOrderGroup {
+  id: number;
+  groupNumber?: string;
+  totalAmount: string;
+  orders: AdminOrderGroupSibling[];
+}
+
+export interface AdminOrderDetail {
+  id: number;
+  orderNumber: string;
+  status: StoreOrderStatus;
+  subtotal?: string;
+  shippingFee?: string;
+  total: string;
+  paymentMethod: PaymentMethod;
+  recipientName: string;
+  recipientPhone: string;
+  city: string;
+  address: string;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  store: AdminOrderStore;
+  customer: AdminOrderCustomer;
+  items: StoreOrderItem[];
+  group?: AdminOrderGroup | null;
+}
+
 // ─── ٣ · المستخدمون ────────────────────────────────────────────
 
 /*
@@ -634,6 +694,39 @@ export interface FeaturedCollection {
 
 export type FeaturedCollectionPayload = Omit<FeaturedCollection, "id" | "productsCount">;
 
+// ─── إدارة المحتوى والصفحات الثابتة 🟢 ──────────────────────
+
+export type AdminContentKey = "terms" | "privacy" | "about" | "faq";
+
+export interface AdminContentAuthor {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface AdminContentPageListItem {
+  key: AdminContentKey;
+  title: string;
+  isPublished: boolean;
+  updatedAt: string | null;
+  updatedBy: AdminContentAuthor | null;
+}
+
+export interface AdminContentPageDetail {
+  key: AdminContentKey;
+  title: string;
+  html: string;
+  isPublished: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+  updatedBy: AdminContentAuthor | null;
+}
+
+export interface AdminContentPagePayload {
+  title: string;
+  html: string;
+}
+
 // ─── حدود مشتركة ───────────────────────────────────────────────
 
 export const ADMIN_LIMITS = {
@@ -648,3 +741,4 @@ export const ADMIN_LIMITS = {
   pageTitleMax: 120,
   pageBodyMax: 20000,
 } as const;
+

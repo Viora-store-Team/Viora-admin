@@ -3,11 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   ArrowUpDown,
+  Building2,
   Eye,
+  Layers,
   MapPin,
   Package,
   Search,
   ShoppingBag,
+  Store,
   User,
   XCircle,
 } from "lucide-react";
@@ -20,9 +23,10 @@ import Pagination from "@/components/ui/Pagination";
 import Spinner from "@/components/ui/Spinner";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { TableShell, Td, Thead } from "@/components/ui/Table";
-import { fetchStoreOrders } from "@/lib/admin/api";
+import { fetchStoreOrders, fetchAdminOrderDetail } from "@/lib/admin/api";
 import { STORE_ORDER_STATUS } from "@/lib/admin/status";
 import type {
+  AdminOrderDetail,
   StoreOrder,
   StoreOrderStatus,
 } from "@/lib/admin/types";
@@ -68,6 +72,24 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<StoreOrder | null>(null);
+  const [orderDetail, setOrderDetail] = useState<AdminOrderDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  const handleOpenOrder = async (order: StoreOrder) => {
+    setSelectedOrder(order);
+    setLoadingDetail(true);
+    setOrderDetail(null);
+    try {
+      const res = await fetchAdminOrderDetail(order.id);
+      if (res.success && res.order) {
+        setOrderDetail(res.order);
+      }
+    } catch {
+      // fallback to selectedOrder
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -326,7 +348,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                       <Button
                         size="sm"
                         variant="secondary"
-                        onClick={() => setSelectedOrder(order)}
+                        onClick={() => handleOpenOrder(order)}
                         icon={<Eye className="size-3.5" />}
                       >
                         {t.admin.orders.reviewOrder}
@@ -352,7 +374,10 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-            onClick={() => setSelectedOrder(null)}
+            onClick={() => {
+              setSelectedOrder(null);
+              setOrderDetail(null);
+            }}
           />
 
           <div className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-xl">
@@ -360,125 +385,236 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-extrabold text-heading">
-                    {t.admin.orders.detailsTitle} ({selectedOrder.orderNumber})
+                    {t.admin.orders.detailsTitle} ({orderDetail?.orderNumber || selectedOrder.orderNumber})
                   </h3>
-                  <StatusBadge meta={STORE_ORDER_STATUS[selectedOrder.status]} />
+                  <StatusBadge meta={STORE_ORDER_STATUS[orderDetail?.status || selectedOrder.status]} />
                 </div>
                 <p className="text-xs text-text-secondary">
-                  {formatDate(selectedOrder.createdAt)}
+                  {formatDate(orderDetail?.createdAt || selectedOrder.createdAt)}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedOrder(null)}
-                className="grid size-8 place-items-center rounded-xl text-text-secondary hover:bg-field-bg hover:text-heading"
+                onClick={() => {
+                  setSelectedOrder(null);
+                  setOrderDetail(null);
+                }}
+                className="grid size-8 place-items-center rounded-xl text-text-secondary hover:bg-field-bg hover:text-heading cursor-pointer"
               >
                 <XCircle className="size-5" />
               </button>
             </div>
 
-            <div className="mt-6 flex flex-col gap-6">
-              {/* Customer & Address Grid */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="rounded-xl border border-border/70 bg-field-bg/40 p-4">
-                  <p className="flex items-center gap-2 text-xs font-bold text-text-secondary">
-                    <User className="size-4 text-primary" />
-                    {t.admin.orders.customerInfo}
-                  </p>
-                  <p className="mt-2 text-sm font-bold text-heading">
-                    {selectedOrder.customerName}
-                  </p>
-                  {selectedOrder.customerPhone && (
-                    <p className="ltr-nums mt-1 text-xs text-text-secondary">
-                      {selectedOrder.customerPhone}
-                    </p>
-                  )}
-                  {selectedOrder.customerEmail && (
-                    <p className="mt-1 text-xs text-text-secondary">
-                      {selectedOrder.customerEmail}
-                    </p>
-                  )}
-                </div>
-
-                <div className="rounded-xl border border-border/70 bg-field-bg/40 p-4">
-                  <p className="flex items-center gap-2 text-xs font-bold text-text-secondary">
-                    <MapPin className="size-4 text-primary" />
-                    {t.admin.orders.shippingAddress}
-                  </p>
-                  <p className="mt-2 text-sm font-bold text-heading">
-                    {selectedOrder.city}
-                  </p>
-                  <p className="mt-1 text-xs text-text-secondary">
-                    {selectedOrder.address}
-                  </p>
-                </div>
+            {loadingDetail ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Spinner variant="inline" className="size-8 border-3" />
+                <p className="mt-3 text-xs font-bold text-text-secondary">
+                  جاري جلب تفاصيل الطلب الإدارية الكاملة...
+                </p>
               </div>
-
-              {/* Items List */}
-              <div>
-                <h4 className="mb-3 text-sm font-extrabold text-heading">
-                  {t.admin.orders.itemsList} ({selectedOrder.itemsCount})
-                </h4>
-                <div className="divide-y divide-border/60 rounded-xl border border-border/80">
-                  {(selectedOrder.items || []).map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-3.5 text-sm"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="grid size-9 place-items-center rounded-lg bg-field-bg text-text-secondary">
-                          <Package className="size-4" />
+            ) : (
+              <div className="mt-6 flex flex-col gap-6">
+                {/* 🌟 Multi-store Parent Group (Admin Perspective) */}
+                {orderDetail?.group && (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="grid size-7 place-items-center rounded-lg bg-primary text-white">
+                          <Layers className="size-4" />
                         </span>
                         <div>
-                          <p className="font-bold text-heading">{item.productName}</p>
-                          <p className="text-xs text-text-secondary">
-                            {item.variant} · مقاس {item.size}
+                          <p className="text-xs font-black text-heading">
+                            الطلبية الأم المشتركة (#{orderDetail.group.id})
+                          </p>
+                          <p className="text-[11px] font-bold text-text-secondary">
+                            قام الزبون بطلب هذه السلة من {orderDetail.group.orders.length} متجر مختلف
                           </p>
                         </div>
                       </div>
                       <div className="text-left">
-                        <p className="ltr-nums font-bold text-heading">
-                          {formatCurrency(Number(item.price))} × {item.quantity}
-                        </p>
-                        <p className="ltr-nums text-xs font-medium text-text-secondary">
-                          {formatCurrency(Number(item.price) * item.quantity)}
-                        </p>
+                        <span className="text-[10px] font-bold text-text-secondary block">
+                          إجمالي ما دفعه الزبون بالكامل
+                        </span>
+                        <span className="ltr-nums text-sm font-black text-primary">
+                          {formatCurrency(Number(orderDetail.group.totalAmount))}
+                        </span>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Financial Summary */}
-              <div className="rounded-xl border border-border/80 bg-field-bg/50 p-4">
-                <div className="flex items-center justify-between py-1 text-sm text-text-secondary">
-                  <span>{t.admin.orders.subtotal}</span>
-                  <span className="ltr-nums font-bold text-heading">
-                    {formatCurrency(
-                      Number(selectedOrder.total) -
-                        Number(selectedOrder.shippingFee || 0),
+                    {/* Sibling Stores in this Group */}
+                    {orderDetail.group.orders.length > 1 && (
+                      <div className="mt-3 divide-y divide-border/50 border-t border-border/60 pt-2">
+                        <p className="mb-2 text-[11px] font-extrabold text-heading">
+                          متاجر الطلبية الأخرى وحالتها:
+                        </p>
+                        <div className="space-y-1.5">
+                          {orderDetail.group.orders.map((sib) => {
+                            const isCurrent = sib.id === (orderDetail?.id || selectedOrder.id);
+                            return (
+                              <div
+                                key={sib.id}
+                                className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs ${
+                                  isCurrent
+                                    ? "bg-surface font-black text-primary shadow-2xs"
+                                    : "text-text-secondary"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Store className="size-3.5 text-text-secondary" />
+                                  <span>{sib.storeName || `متجر #${sib.storeId}`}</span>
+                                  {isCurrent && (
+                                    <span className="rounded bg-primary/10 px-1.5 py-0.2 text-[10px] font-extrabold text-primary">
+                                      هذا الطلب
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="ltr-nums font-bold">
+                                    {formatCurrency(Number(sib.total))}
+                                  </span>
+                                  <StatusBadge meta={STORE_ORDER_STATUS[sib.status]} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     )}
-                  </span>
+                  </div>
+                )}
+
+                {/* Customer Account & Delivery Info Grid */}
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="rounded-xl border border-border/70 bg-field-bg/40 p-4">
+                    <p className="flex items-center gap-2 text-xs font-bold text-text-secondary">
+                      <User className="size-4 text-primary" />
+                      {t.admin.orders.customerInfo}
+                    </p>
+                    <p className="mt-2 text-sm font-bold text-heading">
+                      {orderDetail?.customer?.name || selectedOrder.customerName}
+                    </p>
+                    {(orderDetail?.customer?.phone || selectedOrder.customerPhone) && (
+                      <p className="ltr-nums mt-1 text-xs text-text-secondary">
+                        {orderDetail?.customer?.phone || selectedOrder.customerPhone}
+                      </p>
+                    )}
+                    {(orderDetail?.customer?.email || selectedOrder.customerEmail) && (
+                      <p className="mt-1 text-xs text-text-secondary">
+                        {orderDetail?.customer?.email || selectedOrder.customerEmail}
+                      </p>
+                    )}
+                    {orderDetail?.recipientName &&
+                      orderDetail.recipientName !== (orderDetail.customer?.name || selectedOrder.customerName) && (
+                        <div className="mt-2 border-t border-border/50 pt-1.5 text-[11px] text-text-secondary">
+                          <span className="font-bold">المستلم: </span>
+                          <span>{orderDetail.recipientName}</span>
+                          {orderDetail.recipientPhone && (
+                            <span className="ltr-nums block">{orderDetail.recipientPhone}</span>
+                          )}
+                        </div>
+                      )}
+                  </div>
+
+                  <div className="rounded-xl border border-border/70 bg-field-bg/40 p-4">
+                    <p className="flex items-center gap-2 text-xs font-bold text-text-secondary">
+                      <MapPin className="size-4 text-primary" />
+                      {t.admin.orders.shippingAddress}
+                    </p>
+                    <p className="mt-2 text-sm font-bold text-heading">
+                      {orderDetail?.city || selectedOrder.city}
+                    </p>
+                    <p className="mt-1 text-xs text-text-secondary">
+                      {orderDetail?.address || selectedOrder.address}
+                    </p>
+                    {orderDetail?.notes && (
+                      <div className="mt-2 rounded bg-surface p-2 text-[11px] font-bold text-text-secondary">
+                        <span className="text-primary font-black">ملاحظة التوصيل: </span>
+                        {orderDetail.notes}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center justify-between py-1 text-sm text-text-secondary">
-                  <span>{t.admin.orders.shippingFee}</span>
-                  <span className="ltr-nums font-bold text-heading">
-                    {Number(selectedOrder.shippingFee) > 0
-                      ? formatCurrency(Number(selectedOrder.shippingFee))
-                      : t.admin.orders.freeShipping}
-                  </span>
+
+                {/* Items List */}
+                <div>
+                  <h4 className="mb-3 text-sm font-extrabold text-heading">
+                    {t.admin.orders.itemsList} ({(orderDetail?.items || selectedOrder.items || []).length})
+                  </h4>
+                  <div className="divide-y divide-border/60 rounded-xl border border-border/80 overflow-hidden">
+                    {(orderDetail?.items || selectedOrder.items || []).map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-3.5 text-sm"
+                      >
+                        <div className="flex items-center gap-3">
+                          {item.productImage ? (
+                            <img
+                              src={item.productImage}
+                              alt={item.productName}
+                              className="size-10 rounded-lg object-cover border border-border/80"
+                            />
+                          ) : (
+                            <span className="grid size-10 place-items-center rounded-lg bg-field-bg text-text-secondary">
+                              <Package className="size-4" />
+                            </span>
+                          )}
+                          <div>
+                            <p className="font-bold text-heading">{item.productName}</p>
+                            <p className="text-xs text-text-secondary">
+                              {item.variant ? `لون/نوع: ${item.variant}` : ""}
+                              {item.variant && item.size ? " · " : ""}
+                              {item.size ? `مقاس: ${item.size}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-left">
+                          <p className="ltr-nums font-bold text-heading">
+                            {formatCurrency(Number(item.price))} × {item.quantity}
+                          </p>
+                          <p className="ltr-nums text-xs font-medium text-text-secondary">
+                            {formatCurrency(Number(item.price) * item.quantity)}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex items-center justify-between border-t border-border/80 pt-2 text-base font-extrabold text-heading">
-                  <span>{t.admin.orders.grandTotal}</span>
-                  <span className="ltr-nums text-primary">
-                    {formatCurrency(Number(selectedOrder.total))}
-                  </span>
+
+                {/* Financial Summary */}
+                <div className="rounded-xl border border-border/80 bg-field-bg/50 p-4">
+                  <div className="flex items-center justify-between py-1 text-sm text-text-secondary">
+                    <span>{t.admin.orders.subtotal}</span>
+                    <span className="ltr-nums font-bold text-heading">
+                      {formatCurrency(
+                        Number(orderDetail?.subtotal ?? (Number(selectedOrder.total) - Number(selectedOrder.shippingFee || 0))),
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-1 text-sm text-text-secondary">
+                    <span>{t.admin.orders.shippingFee}</span>
+                    <span className="ltr-nums font-bold text-heading">
+                      {Number(orderDetail?.shippingFee ?? selectedOrder.shippingFee) > 0
+                        ? formatCurrency(Number(orderDetail?.shippingFee ?? selectedOrder.shippingFee))
+                        : t.admin.orders.freeShipping}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-border/80 pt-2 text-base font-extrabold text-heading">
+                    <span>{t.admin.orders.grandTotal}</span>
+                    <span className="ltr-nums text-primary font-black">
+                      {formatCurrency(Number(orderDetail?.total ?? selectedOrder.total))}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="mt-6 flex justify-end">
-              <Button onClick={() => setSelectedOrder(null)}>
+              <Button
+                onClick={() => {
+                  setSelectedOrder(null);
+                  setOrderDetail(null);
+                }}
+              >
                 {t.admin.common.backToList}
               </Button>
             </div>
