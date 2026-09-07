@@ -1,9 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { getActiveNavItem, NAV_ITEMS, type NavItem } from "@/config/nav";
 import { t } from "@/lib/strings";
+import NotificationsDropdown from "@/components/layout/NotificationsDropdown";
 
 interface TopbarProps {
   onOpenMenu: () => void;
@@ -38,14 +39,7 @@ export default function Topbar({
       </p>
 
       <div className="ms-auto flex items-center gap-2">
-        <button
-          type="button"
-          aria-label={t.nav.notifications}
-          className="relative grid size-10 place-items-center rounded-xl bg-field-bg text-field-label transition hover:bg-primary-soft hover:text-primary"
-        >
-          <Bell className="size-5" aria-hidden="true" />
-          <span className="absolute end-2.5 top-2.5 size-2 rounded-full bg-danger ring-2 ring-app-bg" />
-        </button>
+        <NotificationsDropdown />
       </div>
     </header>
   );

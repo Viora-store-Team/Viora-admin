@@ -727,6 +727,47 @@ export interface AdminContentPagePayload {
   html: string;
 }
 
+// ─── نظام الإشعارات والجرس 🔔 ──────────────────────────────────
+
+export type NotificationType =
+  | "ORDER_PLACED"
+  | "ORDER_ACCEPTED"
+  | "ORDER_REJECTED"
+  | "ORDER_DELIVERED"
+  | "ORDER_CANCELLED"
+  | "STORE_APPROVED"
+  | "STORE_REJECTED"
+  | "STORE_SUSPENDED"
+  | "STORE_ACTIVATED"
+  | string;
+
+export interface AppNotification {
+  id: number;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data?: {
+    groupId?: number | string;
+    orderId?: number | string;
+    orderNumber?: string;
+    storeId?: number | string;
+    [key: string]: any;
+  } | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationsListResponse {
+  unread?: number;
+  notifications?: AppNotification[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 // ─── حدود مشتركة ───────────────────────────────────────────────
 
 export const ADMIN_LIMITS = {

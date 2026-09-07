@@ -46,6 +46,8 @@ import type {
   AdminContentPageListItem,
   AdminContentPagePayload,
   AdminOrderDetail,
+  AppNotification,
+  NotificationsListResponse,
 } from "./types";
 import { ADMIN_LIMITS } from "./types";
 
@@ -735,5 +737,48 @@ export function deleteFeaturedCollection(
   id: number,
 ): Promise<ApiResponse & { collections?: FeaturedCollection[] }> {
   return adminFetch(`/admin/collections/${id}`, { method: "DELETE" });
+}
+
+// ─── الإشعارات والجرس 🔔 ─────────────────────────────────────
+
+/**
+ * ✅ `GET /notifications?page&limit`
+ * جلب قائمة الإشعارات وعدد غير المقروء
+ */
+export function fetchNotifications(
+  page = 1,
+  limit = 20,
+): Promise<ApiResponse & NotificationsListResponse> {
+  return adminFetch(`/notifications${query({ page, limit })}`);
+}
+
+/**
+ * ✅ `GET /notifications/count`
+ * جلب عدد الإشعارات غير المقروءة فقط (خفيف للشارة)
+ */
+export function fetchUnreadNotificationsCount(): Promise<
+  ApiResponse & { unread?: number }
+> {
+  return adminFetch("/notifications/count");
+}
+
+/**
+ * ✅ `PATCH /notifications/:id/read`
+ * تعليم إشعار واحد كمقروء
+ */
+export function markNotificationAsRead(
+  id: number,
+): Promise<ApiResponse & { unread?: number }> {
+  return adminFetch(`/notifications/${id}/read`, { method: "PATCH" });
+}
+
+/**
+ * ✅ `PATCH /notifications/read-all`
+ * تعليم جميع الإشعارات كمقروءة
+ */
+export function markAllNotificationsAsRead(): Promise<
+  ApiResponse & { marked?: number; unread?: number }
+> {
+  return adminFetch("/notifications/read-all", { method: "PATCH" });
 }
 
