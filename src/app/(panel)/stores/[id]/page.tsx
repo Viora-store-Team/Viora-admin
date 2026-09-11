@@ -25,6 +25,7 @@ import {
   StarOff,
   Store as StoreIcon,
   Tag,
+  Trash2,
   TriangleAlert,
   User,
 } from "lucide-react";
@@ -43,6 +44,7 @@ import {
   activateStore,
   activateUser,
   approveStore,
+  deleteStore,
   featureStore,
   fetchStore,
   rejectStore,
@@ -66,6 +68,7 @@ type Dialog =
   | "activate"
   | "feature"
   | "unfeature"
+  | "delete"
   | null;
 
 type ActiveSection = "info" | "orders";
@@ -368,6 +371,35 @@ export default function AdminStoreDetailPage({
     showFlash(t.admin.stores.didUnfeature);
   }, [storeId, showFlash]);
 
+  const handleDeleteStore = useCallback(async () => {
+    setBusy(true);
+    setError("");
+
+    const res = await deleteStore(storeId);
+    if (!res.success) {
+      setBusy(false);
+      setDialog(null);
+      if (res.ordersCount && res.ordersCount > 0) {
+        setError(
+          `لا يمكن حذف المتجر لوجود ${res.ordersCount} طلب/طلبات مسجلة عليه. يمكنك إيقافه أو حظره بدلاً من ذلك.`,
+        );
+        return;
+      }
+      const failure = classifyStatus(res);
+      setError(
+        failure.kind === "unauthorized"
+          ? t.admin.common.sessionInvalid
+          : (res.message || failure.message),
+      );
+      return;
+    }
+
+    setBusy(false);
+    setDialog(null);
+    showFlash("تم حذف المتجر وحساب التاجر نهائياً بنجاح 🗑️");
+    router.push("/stores");
+  }, [storeId, router, showFlash]);
+
   if (loading) return <Spinner />;
 
   if (notFound) {
@@ -599,6 +631,15 @@ export default function AdminStoreDetailPage({
                   {t.admin.stores.reReview}
                 </Button>
               )}
+
+              <Button
+                variant="danger"
+                disabled={busy}
+                onClick={() => setDialog("delete")}
+                icon={<Trash2 className="size-4" aria-hidden="true" />}
+              >
+                حذف المتجر
+              </Button>
             </div>
           </div>
 
@@ -967,6 +1008,17 @@ export default function AdminStoreDetailPage({
         confirmLabel={t.admin.stores.unfeature}
         loading={busy}
         onConfirm={handleUnfeatureStore}
+        onCancel={() => setDialog(null)}
+      />
+
+      <ConfirmDialog
+        open={dialog === "delete"}
+        tone="danger"
+        title="حذف المتجر نهائياً ⚠️"
+        body={`هل أنت متأكد من رغبتك بحذف متجر "${displayName}" بشكل نهائي؟\n\nتنبيه: سيتم حذف المتجر مع كافة منتجاته وتصنيفاته وصوره، وحذف حساب التاجر التابع له نهائياً.\n(ملاحظة: لا يمكن حذف المتجر إذا كانت له أي طلبات سابقة).`}
+        confirmLabel="نعم، حذف نهائي"
+        loading={busy}
+        onConfirm={handleDeleteStore}
         onCancel={() => setDialog(null)}
       />
     </div>

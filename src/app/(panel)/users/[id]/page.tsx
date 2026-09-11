@@ -8,6 +8,7 @@ import {
   Check,
   CircleCheck,
   PowerOff,
+  Trash2,
   UserRound,
 } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
@@ -20,7 +21,7 @@ import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
 import InfoGrid from "@/components/admin/InfoGrid";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { activateUser, fetchUser, suspendUser } from "@/lib/admin/api";
+import { activateUser, deleteUser, fetchUser, suspendUser } from "@/lib/admin/api";
 import { accountStatus, ROLE_LABEL, STORE_STATUS } from "@/lib/admin/status";
 import type { AdminUserDetail } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
@@ -30,7 +31,7 @@ import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { useFlash } from "@/lib/useFlash";
 import { t } from "@/lib/strings";
 
-type Dialog = "suspend" | "activate" | null;
+type Dialog = "suspend" | "activate" | "delete" | null;
 
 export default function AdminUserDetailPage({
   params: paramsPromise,
@@ -134,6 +135,39 @@ export default function AdminUserDetailPage({
     [showFlash],
   );
 
+  const handleDeleteUser = useCallback(async () => {
+    setBusy(true);
+    setError("");
+
+    const res = await deleteUser(userId);
+    if (!res.success) {
+      setBusy(false);
+      setDialog(null);
+      if (
+        (res.ordersCount && res.ordersCount > 0) ||
+        (res.storeOrdersCount && res.storeOrdersCount > 0)
+      ) {
+        const cnt = (res.ordersCount || 0) + (res.storeOrdersCount || 0);
+        setError(
+          `لا يمكن حذف هذا الحساب لوجود ${cnt} طلب/طلبات مسجلة عليه كزبون أو متجر. يمكنك إيقاف الحساب بدلاً من ذلك.`,
+        );
+        return;
+      }
+      const failure = classifyStatus(res);
+      setError(
+        failure.kind === "unauthorized"
+          ? t.admin.common.sessionInvalid
+          : (res.message || failure.message),
+      );
+      return;
+    }
+
+    setBusy(false);
+    setDialog(null);
+    showFlash("تم حذف الحساب وبياناته نهائياً بنجاح 🗑️");
+    router.push("/users");
+  }, [userId, router, showFlash]);
+
   if (loading) return <Spinner />;
 
   if (notFound) {
@@ -229,24 +263,35 @@ export default function AdminUserDetailPage({
             </Badge>
           </div>
 
-          {user.isActive ? (
+          <div className="flex flex-wrap items-center gap-2.5">
+            {user.isActive ? (
+              <Button
+                variant="danger"
+                disabled={busy}
+                onClick={() => setDialog("suspend")}
+                icon={<Ban className="size-4" aria-hidden="true" />}
+              >
+                {t.admin.users.suspend}
+              </Button>
+            ) : (
+              <Button
+                disabled={busy}
+                onClick={() => setDialog("activate")}
+                icon={<CircleCheck className="size-4" aria-hidden="true" />}
+              >
+                {t.admin.users.activate}
+              </Button>
+            )}
+
             <Button
               variant="danger"
               disabled={busy}
-              onClick={() => setDialog("suspend")}
-              icon={<Ban className="size-4" aria-hidden="true" />}
+              onClick={() => setDialog("delete")}
+              icon={<Trash2 className="size-4" aria-hidden="true" />}
             >
-              {t.admin.users.suspend}
+              حذف الحساب
             </Button>
-          ) : (
-            <Button
-              disabled={busy}
-              onClick={() => setDialog("activate")}
-              icon={<CircleCheck className="size-4" aria-hidden="true" />}
-            >
-              {t.admin.users.activate}
-            </Button>
-          )}
+          </div>
         </CardBody>
       </Card>
 
@@ -394,6 +439,17 @@ export default function AdminUserDetailPage({
         onConfirm={() =>
           run(() => activateUser(userId), t.admin.users.didActivate)
         }
+        onCancel={() => setDialog(null)}
+      />
+
+      <ConfirmDialog
+        open={dialog === "delete"}
+        tone="danger"
+        title="حذف الحساب نهائياً ⚠️"
+        body={`هل أنت متأكد من رغبتك بحذف حساب "${textOrNull(user.name) ?? user.email}" بشكل نهائي؟\n\nتنبيه: سيتم حذف الحساب وبياناته ومتجره (إن وجد) وعناوينه وسلته ومفضلته بشكل نهائي ولا يمكن التراجع عن هذه العملية.\n(ملاحظة: لا يمكن حذف أي حساب ارتبط بطلبات شراء أو بيع سابقة).`}
+        confirmLabel="نعم، حذف نهائي"
+        loading={busy}
+        onConfirm={handleDeleteUser}
         onCancel={() => setDialog(null)}
       />
     </div>

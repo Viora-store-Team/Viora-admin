@@ -202,6 +202,18 @@ export function unfeatureStore(
 }
 
 /**
+ * ✅ `DELETE /admin/stores/:id`
+ *
+ * حذف متجر نهائياً مع حساب التاجر وتصنيفاته ومنتجاته وصوره.
+ * ⚠️ يرجع 409 لو المتجر عليه ولو طلب واحد.
+ */
+export function deleteStore(
+  id: number,
+): Promise<ApiResponse & { ordersCount?: number; ownerOrdersCount?: number }> {
+  return adminFetch(`/admin/stores/${id}`, { method: "DELETE" });
+}
+
+/**
  * `GET /admin/stores/:id/orders`
  *
  * قائمة طلبات المتجر مع الفلترة حسب الحالة والبحث والترتيب
@@ -293,6 +305,18 @@ export function activateUser(
   id: number,
 ): Promise<ApiResponse & { user?: AdminUserDetail }> {
   return adminFetch(`/admin/users/${id}/activate`, { method: "PATCH" });
+}
+
+/**
+ * ✅ `DELETE /admin/users/:id`
+ *
+ * حذف مستخدم نهائياً مع متجره وسلته وعناوينه ومفضلته.
+ * ⚠️ يرجع 409 لو الحساب عليه أي طلبات (شراء أو بيع).
+ */
+export function deleteUser(
+  id: number,
+): Promise<ApiResponse & { ordersCount?: number; storeOrdersCount?: number }> {
+  return adminFetch(`/admin/users/${id}`, { method: "DELETE" });
 }
 
 // ─── التصنيفات ✅ ──────────────────────────────────────────────
