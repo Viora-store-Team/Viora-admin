@@ -4,6 +4,8 @@ import {
   LayoutDashboard,
   Star,
   Store,
+  Headphones,
+  ShoppingBag,
   Truck,
   Users,
   type LucideIcon,
@@ -23,6 +25,8 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/users", label: t.admin.nav.users, icon: Users },
   { href: "/categories", label: t.admin.nav.categories, icon: FolderTree },
   { href: "/reviews", label: t.admin.nav.reviews, icon: Star },
+  { href: "/orders", label: t.admin.nav.orders, icon: ShoppingBag },
+  { href: "/support", label: t.admin.nav.support, icon: Headphones },
   { href: "/content", label: t.admin.nav.content, icon: FileText },
   { href: "/delivery", label: t.admin.nav.delivery, icon: Truck },
 ];

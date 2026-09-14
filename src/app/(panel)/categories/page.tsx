@@ -45,12 +45,14 @@ import {
   deleteCategory,
   deleteFeaturedCollection,
   deleteOccasionFilter,
+  fetchCategory,
   fetchAdminCategories,
   fetchFeaturedCollections,
   fetchOccasionFilters,
   updateCategory,
   updateFeaturedCollection,
   updateOccasionFilter,
+  reorderCategories,
 } from "@/lib/admin/api";
 import type {
   AdminCategoryNode,
@@ -232,6 +234,44 @@ export default function AdminCategoriesPage() {
 
   const updateCat = (id: number, payload: CategoryUpdatePayload) =>
     run(() => updateCategory(id, payload), t.admin.categories.updated);
+
+  const openCategory = async (node: AdminCategoryNode, parentName?: string) => {
+    setError("");
+    const res = await fetchCategory(node.id);
+    if (res.success && res.category) {
+      setSelectedCategory({ node: res.category, parentName });
+      return;
+    }
+    const failure = classifyStatus(res);
+    setError(failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
+  };
+
+  const moveCategory = async (
+    parentId: number | null,
+    nodeId: number,
+    direction: "up" | "down",
+  ) => {
+    const siblings = parentId === null
+      ? roots
+      : roots.find((root) => root.id === parentId)?.children ?? [];
+    const index = siblings.findIndex((item) => item.id === nodeId);
+    const target = direction === "up" ? index - 1 : index + 1;
+    if (index < 0 || target < 0 || target >= siblings.length) return;
+
+    const ids = siblings.map((item) => item.id);
+    [ids[index], ids[target]] = [ids[target], ids[index]];
+    setSaving(true);
+    setError("");
+    const res = await reorderCategories({ parentId, ids });
+    setSaving(false);
+    if (res.success) {
+      showFlash("تم حفظ ترتيب التصنيفات");
+      await load();
+      return;
+    }
+    const failure = classifyStatus(res);
+    setError(failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
+  };
 
   // عمليات فلاتر المناسبات
   const saveOccasion = (payload: OccasionFilterPayload) => {
@@ -481,15 +521,14 @@ export default function AdminCategoriesPage() {
               disabled={saving}
               searchQuery={searchQuery}
               statusFilter={statusFilter}
-              onSelectNode={(node, parentName) =>
-                setSelectedCategory({ node, parentName })
-              }
+              onSelectNode={openCategory}
               onAddChild={(root) =>
                 setCategoryMode({ kind: "child", parentId: root.id, parentName: root.name })
               }
               onEdit={(node) => setCategoryMode({ kind: "edit", node })}
               onToggleActive={(node) => setPending({ kind: "toggle-category", node })}
               onDelete={(node) => setPending({ kind: "delete-category", node })}
+              onMove={moveCategory}
             />
           )}
         </>

@@ -7,6 +7,7 @@ import type {
   ReviewTarget,
   StoreOrderStatus,
   StoreStatus,
+  SupportTicketStatus,
 } from "./types";
 
 /**
@@ -55,6 +56,9 @@ export const STORE_ORDER_STATUS: Record<StoreOrderStatus, StatusMeta> = {
   READY: { label: t.admin.orders.statusReady, tone: "primary" },
   SHIPPED: { label: t.admin.orders.statusShipped, tone: "neutral" },
   COMPLETED: { label: t.admin.orders.statusCompleted, tone: "success" },
+  HANDED_TO_COURIER: { label: "سُلّم لشركة التوصيل", tone: "info" },
+  PARTIALLY_DELIVERED: { label: "تم توصيل جزء من الطلب", tone: "warning" },
+  RETURNED: { label: "مرتجع", tone: "danger" },
 };
 
 export const REPORT_STATUS: Record<ReportStatus, StatusMeta> = {
@@ -80,6 +84,11 @@ export const REPORT_TARGET_KEYS = [
   "PRODUCT",
   "STORE",
 ] as const satisfies readonly ReportTarget[];
+
+export const SUPPORT_TICKET_STATUS: Record<SupportTicketStatus, StatusMeta> = {
+  OPEN: { label: t.admin.status.ticketOpen, tone: "warning" },
+  RESOLVED: { label: t.admin.status.ticketResolved, tone: "success" },
+};
 
 export const REVIEW_TARGET: Record<ReviewTarget, string> = {
   PRODUCT: t.admin.reports.reviewOnProduct,

@@ -127,11 +127,15 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
         items: (o.items || o.orderItems || []).map((it: any) => ({
           id: it.id ?? 0,
           productName: it.productName || it.product?.name || "منتج",
-          productImage: it.productImage || it.product?.imageUrl || it.product?.image || null,
+          productImage: it.productImage || it.image || it.product?.imageUrl || it.product?.image || null,
+          colorName: it.colorName || it.color || null,
+          sizeName: it.sizeName || it.size || null,
           variant: it.variant || it.color || null,
           size: it.size || null,
           quantity: it.quantity ?? 1,
-          price: String(it.price ?? 0),
+          unitPrice: String(it.unitPrice ?? it.price ?? 0),
+          lineTotal: String(it.lineTotal ?? (Number(it.unitPrice ?? it.price ?? 0) * Number(it.quantity ?? 1))),
+          price: String(it.unitPrice ?? it.price ?? 0),
         })),
         city: o.city || o.address?.city || "—",
         address: o.address?.street || (typeof o.address === "string" ? o.address : o.city || "—"),
@@ -380,17 +384,16 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
             }}
           />
 
-          <div className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-surface p-6 shadow-xl">
-            <div className="flex items-start justify-between border-b border-border/80 pb-4">
+          <div className="relative z-10 max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-border bg-app-bg shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-start justify-between border-b border-border bg-surface px-6 py-5 sm:px-8">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-extrabold text-heading">
-                    {t.admin.orders.detailsTitle} ({orderDetail?.orderNumber || selectedOrder.orderNumber})
+                    {t.admin.orders.detailsTitle}
                   </h3>
-                  <StatusBadge meta={STORE_ORDER_STATUS[orderDetail?.status || selectedOrder.status]} />
                 </div>
                 <p className="text-xs text-text-secondary">
-                  {formatDate(orderDetail?.createdAt || selectedOrder.createdAt)}
+                  {orderDetail?.orderNumber || selectedOrder.orderNumber} · {formatDate(orderDetail?.createdAt || selectedOrder.createdAt)}
                 </p>
               </div>
               <button
@@ -399,7 +402,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                   setSelectedOrder(null);
                   setOrderDetail(null);
                 }}
-                className="grid size-8 place-items-center rounded-xl text-text-secondary hover:bg-field-bg hover:text-heading cursor-pointer"
+                className="grid size-9 place-items-center rounded-xl text-text-secondary hover:bg-field-bg hover:text-heading cursor-pointer"
               >
                 <XCircle className="size-5" />
               </button>
@@ -413,7 +416,30 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                 </p>
               </div>
             ) : (
-              <div className="mt-6 flex flex-col gap-6">
+              <div className="mt-6 flex flex-col gap-5 px-5 pb-5 sm:px-8 sm:pb-8">
+                <section className="flex flex-col gap-4 rounded-2xl bg-primary p-5 text-icon sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-icon/70">حالة الطلب</p>
+                    <div className="mt-2">
+                      <StatusBadge meta={STORE_ORDER_STATUS[orderDetail?.status || selectedOrder.status]} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-5 text-start sm:text-end">
+                    <div>
+                      <p className="text-xs font-bold text-icon/70">إجمالي المنتجات</p>
+                      <p className="mt-1 ltr-nums text-lg font-black">
+                        {formatCurrency(Number(orderDetail?.money?.productsTotal ?? orderDetail?.subtotal ?? selectedOrder.total))}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-icon/70">الإجمالي المطلوب</p>
+                      <p className="mt-1 ltr-nums text-lg font-black">
+                        {formatCurrency(Number(orderDetail?.total ?? selectedOrder.total))}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
                 {/* 🌟 Multi-store Parent Group (Admin Perspective) */}
                 {orderDetail?.group && (
                   <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
@@ -483,9 +509,9 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                   </div>
                 )}
 
-                {/* Customer Account & Delivery Info Grid */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div className="rounded-xl border border-border/70 bg-field-bg/40 p-4">
+                {/* Customer account and delivery information */}
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
                     <p className="flex items-center gap-2 text-xs font-bold text-text-secondary">
                       <User className="size-4 text-primary" />
                       {t.admin.orders.customerInfo}
@@ -493,9 +519,9 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                     <p className="mt-2 text-sm font-bold text-heading">
                       {orderDetail?.customer?.name || selectedOrder.customerName}
                     </p>
-                    {(orderDetail?.customer?.phone || selectedOrder.customerPhone) && (
+                    {(orderDetail?.delivery?.recipientPhone || orderDetail?.customer?.phone || selectedOrder.customerPhone) && (
                       <p className="ltr-nums mt-1 text-xs text-text-secondary">
-                        {orderDetail?.customer?.phone || selectedOrder.customerPhone}
+                        {orderDetail?.delivery?.recipientPhone || orderDetail?.customer?.phone || selectedOrder.customerPhone}
                       </p>
                     )}
                     {(orderDetail?.customer?.email || selectedOrder.customerEmail) && (
@@ -503,98 +529,110 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                         {orderDetail?.customer?.email || selectedOrder.customerEmail}
                       </p>
                     )}
-                    {orderDetail?.recipientName &&
-                      orderDetail.recipientName !== (orderDetail.customer?.name || selectedOrder.customerName) && (
+                    {(orderDetail?.delivery?.recipientName || orderDetail?.recipientName) &&
+                      (orderDetail?.delivery?.recipientName || orderDetail?.recipientName) !== (orderDetail?.customer?.name || selectedOrder.customerName) && (
                         <div className="mt-2 border-t border-border/50 pt-1.5 text-[11px] text-text-secondary">
                           <span className="font-bold">المستلم: </span>
-                          <span>{orderDetail.recipientName}</span>
-                          {orderDetail.recipientPhone && (
-                            <span className="ltr-nums block">{orderDetail.recipientPhone}</span>
+                          <span>{orderDetail?.delivery?.recipientName || orderDetail?.recipientName}</span>
+                          {(orderDetail?.delivery?.recipientPhone || orderDetail?.recipientPhone) && (
+                            <span className="ltr-nums block">{orderDetail?.delivery?.recipientPhone || orderDetail?.recipientPhone}</span>
                           )}
                         </div>
                       )}
                   </div>
 
-                  <div className="rounded-xl border border-border/70 bg-field-bg/40 p-4">
+                  <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
                     <p className="flex items-center gap-2 text-xs font-bold text-text-secondary">
                       <MapPin className="size-4 text-primary" />
                       {t.admin.orders.shippingAddress}
                     </p>
                     <p className="mt-2 text-sm font-bold text-heading">
-                      {orderDetail?.city || selectedOrder.city}
+                      {orderDetail?.delivery?.city || orderDetail?.city || selectedOrder.city}
                     </p>
                     <p className="mt-1 text-xs text-text-secondary">
-                      {orderDetail?.address || selectedOrder.address}
+                      {[orderDetail?.delivery?.area, orderDetail?.delivery?.street, orderDetail?.delivery?.details]
+                        .filter(Boolean)
+                        .join(" — ") || orderDetail?.address || selectedOrder.address}
                     </p>
-                    {orderDetail?.notes && (
+                    {(orderDetail?.delivery?.notes || orderDetail?.notes) && (
                       <div className="mt-2 rounded bg-surface p-2 text-[11px] font-bold text-text-secondary">
                         <span className="text-primary font-black">ملاحظة التوصيل: </span>
-                        {orderDetail.notes}
+                        {orderDetail?.delivery?.notes || orderDetail?.notes}
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Items List */}
-                <div>
-                  <h4 className="mb-3 text-sm font-extrabold text-heading">
+                <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-xs">
+                  <h4 className="border-b border-border px-5 py-4 text-base font-extrabold text-heading">
                     {t.admin.orders.itemsList} ({(orderDetail?.items || selectedOrder.items || []).length})
                   </h4>
-                  <div className="divide-y divide-border/60 rounded-xl border border-border/80 overflow-hidden">
-                    {(orderDetail?.items || selectedOrder.items || []).map((item) => (
-                      <div
+                  <div className="divide-y divide-border/70">
+                    {(orderDetail?.items || selectedOrder.items || []).map((item) => {
+                      const unitPrice = item.unitPrice ?? item.price;
+                      const lineTotal = item.lineTotal ?? String(Number(unitPrice) * item.quantity);
+                      const variant = [item.colorName ?? item.variant, item.sizeName ?? item.size]
+                        .filter(Boolean)
+                        .join(" · ");
+                      const image = item.image ?? item.productImage;
+
+                      return (
+                      <article
                         key={item.id}
-                        className="flex items-center justify-between p-3.5 text-sm"
+                        className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
                       >
-                        <div className="flex items-center gap-3">
-                          {item.productImage ? (
+                        <div className="flex min-w-0 items-center gap-4">
+                          {image ? (
                             <img
-                              src={item.productImage}
+                              src={image}
                               alt={item.productName}
-                              className="size-10 rounded-lg object-cover border border-border/80"
+                              className="size-16 shrink-0 rounded-xl border border-border object-cover"
                             />
                           ) : (
-                            <span className="grid size-10 place-items-center rounded-lg bg-field-bg text-text-secondary">
-                              <Package className="size-4" />
+                            <span className="grid size-16 shrink-0 place-items-center rounded-xl bg-field-bg text-text-secondary">
+                              <Package className="size-5" />
                             </span>
                           )}
-                          <div>
-                            <p className="font-bold text-heading">{item.productName}</p>
-                            <p className="text-xs text-text-secondary">
-                              {item.variant ? `لون/نوع: ${item.variant}` : ""}
-                              {item.variant && item.size ? " · " : ""}
-                              {item.size ? `مقاس: ${item.size}` : ""}
-                            </p>
+                          <div className="min-w-0">
+                            <p className="truncate text-base font-extrabold text-heading">{item.productName}</p>
+                            {variant && <p className="mt-1 text-sm text-text-secondary">{variant}</p>}
                           </div>
                         </div>
-                        <div className="text-left">
-                          <p className="ltr-nums font-bold text-heading">
-                            {formatCurrency(Number(item.price))} × {item.quantity}
-                          </p>
-                          <p className="ltr-nums text-xs font-medium text-text-secondary">
-                            {formatCurrency(Number(item.price) * item.quantity)}
-                          </p>
+                        <div className="grid grid-cols-3 gap-3 rounded-xl bg-field-bg p-3 text-center sm:min-w-[290px]">
+                          <div>
+                            <p className="text-[11px] font-bold text-text-secondary">عدد القطع</p>
+                            <p className="mt-1 ltr-nums font-black text-heading">{item.quantity}</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-bold text-text-secondary">سعر القطعة</p>
+                            <p className="mt-1 ltr-nums font-black text-heading">{formatCurrency(Number(unitPrice))}</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-bold text-text-secondary">إجمالي المنتج</p>
+                            <p className="mt-1 ltr-nums font-black text-primary">{formatCurrency(Number(lineTotal))}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      </article>
+                    )})}
                   </div>
                 </div>
 
                 {/* Financial Summary */}
-                <div className="rounded-xl border border-border/80 bg-field-bg/50 p-4">
+                <div className="rounded-2xl border border-border bg-field-bg/70 p-5">
                   <div className="flex items-center justify-between py-1 text-sm text-text-secondary">
                     <span>{t.admin.orders.subtotal}</span>
                     <span className="ltr-nums font-bold text-heading">
                       {formatCurrency(
-                        Number(orderDetail?.subtotal ?? (Number(selectedOrder.total) - Number(selectedOrder.shippingFee || 0))),
+                        Number(orderDetail?.money?.productsTotal ?? orderDetail?.subtotal ?? (Number(selectedOrder.total) - Number(selectedOrder.shippingFee || 0))),
                       )}
                     </span>
                   </div>
                   <div className="flex items-center justify-between py-1 text-sm text-text-secondary">
                     <span>{t.admin.orders.shippingFee}</span>
                     <span className="ltr-nums font-bold text-heading">
-                      {Number(orderDetail?.shippingFee ?? selectedOrder.shippingFee) > 0
-                        ? formatCurrency(Number(orderDetail?.shippingFee ?? selectedOrder.shippingFee))
+                      {Number(orderDetail?.money?.deliveryFee ?? orderDetail?.delivery?.fee ?? orderDetail?.shippingFee ?? selectedOrder.shippingFee) > 0
+                        ? formatCurrency(Number(orderDetail?.money?.deliveryFee ?? orderDetail?.delivery?.fee ?? orderDetail?.shippingFee ?? selectedOrder.shippingFee))
                         : t.admin.orders.freeShipping}
                     </span>
                   </div>
@@ -608,7 +646,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
               </div>
             )}
 
-            <div className="mt-6 flex justify-end">
+            <div className="flex justify-end border-t border-border bg-surface px-5 py-4 sm:px-8">
               <Button
                 onClick={() => {
                   setSelectedOrder(null);

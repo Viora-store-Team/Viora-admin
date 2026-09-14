@@ -5,6 +5,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronUp,
+  ArrowDown,
+  ArrowUp,
   Eye,
   EyeOff,
   FolderTree,
@@ -38,6 +40,7 @@ interface CategoryTreeProps {
   onEdit: (node: AdminCategoryNode) => void;
   onToggleActive: (node: AdminCategoryNode) => void;
   onDelete: (node: AdminCategoryNode) => void;
+  onMove?: (parentId: number | null, nodeId: number, direction: "up" | "down") => void;
 }
 
 /** تلوين مجموعات المقاسات بشكل بصري جذاب وواضح */
@@ -174,6 +177,7 @@ export default function CategoryTree({
   onEdit,
   onToggleActive,
   onDelete,
+  onMove,
 }: CategoryTreeProps) {
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
 
@@ -367,6 +371,12 @@ export default function CategoryTree({
 
                 {/* أزرار الإجراءات على التصنيف الرئيسي */}
                 <div className="flex items-center gap-2">
+                  {onMove && (
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="sm" disabled={disabled} onClick={() => onMove(null, root.id, "up")} icon={<ArrowUp className="size-3.5" aria-hidden="true" />} title="نقل لأعلى" />
+                      <Button variant="ghost" size="sm" disabled={disabled} onClick={() => onMove(null, root.id, "down")} icon={<ArrowDown className="size-3.5" aria-hidden="true" />} title="نقل لأسفل" />
+                    </div>
+                  )}
                   <Button
                     variant="primary"
                     size="sm"
@@ -462,6 +472,12 @@ export default function CategoryTree({
                               onToggleActive={onToggleActive}
                               onDelete={onDelete}
                             />
+                            {onMove && (
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="sm" disabled={disabled} onClick={() => onMove(root.id, child.id, "up")} icon={<ArrowUp className="size-3.5" aria-hidden="true" />} title="نقل لأعلى" />
+                                <Button variant="ghost" size="sm" disabled={disabled} onClick={() => onMove(root.id, child.id, "down")} icon={<ArrowDown className="size-3.5" aria-hidden="true" />} title="نقل لأسفل" />
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}

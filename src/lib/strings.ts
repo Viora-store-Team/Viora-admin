@@ -101,6 +101,8 @@ export const t = {
       users: "المستخدمون",
       categories: "التصنيفات",
       reviews: "التقييمات",
+      orders: "الطلبات",
+      support: "تذاكر الدعم",
       reports: "البلاغات",
       content: "المحتوى",
       delivery: "التوصيل",
@@ -143,6 +145,8 @@ export const t = {
       storePending: "بانتظار المراجعة",
       storeApproved: "مقبول",
       storeRejected: "مرفوض",
+      ticketOpen: "مفتوحة",
+      ticketResolved: "مقفلة",
     },
 
     dashboard: {
@@ -160,6 +164,8 @@ export const t = {
       orders: "إجمالي الطلبات",
       gmv: "القيمة الإجمالية",
       openReports: "بلاغات مفتوحة",
+      databaseOnline: "قاعدة البيانات متصلة",
+      databaseOffline: "تعذر فحص قاعدة البيانات",
       storeUnit: "متجر",
       userUnit: "مستخدم",
       orderUnit: "طلب",
@@ -324,6 +330,8 @@ export const t = {
       quantity: "الكمية",
       totalPrice: "المجموع",
       freeShipping: "مجاني",
+      globalSubtitle: "كل طلبات المنصة من جميع المتاجر.",
+      colStore: "المتجر",
     },
 
     users: {
@@ -582,6 +590,41 @@ export const t = {
       didResolve: "تم تعليم البلاغ كمعالج",
       didDismiss: "تم رفض البلاغ",
       contentGone: "المحتوى المبلّغ عنه لم يعد موجوداً",
+    },
+
+    support: {
+      title: "تذاكر الدعم",
+      subtitle: "رسائل وشكاوى التجار التي تحتاج متابعة خارج المنصة.",
+      count: "تذكرة",
+      all: "الكل",
+      open: "مفتوحة",
+      resolved: "مقفلة",
+      empty: "لا توجد تذاكر دعم",
+      emptyHint: "عند إرسال تاجر سؤالاً أو شكوى، ستظهر التذكرة هنا.",
+      colSubject: "الموضوع",
+      colMerchant: "التاجر",
+      colStatus: "الحالة",
+      colCreated: "تاريخ الإرسال",
+      detailsTitle: "تفاصيل تذكرة الدعم",
+      sender: "بيانات التاجر",
+      name: "الاسم",
+      ticket: "رسالة التاجر",
+      phone: "الهاتف",
+      email: "البريد الإلكتروني",
+      adminNote: "ملاحظة المعالجة",
+      adminNotePlaceholder: "مثال: تواصلنا مع التاجر وحلّينا المشكلة",
+      noteLimit: "اختيارية، بحد أقصى 1000 حرف.",
+      resolve: "إقفال التذكرة",
+      resolveTitle: "إقفال التذكرة؟",
+      resolveBody:
+        "تأكد أنك عالجت المشكلة أو تواصلت مع التاجر. لا يمكن إعادة فتحها من لوحة الإدارة.",
+      resolvedInfo: "معلومات الإقفال",
+      resolvedAt: "وقت الإقفال",
+      resolvedBy: "أغلقها",
+      didResolve: "تم إقفال التذكرة",
+      alreadyResolved: "هذه التذكرة مقفلة بالفعل.",
+      contactOutside:
+        "لا يوجد رد أو محادثة داخل التطبيق؛ تواصل مع التاجر عبر الهاتف أو البريد الإلكتروني.",
     },
 
     content: {

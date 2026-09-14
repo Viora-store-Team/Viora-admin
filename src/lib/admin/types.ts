@@ -221,7 +221,10 @@ export type StoreOrderStatus =
   | "PROCESSING"
   | "READY"
   | "SHIPPED"
-  | "COMPLETED";
+  | "COMPLETED"
+  | "HANDED_TO_COURIER"
+  | "PARTIALLY_DELIVERED"
+  | "RETURNED";
 
 export const STORE_ORDER_STATUS_KEYS = [
   "PENDING",
@@ -234,6 +237,9 @@ export const STORE_ORDER_STATUS_KEYS = [
   "READY",
   "SHIPPED",
   "COMPLETED",
+  "HANDED_TO_COURIER",
+  "PARTIALLY_DELIVERED",
+  "RETURNED",
 ] as const satisfies readonly StoreOrderStatus[];
 
 export type PaymentMethod = "ONLINE" | "CASH_ON_DELIVERY";
@@ -242,6 +248,12 @@ export interface StoreOrderItem {
   id: number;
   productName: string;
   productImage?: string | null;
+  /** الحقول الفعلية من تفاصيل طلب الأدمن. */
+  image?: string | null;
+  colorName?: string | null;
+  sizeName?: string | null;
+  unitPrice?: string;
+  lineTotal?: string;
   variant?: string | null;
   size?: string | null;
   quantity: number;
@@ -323,6 +335,25 @@ export interface AdminOrderDetail {
   customer: AdminOrderCustomer;
   items: StoreOrderItem[];
   group?: AdminOrderGroup | null;
+  /** الإجماليات التي يرجعها عقد الأدمن الحديث. */
+  money?: {
+    productsTotal?: string | null;
+    deliveryFee?: string | null;
+    payableTotal?: string | null;
+    finalProductsTotal?: string | null;
+    finalTotal?: string | null;
+  } | null;
+  /** عنوان التوصيل كما يرجع من `GET /admin/orders/:id`. */
+  delivery?: {
+    recipientName?: string | null;
+    recipientPhone?: string | null;
+    city?: string | null;
+    area?: string | null;
+    street?: string | null;
+    details?: string | null;
+    fee?: string | null;
+    notes?: string | null;
+  } | null;
 }
 
 // ─── ٣ · المستخدمون ────────────────────────────────────────────
@@ -597,6 +628,53 @@ export interface AdminReportDetail extends AdminReportListItem {
   /** بلاغات سابقة على نفس الهدف — بتساعد المشرف يقرّر */
   relatedCount: number;
   resolvedAt: string | null;
+}
+
+/** الصف المختصر من `GET /admin/orders` — قائمة كل طلبات المنصة. */
+export interface AdminOrderListItem {
+  id: number;
+  orderNumber: string;
+  status: StoreOrderStatus;
+  total: string;
+  itemsCount: number;
+  createdAt: string;
+  recipientName: string;
+  city: string | null;
+  thumbnail: string | null;
+  store: { id: number; name: string } | null;
+  customer: { id: number; name: string; email?: string } | null;
+}
+
+// ─── تذاكر الدعم ───────────────────────────────────────────────
+
+/** تذكرة دعم من تاجر للأدمن — لا محادثة داخل التطبيق. */
+export type SupportTicketStatus = "OPEN" | "RESOLVED";
+
+export interface SupportTicketUser {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+}
+
+export interface SupportTicketResolver {
+  id: number;
+  name: string;
+  email: string;
+}
+
+/** نفس الشكل في القائمة والتفاصيل كما يرسله `/admin/support/tickets`. */
+export interface AdminSupportTicket {
+  id: number;
+  subject: string;
+  message: string;
+  status: SupportTicketStatus;
+  adminNote: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user: SupportTicketUser;
+  resolvedBy: SupportTicketResolver | null;
 }
 
 // ─── ٦ · المحتوى ───────────────────────────────────────────────

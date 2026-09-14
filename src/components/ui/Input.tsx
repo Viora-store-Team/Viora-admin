@@ -35,6 +35,7 @@ interface InputProps extends NativeProps {
   /** استخدم textarea بدل input */
   multiline?: boolean;
   rows?: number;
+  maxLength?: number;
   required?: boolean;
   disabled?: boolean;
   className?: string;
@@ -58,6 +59,7 @@ export default function Input({
   error,
   multiline = false,
   rows = 4,
+  maxLength,
   required = false,
   disabled = false,
   className,
@@ -88,6 +90,7 @@ export default function Input({
     placeholder,
     disabled,
     required,
+    maxLength,
     "aria-invalid": error ? (true as const) : undefined,
     "aria-describedby": errorId,
   };

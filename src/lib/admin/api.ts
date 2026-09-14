@@ -1,10 +1,12 @@
 import type { ApiResponse, Pagination } from "@/lib/api";
 import { adminFetch, query } from "./client";
 import type {
+  AdminOrderListItem,
   AdminCategoryNode,
   AdminCategoryRoot,
   AdminReportDetail,
   AdminReportListItem,
+  AdminSupportTicket,
   AdminStatsCharts,
   AdminStoreDetail,
   AdminStoreListItem,
@@ -39,6 +41,7 @@ import type {
   StoreOrderStatus,
   StoreRatingSummary,
   StoreStatus,
+  SupportTicketStatus,
   TopStoreRow,
   AdminContentAuthor,
   AdminContentKey,
@@ -49,6 +52,7 @@ import type {
   AppNotification,
   NotificationsListResponse,
 } from "./types";
+import { apiFetch } from "@/lib/api";
 import { ADMIN_LIMITS } from "./types";
 
 /**
@@ -245,6 +249,23 @@ export function fetchAdminOrderDetail(
   orderId: number,
 ): Promise<ApiResponse & { order?: AdminOrderDetail }> {
   return adminFetch(`/admin/orders/${orderId}`);
+}
+
+/** `GET /admin/orders?page&limit` — كل طلبات المنصة، مش طلبات متجر واحد. */
+export function fetchAdminOrders(
+  params: Pick<ListParams, "page" | "limit"> = {},
+): Promise<Paged<"orders", AdminOrderListItem> & { statusCounts?: Record<string, number> }> {
+  return adminFetch(
+    `/admin/orders${query({
+      page: params.page ?? 1,
+      limit: params.limit ?? ADMIN_LIMITS.pageLimit,
+    })}`,
+  );
+}
+
+/** فحص تشخيصي خفيف لقاعدة البيانات؛ لا يغيّر بيانات ولا يحتاج توكن. */
+export function fetchDatabaseHealth(): Promise<ApiResponse> {
+  return apiFetch("/health/db", { cache: "no-store" });
 }
 
 // ─── المستخدمون ✅ ─────────────────────────────────────────────
@@ -557,6 +578,39 @@ export function unhideReview(
   id: number,
 ): Promise<ApiResponse & { review?: Review }> {
   return adminFetch(`/admin/reviews/${id}/unhide`, { method: "POST" });
+}
+
+// ─── تذاكر الدعم ✅ ─────────────────────────────────────────────
+
+/** `GET /admin/support/tickets?status&page&limit` — الأقدم أولاً للمفتوحة. */
+export function fetchSupportTickets(
+  params: ListParams & { status?: SupportTicketStatus | "" } = {},
+): Promise<Paged<"tickets", AdminSupportTicket>> {
+  return adminFetch(
+    `/admin/support/tickets${query({
+      page: params.page ?? 1,
+      limit: params.limit ?? 20,
+      status: params.status,
+    })}`,
+  );
+}
+
+/** `GET /admin/support/tickets/:id` */
+export function fetchSupportTicket(
+  id: number,
+): Promise<ApiResponse & { ticket?: AdminSupportTicket }> {
+  return adminFetch(`/admin/support/tickets/${id}`);
+}
+
+/** `PATCH /admin/support/tickets/:id/resolve` — الملاحظة اختيارية، حتى 1000 حرف. */
+export function resolveSupportTicket(
+  id: number,
+  adminNote?: string,
+): Promise<ApiResponse & { ticket?: AdminSupportTicket }> {
+  return adminFetch(`/admin/support/tickets/${id}/resolve`, {
+    method: "PATCH",
+    ...json(adminNote ? { adminNote } : {}),
+  });
 }
 
 // ─── المحتوى 🟡 ────────────────────────────────────────────────

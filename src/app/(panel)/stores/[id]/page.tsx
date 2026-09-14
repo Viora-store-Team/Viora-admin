@@ -326,20 +326,14 @@ export default function AdminStoreDetailPage({
   const handleFeatureStore = useCallback(async () => {
     setBusy(true);
     setError("");
-
     const res = await featureStore(storeId);
     if (!res.success) {
       setBusy(false);
       setDialog(null);
       const failure = classifyStatus(res);
-      setError(
-        failure.kind === "unauthorized"
-          ? t.admin.common.sessionInvalid
-          : failure.message,
-      );
+      setError(failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
       return;
     }
-
     setStore((prev) => (prev ? { ...prev, isFeatured: true } : null));
     setBusy(false);
     setDialog(null);
@@ -349,23 +343,15 @@ export default function AdminStoreDetailPage({
   const handleUnfeatureStore = useCallback(async () => {
     setBusy(true);
     setError("");
-
     const res = await unfeatureStore(storeId);
     if (!res.success) {
       setBusy(false);
       setDialog(null);
       const failure = classifyStatus(res);
-      setError(
-        failure.kind === "unauthorized"
-          ? t.admin.common.sessionInvalid
-          : failure.message,
-      );
+      setError(failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
       return;
     }
-
-    setStore((prev) =>
-      prev ? { ...prev, isFeatured: false, featuredOrder: null } : null,
-    );
+    setStore((prev) => prev ? { ...prev, isFeatured: false, featuredOrder: null } : null);
     setBusy(false);
     setDialog(null);
     showFlash(t.admin.stores.didUnfeature);
@@ -573,25 +559,14 @@ export default function AdminStoreDetailPage({
               {store.status === "APPROVED" && (
                 <>
                   {store.isFeatured ? (
-                    <Button
-                      variant="secondary"
-                      disabled={busy}
-                      onClick={() => setDialog("unfeature")}
-                      icon={<StarOff className="size-4" aria-hidden="true" />}
-                    >
+                    <Button variant="secondary" disabled={busy} onClick={() => setDialog("unfeature")} icon={<StarOff className="size-4" aria-hidden="true" />}>
                       {t.admin.stores.unfeature}
                     </Button>
                   ) : (
-                    <Button
-                      variant="secondary"
-                      disabled={busy}
-                      onClick={() => setDialog("feature")}
-                      icon={<Star className="size-4" aria-hidden="true" />}
-                    >
+                    <Button variant="secondary" disabled={busy} onClick={() => setDialog("feature")} icon={<Star className="size-4" aria-hidden="true" />}>
                       {t.admin.stores.feature}
                     </Button>
                   )}
-
                   {store.isActive ? (
                     <Button
                       variant="danger"
@@ -611,35 +586,22 @@ export default function AdminStoreDetailPage({
                     </Button>
                   )}
 
-                  <Button
-                    variant="danger"
-                    disabled={busy}
-                    onClick={() => setDialog("reject")}
-                    icon={<Ban className="size-4" aria-hidden="true" />}
-                  >
-                    {t.admin.stores.reject}
+                  <Button variant="danger" disabled={busy} onClick={() => setDialog("delete")} icon={<Trash2 className="size-4" aria-hidden="true" />}>
+                    حذف المتجر
                   </Button>
                 </>
               )}
 
               {store.status === "REJECTED" && (
-                <Button
-                  disabled={busy}
-                  onClick={() => setDialog("rereview")}
-                  icon={<RotateCcw className="size-4" aria-hidden="true" />}
-                >
-                  {t.admin.stores.reReview}
-                </Button>
+                <>
+                  <Button disabled={busy} onClick={() => setDialog("rereview")} icon={<RotateCcw className="size-4" aria-hidden="true" />}>
+                    {t.admin.stores.reReview}
+                  </Button>
+                  <Button variant="danger" disabled={busy} onClick={() => setDialog("delete")} icon={<Trash2 className="size-4" aria-hidden="true" />}>
+                    حذف المتجر
+                  </Button>
+                </>
               )}
-
-              <Button
-                variant="danger"
-                disabled={busy}
-                onClick={() => setDialog("delete")}
-                icon={<Trash2 className="size-4" aria-hidden="true" />}
-              >
-                حذف المتجر
-              </Button>
             </div>
           </div>
 
