@@ -14,6 +14,7 @@ import type {
   AdminUserListItem,
   Banner,
   BannerPayload,
+  BannerSlot,
   CategoryPayload,
   CategoryReorderPayload,
   CategoryUpdatePayload,
@@ -725,23 +726,12 @@ export function fetchBanners(): Promise<ApiResponse & { banners?: Banner[] }> {
   return adminFetch("/admin/banners");
 }
 
-export function createBanner(
-  payload: BannerPayload,
-): Promise<ApiResponse & { banners?: Banner[] }> {
-  return adminFetch("/admin/banners", { method: "POST", ...json(payload) });
-}
-
+/** Saves a fixed slot; the response contains the updated banner. */
 export function updateBanner(
-  id: number,
-  payload: Partial<BannerPayload>,
-): Promise<ApiResponse & { banners?: Banner[] }> {
-  return adminFetch(`/admin/banners/${id}`, { method: "PATCH", ...json(payload) });
-}
-
-export function deleteBanner(
-  id: number,
-): Promise<ApiResponse & { banners?: Banner[] }> {
-  return adminFetch(`/admin/banners/${id}`, { method: "DELETE" });
+  slot: BannerSlot,
+  payload: BannerPayload,
+): Promise<ApiResponse & { banner?: Banner; allowedSlots?: BannerSlot[] }> {
+  return adminFetch(`/admin/banners/${slot}`, { method: "PUT", ...json(payload) });
 }
 
 // ─── التوصيل 🟡 ────────────────────────────────────────────────

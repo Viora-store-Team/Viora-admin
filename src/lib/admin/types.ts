@@ -703,19 +703,16 @@ export interface StaticPage {
   updatedAt: string;
 }
 
+export type BannerSlot = 1 | 2 | 3;
 export interface Banner {
-  id: number;
-  title: string;
-  imageUrl: string;
-  linkUrl: string | null;
-  /** ترتيب العرض — الأصغر أول */
-  position: number;
-  isActive: boolean;
-  startsAt: string | null;
-  endsAt: string | null;
+  slot: BannerSlot;
+  imageUrl: string | null;
+  isPublished: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  updatedBy?: AdminContentAuthor | null;
 }
-
-export type BannerPayload = Omit<Banner, "id">;
+export interface BannerPayload { imageUrl: string; }
 
 // ─── ٧ · التوصيل ───────────────────────────────────────────────
 

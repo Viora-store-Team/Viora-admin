@@ -126,7 +126,7 @@ POST /api/admin/login   { "email": "owner@viora.com", "password": "admin@admin" 
 
 `/admin/overview` · `/admin/reports` ·
 `/admin/reviews/:id/hide` · `/admin/content/home` · `/admin/content/pages` ·
-`/admin/banners` · `/admin/delivery/*`
+`/admin/delivery/*`
 
 الصفحات اللي بتناديها لسا شغّالة على `src/lib/admin/mock/` مع شريط تنبيه.
 
@@ -176,3 +176,7 @@ POST /api/admin/login   { "email": "owner@viora.com", "password": "admin@admin" 
 الواجهة بتكشفهم وبتعرض «متجر #28» بدل الرموز المكسّرة، مع تنبيه بصفحة
 التفاصيل — شوف [`src/lib/brokenText.ts`](src/lib/brokenText.ts). **هاد عرض
 مش إصلاح**؛ الإصلاح الحقيقي تصحيح الصف أو حذفه بقاعدة البيانات.
+
+## بنرات التطبيق — العقد المحدث
+
+صفحة `/banners` تعرض ثلاث خانات ثابتة. `GET /admin/banners` و`PUT /admin/banners/:slot` مربوطان بالسيرفر مع توكن الأدمن. رفع الصورة عبر `POST /uploads` بحقل `file` ثم إرسال `{ imageUrl }` فقط. الحفظ يحدّث الكرت من `res.banner`، بما فيه حالة النشر والتواريخ و`updatedBy`. لا يوجد إنشاء أو حذف خانات. تم فحص الطلبات بمحاكاة الشبكة؛ لم تُرفع صور إلى السيرفر أثناء التطوير.

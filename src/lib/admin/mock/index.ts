@@ -1059,52 +1059,24 @@ export async function mockFetch(
 
   // ─── الإعلانات ──────────────────────────────────────────────
   if (resource === "banners") {
-    if (!rawId) {
-      if (method === "GET") {
-        const rows = emptyMode
-          ? []
-          : [...db.banners].sort((a, b) => a.position - b.position);
-        return ok({ banners: rows });
-      }
-
-      if (method === "POST") {
-        const body = readBody<BannerPayload>(options);
-        const invalid = checkBanner(body);
-        if (invalid) return invalid;
-
-        db.banners.push({
-          id: ++db.nextBannerId,
-          title: (body.title ?? "").trim(),
-          imageUrl: body.imageUrl ?? "",
-          linkUrl: body.linkUrl || null,
-          position: body.position ?? db.banners.length + 1,
-          isActive: body.isActive ?? true,
-          startsAt: body.startsAt || null,
-          endsAt: body.endsAt || null,
-        });
-        return ok({ banners: db.banners });
-      }
+    if (!rawId && method === "GET") {
+      return ok({ banners: db.banners.map(banner => emptyMode
+        ? { ...banner, imageUrl: null, isPublished: false, updatedBy: null, createdAt: null, updatedAt: null }
+        : banner) });
     }
-
-    const index = db.banners.findIndex((b) => b.id === id);
-    if (index === -1) return notFound();
-
-    if (method === "PATCH") {
+    const index = db.banners.findIndex(banner => banner.slot === id);
+    if (index === -1) return { ...notFound(), allowedSlots: [1, 2, 3] };
+    if (method === "PUT") {
       const body = readBody<BannerPayload>(options);
-      // التفعيل السريع بيبعث isActive لحاله — بلا عنوان ولا صورة
-      const activeOnly = Object.keys(body).length === 1 && "isActive" in body;
-      if (!activeOnly) {
-        const invalid = checkBanner(body);
-        if (invalid) return invalid;
-      }
-      db.banners[index] = { ...db.banners[index], ...body, id };
-      return ok({ banners: db.banners });
+      const invalid = checkBanner(body);
+      if (invalid) return invalid;
+      const now = new Date().toISOString();
+      db.banners[index] = { ...db.banners[index], imageUrl: body.imageUrl ?? null,
+        isPublished: true, createdAt: db.banners[index].createdAt || now,
+        updatedAt: now, updatedBy: { id: 1, name: "مشرف تجريبي", email: "admin@example.test" } };
+      return ok({ banner: db.banners[index] });
     }
-
-    if (method === "DELETE") {
-      db.banners.splice(index, 1);
-      return ok({ banners: db.banners });
-    }
+    return fail(405, "العملية غير مدعومة");
   }
 
   // ─── وسوم وفلاتر المناسبات ───────────────────────────────────
@@ -1252,7 +1224,6 @@ export async function mockFetch(
 
 function checkBanner(body: Partial<BannerPayload>): ApiResponse | null {
   const errors: Record<string, string> = {};
-  if (!(body.title ?? "").trim()) errors.title = "أدخل عنوان الإعلان";
   if (!body.imageUrl) errors.imageUrl = "أضف صورة الإعلان";
   return Object.keys(errors).length > 0
     ? fail(400, "بيانات غير صحيحة", errors)

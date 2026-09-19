@@ -24,6 +24,7 @@ const LIVE_PREFIXES = [
   "/admin/occasions",
   "/admin/collections",
   "/admin/content",
+  "/admin/banners",
   "/admin/orders",
   "/admin/support",
   "/notifications",
@@ -33,7 +34,7 @@ const LIVE_PREFIXES = [
  * مسارات الصفحات اللي بتقرأ من السيرفر الحقيقي — بتغذّي شريط التنبيه بس.
  * مطابقة **بادئة**: `/stores/18` بتنحسب تحت `/stores`.
  */
-const LIVE_PAGES = ["/", "/stores", "/users", "/categories", "/reviews", "/orders", "/content", "/support"] as const;
+const LIVE_PAGES = ["/", "/stores", "/users", "/categories", "/reviews", "/orders", "/content", "/support", "/banners"] as const;
 
 /**
  * مفتاح طوارئ: `NEXT_PUBLIC_ADMIN_MOCK=true` بيرجّع **كل** المسارات

@@ -437,38 +437,10 @@ const pages: StaticPage[] = [
   },
 ];
 
-const banners: Banner[] = [
-  {
-    id: 1,
-    title: "تخفيضات نهاية الموسم",
-    imageUrl: "https://placehold.co/1200x400/253745/ffffff?text=Season+Sale",
-    linkUrl: "/offers",
-    position: 1,
-    isActive: true,
-    startsAt: daysAgo(10),
-    endsAt: null,
-  },
-  {
-    id: 2,
-    title: "متاجر جديدة على المنصة",
-    imageUrl: "https://placehold.co/1200x400/1b2a35/ffffff?text=New+Stores",
-    linkUrl: null,
-    position: 2,
-    isActive: true,
-    startsAt: null,
-    endsAt: null,
-  },
-  {
-    id: 3,
-    title: "عودة المدارس",
-    imageUrl: "https://placehold.co/1200x400/6b7280/ffffff?text=Back+To+School",
-    linkUrl: "/products",
-    position: 3,
-    isActive: false,
-    startsAt: daysAgo(60),
-    endsAt: daysAgo(20),
-  },
-];
+const banners: Banner[] = [1, 2, 3].map((slot) => ({
+  slot: slot as Banner["slot"], imageUrl: null, isPublished: false,
+  createdAt: null, updatedAt: null, updatedBy: null,
+}));
 
 // ─── التوصيل ───────────────────────────────────────────────────
 
@@ -692,7 +664,6 @@ export const db = {
   actor: ACTOR,
   /** عدّادات المعرّفات — عشان الإنشاء بالجلسة ما يكرّر id */
   nextCategoryId: 900,
-  nextBannerId: 100,
   nextOccasionId: 50,
   nextCollectionId: 50,
 };

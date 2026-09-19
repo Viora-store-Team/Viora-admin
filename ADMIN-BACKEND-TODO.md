@@ -222,18 +222,17 @@ isHidden, hiddenReason, hiddenAt, createdAt
 | `GET /admin/content/home` · `PUT /admin/content/home` | محتوى الصفحة الرئيسية |
 | `GET /admin/content/pages` | كل الصفحات الثابتة |
 | `GET/PUT /admin/content/pages/:key` | صفحة واحدة — `key` = `terms\|privacy\|about` |
-| `GET /admin/banners` · `POST /admin/banners` | الإعلانات |
-| `PATCH /admin/banners/:id` · `DELETE /admin/banners/:id` | تعديل/حذف إعلان |
+| `GET /admin/banners` | مربوط: ثلاث خانات ثابتة |
+| `PUT /admin/banners/:slot` | مربوط: حفظ صورة الخانة 1..3 وإرجاع banner |
 
 ```
 HomeContent: { heroTitle, heroSubtitle, heroImageUrl, featuredStoreIds[], featuredCategoryIds[] }
 StaticPage:  { key, title, body, updatedAt }        body نص عادي مش HTML
-Banner:      { id, title, imageUrl, linkUrl, position, isActive, startsAt, endsAt }
+Banner:      { slot, imageUrl, isPublished, createdAt, updatedAt, updatedBy }
 ```
 
 > رفع صور الإعلانات بيستخدم **`POST /uploads` القائم** — ما في مسار رفع جديد.
-> `PATCH /admin/banners/:id` بيستقبل `{ isActive }` لحاله للتفعيل السريع من
-> البطاقة، فلازم يقبل تعديل جزئي بلا ما يطلب باقي الحقول.
+> حفظ البنر يرسل `{ imageUrl }` فقط. صفحة البنرات المستقلة: `/banners`.
 
 **الصفحة**: `/admin/content` (ثلاث تبويبات)
 
