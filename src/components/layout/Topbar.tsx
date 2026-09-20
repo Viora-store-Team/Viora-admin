@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
+import { InstallButton } from "@/components/pwa/PwaProvider";
 import { getActiveNavItem, NAV_ITEMS, type NavItem } from "@/config/nav";
 import { t } from "@/lib/strings";
 import NotificationsDropdown from "@/components/layout/NotificationsDropdown";
@@ -39,6 +40,7 @@ export default function Topbar({
       </p>
 
       <div className="ms-auto flex items-center gap-2">
+        <InstallButton />
         <NotificationsDropdown />
       </div>
     </header>

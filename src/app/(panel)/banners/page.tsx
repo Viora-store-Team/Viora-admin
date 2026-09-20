@@ -92,7 +92,7 @@ function BannerCard({ slot, banner, ready, onSaved }: {
         </span>
       </div>
       <div className="space-y-4 p-5" aria-busy={busy}>
-        <div className="flex aspect-[3/2] items-center justify-center overflow-hidden rounded-xl border border-border bg-field-bg">
+        <div className="flex aspect-[1505/625] items-center justify-center overflow-hidden rounded-xl border border-border bg-field-bg">
           {imageUrl ? (
             // Uploaded and remote banner URLs are provided by the API.
             // eslint-disable-next-line @next/next/no-img-element
@@ -119,7 +119,7 @@ function BannerCard({ slot, banner, ready, onSaved }: {
             setFile(null); setPreview(""); setUploadedUrl(""); setError(""); setNotice("");
           }}>إلغاء</Button>}
         </div>
-        <p className="text-xs text-muted">JPG، PNG أو WebP — حتى 10 ميجابايت</p>
+        <p className="text-xs text-muted">المقاس المناسب: 1505 × 625 بكسل — JPG، PNG أو WebP حتى 10 ميجابايت</p>
         <ErrorBanner message={error} />
         {notice && <p role="status" className="text-sm text-primary">{notice}</p>}
         {banner?.updatedAt && <p className="text-xs text-muted">آخر تعديل: {formatDate(banner.updatedAt)}</p>}
@@ -158,7 +158,7 @@ export default function BannersPage() {
       </div>
       <ErrorBanner message={error} onRetry={() => { setError(""); setAttempt(value => value + 1); }} />
       {!banners && !error && <p role="status" className="text-sm text-muted">جارٍ تحميل البنرات…</p>}
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-5 xl:grid-cols-2">
         {SLOTS.map(slot => <BannerCard key={slot} slot={slot} ready={banners !== null}
           banner={banners?.find(banner => banner.slot === slot)}
           onSaved={saved => setBanners(previous => previous?.map(banner => banner.slot === saved.slot ? saved : banner) ?? null)} />)}
