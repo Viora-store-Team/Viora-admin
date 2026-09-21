@@ -11,7 +11,9 @@ npm start
 The manifest uses `/` as its identity, scope and start URL. The top bar shows an
 install button when the browser provides an installation prompt. On iPhone/iPad
 it provides Safari instructions; installed standalone windows hide the button.
-Icons use a burgundy V monogram; the editable source is `public/icons/source.svg`.
+Icons use the original Viora logo on a light cream background (#faf7f2).
+The supplied logo is preserved in `public/icons/original-logo.png`; the composed
+source is `public/icons/source.svg`. The maskable icon has extra safe padding.
 
 Only `public/offline.html` is cached. Full page navigation always uses the
 network and falls back to this document when the request fails. API calls,

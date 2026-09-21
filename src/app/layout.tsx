@@ -14,7 +14,7 @@ const cairo = Cairo({
 export const metadata: Metadata = {
   applicationName: "Viora Admin",
   appleWebApp: { capable: true, title: "Viora Admin", statusBarStyle: "default" },
-  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+  icons: { icon: "/icons/icon-192.png?v=2", apple: "/icons/apple-touch-icon.png?v=2" },
   title: `${t.app.name} | ${t.admin.tagline}`,
   description: "لوحة مالك منصة فيورا — إدارة المتاجر والمستخدمين والمحتوى.",
 };
