@@ -1,34 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState, use } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Ban,
-  Calendar,
-  Check,
-  CircleCheck,
-  CreditCard,
-  DollarSign,
-  ExternalLink,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Power,
-  PowerOff,
-  RotateCcw,
-  ShieldCheck,
-  ShieldOff,
-  ShoppingBag,
-  Star,
-  StarOff,
-  Store as StoreIcon,
-  Tag,
-  Trash2,
-  TriangleAlert,
-  User,
-} from "lucide-react";
+import { ArrowLeft, Ban, Calendar, Check, CircleCheck, DollarSign, ExternalLink, MapPin, Package, Power, PowerOff, RotateCcw, ShieldOff, ShoppingBag, Star, StarOff, Store as StoreIcon, Tag, Trash2, TriangleAlert } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -42,14 +16,12 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import StoreOrdersSection from "@/components/admin/StoreOrdersSection";
 import {
   activateStore,
-  activateUser,
   approveStore,
   deleteStore,
   featureStore,
   fetchStore,
   rejectStore,
   suspendStore,
-  suspendUser,
   unfeatureStore,
 } from "@/lib/admin/api";
 import { accountStatus, STORE_STATUS } from "@/lib/admin/status";
@@ -73,28 +45,12 @@ type Dialog =
 
 type ActiveSection = "info" | "orders";
 
-export default function AdminStoreDetailPage({
-  params: paramsPromise,
-}: {
-  params?: Promise<{ id: string }>;
-} = {}) {
+function AdminStoreDetailPageContent() {
   const router = useRouter();
   const routeParams = useParams<{ id: string }>();
-
-  let rawId: string | undefined = Array.isArray(routeParams?.id)
-    ? routeParams.id[0]
-    : routeParams?.id;
-
-  if (!rawId && paramsPromise) {
-    try {
-      const resolved = use(paramsPromise);
-      rawId = Array.isArray(resolved?.id) ? resolved.id[0] : resolved?.id;
-    } catch {
-      // fallback
-    }
-  }
-
+  const rawId = routeParams?.id;
   const storeId = rawId ? Number(rawId) : NaN;
+  const validId = Number.isSafeInteger(storeId) && storeId > 0;
 
   const [store, setStore] = useState<AdminStoreDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -109,14 +65,11 @@ export default function AdminStoreDetailPage({
   const [flash, showFlash] = useFlash();
 
   useEffect(() => {
-    if (!storeId || Number.isNaN(storeId) || storeId <= 0) {
+    if (!validId) {
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
-    setNotFound(false);
-    setError("");
 
     (async () => {
       const res = await fetchStore(storeId);
@@ -125,14 +78,11 @@ export default function AdminStoreDetailPage({
       setLoading(false);
 
       if (res.success && res.store) {
-        const isRejected = res.store.status === "REJECTED";
         const normalizedStore: AdminStoreDetail = {
           ...res.store,
-          isActive: isRejected ? false : res.store.isActive,
           owner: res.store.owner
             ? {
                 ...res.store.owner,
-                isActive: isRejected ? false : res.store.owner.isActive,
               }
             : ({
                 id: 0,
@@ -168,7 +118,7 @@ export default function AdminStoreDetailPage({
     return () => {
       cancelled = true;
     };
-  }, [storeId, attempt]);
+  }, [storeId, validId, attempt]);
 
   const handleApprove = useCallback(
     async (successMsg: string) => {
@@ -188,36 +138,17 @@ export default function AdminStoreDetailPage({
         return;
       }
 
-      if (store?.owner?.id) {
-        await activateUser(store.owner.id);
+      if (!res.store) {
+        setBusy(false); setDialog(null);
+        setError("تم تنفيذ القرار لكن لم يرجع الخادم تفاصيل المتجر المحدثة. أعد تحميل التفاصيل.");
+        return;
       }
-
-      const updatedStore: AdminStoreDetail = res.store
-        ? {
-            ...res.store,
-            isActive: true,
-            owner: {
-              ...res.store.owner,
-              isActive: true,
-            },
-          }
-        : {
-            ...store!,
-            status: "APPROVED",
-            isActive: true,
-            rejectionReason: null,
-            owner: {
-              ...store!.owner,
-              isActive: true,
-            },
-          };
-
-      setStore(updatedStore);
+      setStore(res.store);
       setBusy(false);
       setDialog(null);
       showFlash(successMsg);
     },
-    [storeId, store, showFlash],
+    [storeId, showFlash],
   );
 
   const handleReject = useCallback(
@@ -243,38 +174,17 @@ export default function AdminStoreDetailPage({
         return;
       }
 
-      if (store?.owner?.id) {
-        await suspendUser(store.owner.id);
+      if (!res.store) {
+        setBusy(false); setDialog(null);
+        setError("تم تنفيذ القرار لكن لم يرجع الخادم تفاصيل المتجر المحدثة. أعد تحميل التفاصيل.");
+        return;
       }
-
-      const updatedStore: AdminStoreDetail = res.store
-        ? {
-            ...res.store,
-            status: "REJECTED",
-            isActive: false,
-            rejectionReason: reason,
-            owner: {
-              ...res.store.owner,
-              isActive: false,
-            },
-          }
-        : {
-            ...store!,
-            status: "REJECTED",
-            isActive: false,
-            rejectionReason: reason,
-            owner: {
-              ...store!.owner,
-              isActive: false,
-            },
-          };
-
-      setStore(updatedStore);
+      setStore(res.store);
       setBusy(false);
       setDialog(null);
       showFlash(t.admin.stores.didReject);
     },
-    [storeId, store, showFlash],
+    [storeId, showFlash],
   );
 
   const handleSuspendStore = useCallback(async () => {
@@ -386,9 +296,9 @@ export default function AdminStoreDetailPage({
     router.push("/stores");
   }, [storeId, router, showFlash]);
 
-  if (loading) return <Spinner />;
+  if (loading && validId) return <Spinner />;
 
-  if (notFound) {
+  if (notFound || !validId) {
     return (
       <Card className="overflow-hidden border border-border shadow-xs">
         <CardBody className="p-8">
@@ -866,9 +776,7 @@ export default function AdminStoreDetailPage({
                     value: (
                       <StatusBadge
                         meta={accountStatus(
-                          store.status === "REJECTED"
-                            ? false
-                            : (store.owner?.isActive ?? false),
+                          store.owner?.isActive ?? false,
                         )}
                       />
                     ),
@@ -985,4 +893,9 @@ export default function AdminStoreDetailPage({
       />
     </div>
   );
+}
+
+export default function AdminStoreDetailPage() {
+  const params = useParams<{id: string}>();
+  return <AdminStoreDetailPageContent key={params.id} />;
 }

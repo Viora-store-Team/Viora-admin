@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Check, Eye, EyeOff, Flag, XCircle } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
@@ -29,28 +29,12 @@ import { t } from "@/lib/strings";
 
 type Dialog = "hide" | "unhide" | "resolve" | "dismiss" | null;
 
-export default function AdminReportDetailPage({
-  params: paramsPromise,
-}: {
-  params?: Promise<{ id: string }>;
-} = {}) {
+function AdminReportDetailPageContent() {
   const router = useRouter();
   const routeParams = useParams<{ id: string }>();
-
-  let rawId: string | undefined = Array.isArray(routeParams?.id)
-    ? routeParams.id[0]
-    : routeParams?.id;
-
-  if (!rawId && paramsPromise) {
-    try {
-      const resolved = use(paramsPromise);
-      rawId = Array.isArray(resolved?.id) ? resolved.id[0] : resolved?.id;
-    } catch {
-      // fallback
-    }
-  }
-
+  const rawId = routeParams?.id;
   const reportId = rawId ? Number(rawId) : NaN;
+  const validId = Number.isSafeInteger(reportId) && reportId > 0;
 
   const [report, setReport] = useState<AdminReportDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,14 +48,11 @@ export default function AdminReportDetailPage({
   const [flash, showFlash] = useFlash();
 
   useEffect(() => {
-    if (!reportId || Number.isNaN(reportId) || reportId <= 0) {
+    if (!validId) {
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
-    setNotFound(false);
-    setError("");
 
     (async () => {
       const res = await fetchReport(reportId);
@@ -101,7 +82,7 @@ export default function AdminReportDetailPage({
     return () => {
       cancelled = true;
     };
-  }, [reportId, attempt]);
+  }, [reportId, validId, attempt]);
 
   /** إجراءات البلاغ نفسه — بترجّع البلاغ المحدّث */
   const changeStatus = async (
@@ -172,9 +153,9 @@ export default function AdminReportDetailPage({
     );
   };
 
-  if (loading) return <Spinner />;
+  if (loading && validId) return <Spinner />;
 
-  if (notFound) {
+  if (notFound || !validId) {
     return (
       <Card className="overflow-hidden border border-border shadow-xs">
         <CardBody className="p-8">
@@ -443,4 +424,9 @@ export default function AdminReportDetailPage({
       />
     </div>
   );
+}
+
+export default function AdminReportDetailPage() {
+  const params = useParams<{id: string}>();
+  return <AdminReportDetailPageContent key={params.id} />;
 }

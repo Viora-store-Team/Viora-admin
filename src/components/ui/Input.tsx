@@ -110,7 +110,9 @@ export default function Input({
 
       {multiline ? (
         <textarea
+          {...(rest as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
           {...sharedProps}
+          dir={resolvedDir}
           rows={rows}
           onChange={(e) => onChange(e.target.value)}
           className={cn(fieldClass, "resize-none")}
@@ -127,7 +129,6 @@ export default function Input({
           />
           <button
             type="button"
-            tabIndex={-1}
             aria-label={visible ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
             onClick={() => setVisible((v) => !v)}
             className="absolute inset-y-0 start-3 flex items-center text-placeholder transition hover:text-heading"

@@ -1,19 +1,8 @@
 "use client";
+import Image from "next/image";
 
-import { useCallback, useEffect, useState } from "react";
-import {
-  ArrowUpDown,
-  Building2,
-  Eye,
-  Layers,
-  MapPin,
-  Package,
-  Search,
-  ShoppingBag,
-  Store,
-  User,
-  XCircle,
-} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowUpDown, Eye, Layers, MapPin, Package, Search, ShoppingBag, Store, User, XCircle } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -28,6 +17,7 @@ import { STORE_ORDER_STATUS } from "@/lib/admin/status";
 import type {
   AdminOrderDetail,
   StoreOrder,
+  StoreOrderItem,
   StoreOrderStatus,
 } from "@/lib/admin/types";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -61,7 +51,20 @@ const TABS: TabConfig[] = [
   { key: "REJECTED", label: "مرفوض", status: "REJECTED" },
 ];
 
+interface WireItem extends StoreOrderItem {
+  product?: {name?: string; imageUrl?: string; image?: string};
+  color?: string; size?: string | null;
+}
+interface WireOrder extends Omit<Partial<StoreOrder>, "items" | "address"> {
+  id: number; code?: string; user?: {name?: string; phone?: string; email?: string};
+  customer?: {name?: string; phone?: string; email?: string};
+  phone?: string; email?: string; items?: WireItem[]; orderItems?: WireItem[];
+  address?: string | {street?: string; city?: string};
+  totalPrice?: string; amount?: string; paymentType?: string;
+}
+
 export default function StoreOrdersSection({ storeId }: { storeId: number }) {
+  const requestId = useRef(0);
   const [orders, setOrders] = useState<StoreOrder[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [pagination, setPagination] = useState<PaginationType | null>(null);
@@ -92,6 +95,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
   };
 
   const loadOrders = useCallback(async () => {
+    const currentRequest = ++requestId.current;
     setLoading(true);
     setError("");
 
@@ -106,25 +110,20 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
       sort: sortOption,
     });
 
+    if (currentRequest !== requestId.current) return;
     setLoading(false);
 
-    if (res.success) {
-      const rawList: any[] = Array.isArray(res.orders)
-        ? res.orders
-        : Array.isArray((res as any).data?.orders)
-          ? (res as any).data.orders
-          : Array.isArray((res as any).data)
-            ? (res as any).data
-            : [];
+    if (res.success && Array.isArray(res.orders)) {
+      const rawList: WireOrder[] = res.orders;
 
-      const normalized: StoreOrder[] = rawList.map((o: any) => ({
+      const normalized: StoreOrder[] = rawList.map((o) => ({
         id: o.id ?? 0,
         orderNumber: o.orderNumber || o.code || (o.id ? `#${o.id}` : "—"),
         customerName: o.customerName || o.user?.name || o.customer?.name || "عميل فيورا",
         customerPhone: o.customerPhone || o.user?.phone || o.phone || null,
         customerEmail: o.customerEmail || o.user?.email || o.email || null,
         itemsCount: o.itemsCount ?? (Array.isArray(o.items) ? o.items.length : Array.isArray(o.orderItems) ? o.orderItems.length : 1),
-        items: (o.items || o.orderItems || []).map((it: any) => ({
+        items: (o.items || o.orderItems || []).map((it) => ({
           id: it.id ?? 0,
           productName: it.productName || it.product?.name || "منتج",
           productImage: it.productImage || it.image || it.product?.imageUrl || it.product?.image || null,
@@ -137,8 +136,8 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
           lineTotal: String(it.lineTotal ?? (Number(it.unitPrice ?? it.price ?? 0) * Number(it.quantity ?? 1))),
           price: String(it.unitPrice ?? it.price ?? 0),
         })),
-        city: o.city || o.address?.city || "—",
-        address: o.address?.street || (typeof o.address === "string" ? o.address : o.city || "—"),
+        city: o.city || (typeof o.address === "object" ? o.address.city : undefined) || "—",
+        address: (typeof o.address === "object" ? o.address.street : undefined) || (typeof o.address === "string" ? o.address : o.city || "—"),
         createdAt: o.createdAt || new Date().toISOString(),
         total: String(o.total ?? o.totalPrice ?? o.amount ?? 0),
         shippingFee: o.shippingFee ? String(o.shippingFee) : undefined,
@@ -148,38 +147,21 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
 
       setOrders(normalized);
 
-      const rawCounts =
-        (res as any).statusCounts ||
-        res.counts ||
-        (res as any).data?.statusCounts ||
-        (res as any).data?.counts;
-
-      if (rawCounts) {
-        const total =
-          res.pagination?.total ??
-          (res as any).data?.pagination?.total ??
-          Object.values(rawCounts).reduce(
-            (acc: number, val: any) => acc + (Number(val) || 0),
-            0,
-          );
-        setCounts({ ...rawCounts, all: total });
-      } else {
-        const computed: Record<string, number> = { all: normalized.length };
-        normalized.forEach((ord) => {
-          computed[ord.status] = (computed[ord.status] || 0) + 1;
-        });
-        setCounts(computed);
-      }
-
-      const rawPagination = res.pagination || (res as any).data?.pagination;
-      if (rawPagination) setPagination(rawPagination);
+      const rawCounts = res.statusCounts || res.counts;
+      setCounts(rawCounts ? {...rawCounts, all: res.pagination?.total ?? normalized.length} : {all: res.pagination?.total ?? normalized.length});
+      setPagination(res.pagination ?? null);
     } else {
       setError(res.message || t.admin.common.loadFailed);
     }
   }, [storeId, activeTab, queryText, sortOption, page]);
 
   useEffect(() => {
-    loadOrders();
+    // Initial fetch is synchronized with the selected store and filters.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadOrders();
+    // Invalidate the latest asynchronous request; this ref is a sequence counter, not a DOM node.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { requestId.current++; };
   }, [loadOrders]);
 
   return (
@@ -584,7 +566,8 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                       >
                         <div className="flex min-w-0 items-center gap-4">
                           {image ? (
-                            <img
+                            <Image
+                              width={64} height={64} unoptimized
                               src={image}
                               alt={item.productName}
                               className="size-16 shrink-0 rounded-xl border border-border object-cover"

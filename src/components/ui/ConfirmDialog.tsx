@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useDialog } from "@/lib/useDialog";
 import { t } from "@/lib/strings";
 import Button from "./Button";
 
@@ -39,22 +39,7 @@ export default function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   // إغلاق بـ Escape + منع تمرير الصفحة خلف الحوار — نفس نمط AppShell
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !loading) onCancel();
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open, loading, onCancel]);
+  const dialogRef = useDialog(open, onCancel, loading);
 
   if (!open) return null;
 
@@ -72,6 +57,8 @@ export default function ConfirmDialog({
 
       <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center p-4">
         <div
+          ref={dialogRef}
+          tabIndex={-1}
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
@@ -88,7 +75,6 @@ export default function ConfirmDialog({
           <div className="mt-6 flex flex-wrap justify-end gap-2">
             {/* التركيز الافتراضي على الإلغاء — الخيار الآمن */}
             <Button
-              autoFocus
               variant="secondary"
               onClick={onCancel}
               disabled={loading}

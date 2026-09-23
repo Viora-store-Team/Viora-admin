@@ -2,18 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  AlertTriangle,
-  Bell,
-  CheckCheck,
-  CheckCircle2,
-  Clock,
-  Package,
-  Sparkles,
-  Store,
-  XCircle,
-} from "lucide-react";
+import { AlertTriangle, Bell, CheckCheck, Clock, Package, Sparkles, Store, XCircle } from "lucide-react";
 import Spinner from "@/components/ui/Spinner";
+import ErrorBanner from "@/components/ui/ErrorBanner";
 import {
   fetchNotifications,
   fetchUnreadNotificationsCount,
@@ -29,6 +20,10 @@ export default function NotificationsDropdown() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
+  const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [readingId, setReadingId] = useState<number | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -58,18 +53,21 @@ export default function NotificationsDropdown() {
   }, []);
 
   // Load full list when opening dropdown
-  const loadList = async () => {
+  const loadList = async (nextPage = 1) => {
     setLoading(true);
+    setError("");
     try {
-      const res = await fetchNotifications(1, 15);
+      const res = await fetchNotifications(nextPage, 15);
       if (res.success) {
-        setNotifications(res.notifications || []);
+        setNotifications(prev => nextPage === 1 ? res.notifications || [] : [...prev, ...(res.notifications || []).filter(item => !prev.some(old => old.id === item.id))]);
+        setPage(nextPage);
+        setTotalPages(res.pagination?.totalPages || 1);
         if (typeof res.unread === "number") {
           setUnreadCount(res.unread);
         }
-      }
+      } else setError(res.message || "تعذر تحميل الإشعارات");
     } catch {
-      // ignore
+      setError("تعذر تحميل الإشعارات");
     } finally {
       setLoading(false);
     }
@@ -104,26 +102,33 @@ export default function NotificationsDropdown() {
 
   // Mark single notification as read & navigate
   const handleItemClick = async (notif: AppNotification) => {
+    if (readingId !== null) return;
+    setError("");
     if (!notif.readAt) {
+      setReadingId(notif.id);
       try {
-        await markNotificationAsRead(notif.id);
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+        const res = await markNotificationAsRead(notif.id);
+        if (!res.success) { setError(res.message || "تعذر تعليم الإشعار كمقروء"); return; }
+        setUnreadCount((prev) => res.unread ?? Math.max(0, prev - 1));
         setNotifications((prev) =>
           prev.map((n) =>
             n.id === notif.id ? { ...n, readAt: new Date().toISOString() } : n,
           ),
         );
       } catch {
-        // ignore
-      }
+        setError("تعذر تعليم الإشعار كمقروء");
+        return;
+      } finally { setReadingId(null); }
     }
 
     // Optional navigation based on notification data
     setIsOpen(false);
-    if (notif.data?.storeId) {
-      router.push(`/stores/${notif.data.storeId}`);
-    } else if (notif.data?.orderId || notif.type.startsWith("ORDER_")) {
-      router.push("/stores");
+    if (notif.data?.orderId) {
+      router.push(`/orders?orderId=${encodeURIComponent(String(notif.data.orderId))}`);
+    } else if (notif.type.startsWith("ORDER_")) {
+      router.push("/orders");
+    } else if (notif.data?.storeId) {
+      router.push(`/stores/${encodeURIComponent(String(notif.data.storeId))}`);
     }
   };
 
@@ -131,19 +136,20 @@ export default function NotificationsDropdown() {
   const handleMarkAllAsRead = async () => {
     if (markingAll || unreadCount === 0) return;
     setMarkingAll(true);
+    setError("");
     try {
       const res = await markAllNotificationsAsRead();
       if (res.success) {
-        setUnreadCount(0);
+        setUnreadCount(res.unread ?? 0);
         setNotifications((prev) =>
           prev.map((n) => ({
             ...n,
             readAt: n.readAt || new Date().toISOString(),
           })),
         );
-      }
+      } else setError(res.message || "تعذر تعليم الإشعارات كمقروءة");
     } catch {
-      // ignore
+      setError("تعذر تعليم الإشعارات كمقروءة");
     } finally {
       setMarkingAll(false);
     }
@@ -191,6 +197,7 @@ export default function NotificationsDropdown() {
       <button
         type="button"
         onClick={handleToggle}
+        onKeyDown={(event) => { if (event.key === "Escape") setIsOpen(false); }}
         aria-label="الإشعارات"
         aria-expanded={isOpen}
         className={`relative grid size-10 place-items-center rounded-xl transition cursor-pointer ${
@@ -212,7 +219,7 @@ export default function NotificationsDropdown() {
 
       {/* 📬 Notifications Dropdown Panel */}
       {isOpen && (
-        <div className="absolute end-0 top-full mt-2.5 z-50 w-80 sm:w-96 rounded-2xl border border-border bg-surface p-0 shadow-2xl backdrop-blur-sm animate-in fade-in-0 zoom-in-95 duration-150">
+        <div onKeyDown={(event) => { if (event.key === "Escape") setIsOpen(false); }} className="absolute end-0 top-full mt-2.5 z-50 w-80 max-w-[calc(100vw-2rem)] sm:w-96 rounded-2xl border border-border bg-surface p-0 shadow-2xl backdrop-blur-sm animate-in fade-in-0 zoom-in-95 duration-150">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border/80 px-4 py-3.5 bg-field-bg/30 rounded-t-2xl">
             <div className="flex items-center gap-2">
@@ -242,6 +249,7 @@ export default function NotificationsDropdown() {
           </div>
 
           {/* Body */}
+          <ErrorBanner message={error} onRetry={() => void loadList()} />
           <div className="max-h-[380px] overflow-y-auto divide-y divide-border/60">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-10 text-center">
@@ -250,7 +258,7 @@ export default function NotificationsDropdown() {
                   جاري جلب الإشعارات...
                 </p>
               </div>
-            ) : notifications.length === 0 ? (
+            ) : notifications.length === 0 && !error ? (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary mb-2">
                   <Sparkles className="size-6" />
@@ -272,6 +280,7 @@ export default function NotificationsDropdown() {
                     key={n.id}
                     type="button"
                     onClick={() => handleItemClick(n)}
+                    disabled={readingId !== null || markingAll}
                     className={`flex w-full items-start gap-3 p-3.5 text-right transition cursor-pointer ${
                       isUnread
                         ? "bg-primary/5 hover:bg-primary/10"
@@ -314,6 +323,7 @@ export default function NotificationsDropdown() {
               })
             )}
           </div>
+          {page < totalPages && <button type="button" disabled={loading} onClick={() => void loadList(page + 1)} className="w-full p-3 text-sm font-bold text-primary">تحميل المزيد</button>}
         </div>
       )}
     </div>

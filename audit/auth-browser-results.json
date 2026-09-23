@@ -1,0 +1,37 @@
+[
+  {
+    "name": "auth server 503 produces blank protected page",
+    "evidence": {
+      "url": "http://localhost:3100/stores",
+      "text": "",
+      "token": true
+    },
+    "errors": []
+  },
+  {
+    "name": "auth empty and invalid login blocked locally",
+    "evidence": {
+      "emptyInvalid": "true",
+      "invalidEmail": "true",
+      "loginRequests": 0
+    },
+    "errors": []
+  },
+  {
+    "name": "auth login error displayed",
+    "evidence": {
+      "alert": "QA incorrect credentials",
+      "buttonEnabled": true
+    },
+    "errors": []
+  },
+  {
+    "name": "auth forceLogout redirects and clears token",
+    "evidence": {
+      "url": "http://localhost:3100/login",
+      "token": false,
+      "alert": "QA session expired"
+    },
+    "errors": []
+  }
+]

@@ -738,37 +738,6 @@ export interface DeliveryFailure {
   retryable: boolean;
 }
 
-// ─── ٨ · وسوم وفلاتر المناسبات والمجموعات ────────────────────────
-
-export interface OccasionFilter {
-  id: number;
-  name: string;
-  slug: string;
-  icon: string;
-  description: string;
-  productsCount: number;
-  isActive: boolean;
-  isFeaturedOnHome: boolean;
-  sortOrder: number;
-  targetCategories: string[];
-}
-
-export type OccasionFilterPayload = Omit<OccasionFilter, "id" | "productsCount">;
-
-export interface FeaturedCollection {
-  id: number;
-  title: string;
-  slug: string;
-  subtitle: string;
-  badge: string | null;
-  imageUrl: string | null;
-  productsCount: number;
-  isActive: boolean;
-  sortOrder: number;
-}
-
-export type FeaturedCollectionPayload = Omit<FeaturedCollection, "id" | "productsCount">;
-
 // ─── إدارة المحتوى والصفحات الثابتة 🟢 ──────────────────────
 
 export type AdminContentKey = "terms" | "privacy" | "about" | "faq";
@@ -826,7 +795,7 @@ export interface AppNotification {
     orderId?: number | string;
     orderNumber?: string;
     storeId?: number | string;
-    [key: string]: any;
+    [key: string]: unknown;
   } | null;
   readAt: string | null;
   createdAt: string;

@@ -1,58 +1,6 @@
 import type { ApiResponse, Pagination } from "@/lib/api";
 import { adminFetch, query } from "./client";
-import type {
-  AdminOrderListItem,
-  AdminCategoryNode,
-  AdminCategoryRoot,
-  AdminReportDetail,
-  AdminReportListItem,
-  AdminSupportTicket,
-  AdminStatsCharts,
-  AdminStoreDetail,
-  AdminStoreListItem,
-  AdminUserDetail,
-  AdminUserListItem,
-  Banner,
-  BannerPayload,
-  BannerSlot,
-  CategoryPayload,
-  CategoryReorderPayload,
-  CategoryUpdatePayload,
-  DeliveryFailure,
-  DeliveryHealth,
-  FeaturedCollection,
-  FeaturedCollectionPayload,
-  AdminRole,
-  HomeContent,
-  OccasionFilter,
-  OccasionFilterPayload,
-  ProductReview,
-  AdminRatingItem,
-  ReportStatus,
-  ReportTarget,
-  Review,
-  ReviewsOverviewStats,
-  StaticPage,
-  StaticPageKey,
-  StatsCounters,
-  StatsPeriod,
-  StatsPeriodInfo,
-  StoreOrder,
-  StoreOrderItem,
-  StoreOrderStatus,
-  StoreRatingSummary,
-  StoreStatus,
-  SupportTicketStatus,
-  TopStoreRow,
-  AdminContentAuthor,
-  AdminContentKey,
-  AdminContentPageDetail,
-  AdminContentPageListItem,
-  AdminContentPagePayload,
-  AdminOrderDetail,
-  AppNotification,
-  NotificationsListResponse,
-} from "./types";
+import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, DeliveryFailure, DeliveryHealth, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse } from "./types";
 import { apiFetch } from "@/lib/api";
 import { ADMIN_LIMITS } from "./types";
 
@@ -229,7 +177,7 @@ export function fetchStoreOrders(
     status?: StoreOrderStatus | "";
     sort?: "newest" | "oldest" | "highest" | "";
   } = {},
-): Promise<Paged<"orders", StoreOrder> & { counts?: Record<string, number> }> {
+): Promise<Paged<"orders", StoreOrder> & { counts?: Record<string, number>; statusCounts?: Record<string, number> }> {
   return adminFetch(
     `/admin/stores/${storeId}/orders${query({
       page: params.page ?? 1,
@@ -254,10 +202,12 @@ export function fetchAdminOrderDetail(
 
 /** `GET /admin/orders?page&limit` — كل طلبات المنصة، مش طلبات متجر واحد. */
 export function fetchAdminOrders(
-  params: Pick<ListParams, "page" | "limit"> = {},
+  params: Pick<ListParams, "page" | "limit"> & { status?: StoreOrderStatus | ""; storeId?: number } = {},
 ): Promise<Paged<"orders", AdminOrderListItem> & { statusCounts?: Record<string, number> }> {
   return adminFetch(
     `/admin/orders${query({
+      status: params.status,
+      storeId: params.storeId,
       page: params.page ?? 1,
       limit: params.limit ?? ADMIN_LIMITS.pageLimit,
     })}`,
@@ -493,6 +443,33 @@ export function fetchRatings(
   );
 }
 
+/** Read a complete, bounded snapshot before offering global client-side analytics.
+ * Stops explicitly rather than labelling a partial page as a platform statistic.
+ * Replace with server aggregation once that contract is available.
+ */
+export async function fetchRatingsSnapshot(signal?: AbortSignal): Promise<ApiResponse & { ratings?: AdminRatingItem[] }> {
+  const items = new Map<number, AdminRatingItem>();
+  let total: number | undefined;
+  for (let page = 1; page <= 100; page++) {
+    if (signal?.aborted) return { success: false, status: 0, message: "تم إلغاء التحميل" };
+    const res = await adminFetch(`/admin/ratings${query({page, limit: 100})}`, {signal}) as Paged<"ratings", AdminRatingItem>;
+    if (!res.success) return res;
+    const pagination = res.pagination;
+    if (!Array.isArray(res.ratings) || !pagination || pagination.page !== page || !Number.isSafeInteger(pagination.total) || pagination.total < 0 || !Number.isSafeInteger(pagination.totalPages) || pagination.totalPages < 0) {
+      return {success:false,status:502,message:"رد التقييمات غير مكتمل؛ تعذر حساب إحصائيات موثوقة."};
+    }
+    if (pagination.total > 10_000 || pagination.totalPages > 100) return {success:false,status:413,message:"عدد التقييمات يتطلب خدمة إحصائيات من الخادم. لا يمكن عرض نتائج جزئية كإجمالي."};
+    if (total !== undefined && total !== pagination.total) return {success:false,status:409,message:"تغيرت التقييمات أثناء التحميل. أعد المحاولة."};
+    total = pagination.total;
+    for (const item of res.ratings) items.set(item.id,item);
+    if (page >= pagination.totalPages) {
+      if (items.size !== total) return {success:false,status:409,message:"بيانات التقييمات غير مكتملة أو تغيرت أثناء التحميل. أعد المحاولة."};
+      return {success:true,status:200,ratings:[...items.values()]};
+    }
+  }
+  return {success:false,status:413,message:"تعذر تحميل كل التقييمات. يلزم تجميع من الخادم."};
+}
+
 /**
  * ✅ `PATCH /admin/ratings/:id/hide` — إخفاء تعليق مسيء
  */
@@ -554,7 +531,6 @@ export function fetchStoreRatings(
 
 export function hideProductReview(
   id: number,
-  reason: string,
 ): Promise<ApiResponse & { review?: ProductReview }> {
   return hideRating(id);
 }
@@ -751,60 +727,6 @@ export function fetchDeliveryFailures(
       limit: params.limit ?? ADMIN_LIMITS.pageLimit,
     })}`,
   );
-}
-
-// ─── وسوم وفلاتر المناسبات 🟡 ─────────────────────────────────
-
-export function fetchOccasionFilters(): Promise<
-  ApiResponse & { occasions?: OccasionFilter[] }
-> {
-  return adminFetch("/admin/occasions");
-}
-
-export function createOccasionFilter(
-  payload: OccasionFilterPayload,
-): Promise<ApiResponse & { occasions?: OccasionFilter[] }> {
-  return adminFetch("/admin/occasions", { method: "POST", ...json(payload) });
-}
-
-export function updateOccasionFilter(
-  id: number,
-  payload: Partial<OccasionFilterPayload>,
-): Promise<ApiResponse & { occasions?: OccasionFilter[] }> {
-  return adminFetch(`/admin/occasions/${id}`, { method: "PATCH", ...json(payload) });
-}
-
-export function deleteOccasionFilter(
-  id: number,
-): Promise<ApiResponse & { occasions?: OccasionFilter[] }> {
-  return adminFetch(`/admin/occasions/${id}`, { method: "DELETE" });
-}
-
-// ─── المجموعات المميزة 🟡 ──────────────────────────────────────
-
-export function fetchFeaturedCollections(): Promise<
-  ApiResponse & { collections?: FeaturedCollection[] }
-> {
-  return adminFetch("/admin/collections");
-}
-
-export function createFeaturedCollection(
-  payload: FeaturedCollectionPayload,
-): Promise<ApiResponse & { collections?: FeaturedCollection[] }> {
-  return adminFetch("/admin/collections", { method: "POST", ...json(payload) });
-}
-
-export function updateFeaturedCollection(
-  id: number,
-  payload: Partial<FeaturedCollectionPayload>,
-): Promise<ApiResponse & { collections?: FeaturedCollection[] }> {
-  return adminFetch(`/admin/collections/${id}`, { method: "PATCH", ...json(payload) });
-}
-
-export function deleteFeaturedCollection(
-  id: number,
-): Promise<ApiResponse & { collections?: FeaturedCollection[] }> {
-  return adminFetch(`/admin/collections/${id}`, { method: "DELETE" });
 }
 
 // ─── الإشعارات والجرس 🔔 ─────────────────────────────────────

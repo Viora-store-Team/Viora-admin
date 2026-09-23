@@ -30,10 +30,11 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import ErrorBanner from "@/components/ui/ErrorBanner";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { formatDate } from "@/lib/format";
 import { useFlash } from "@/lib/useFlash";
 import {
-  fetchAdminContentPages,
   fetchAdminContentPage,
   saveAdminContentPage,
 } from "@/lib/admin/api";
@@ -169,33 +170,52 @@ interface LocalPageState {
 export default function AdminContentPage() {
   const [activeKey, setActiveKey] = useState<AdminContentKey>("terms");
   const [activeView, setActiveView] = useState<"edit" | "preview">("edit");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [flash, showFlash] = useFlash();
+  const [errors, setErrors] = useState<Partial<Record<AdminContentKey, string>>>({});
+  const [loaded, setLoaded] = useState<AdminContentKey[]>([]);
+  const [attempt, setAttempt] = useState(0);
+  const [dirtyKeys, setDirtyKeys] = useState<AdminContentKey[]>([]);
+  const activeKeyRef = useRef<AdminContentKey>("terms");
+  const loadedKeysRef = useRef<AdminContentKey[]>([]);
+  const markDirty = () => setDirtyKeys(keys => keys.includes(activeKeyRef.current) ? keys : [...keys, activeKeyRef.current]);
+  const canEdit = !saving && !loading && loaded.includes(activeKey);
+  useEffect(() => {
+    if (!dirtyKeys.length) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    const navigate = (event: MouseEvent) => {
+      const link = (event.target as Element).closest?.("a[href]");
+      if (link && !window.confirm("لديك تعديلات غير محفوظة. هل تريد مغادرة الصفحة؟")) { event.preventDefault(); event.stopPropagation(); }
+    };
+    window.addEventListener("beforeunload", warn);
+    document.addEventListener("click", navigate, true);
+    return () => { window.removeEventListener("beforeunload", warn); document.removeEventListener("click", navigate, true); };
+  }, [dirtyKeys]);
 
   // In-memory cache for all 4 pages
   const [pagesState, setPagesState] = useState<Record<AdminContentKey, LocalPageState>>({
     terms: {
       title: PAGE_DEFINITIONS.terms.defaultTitle,
-      html: PAGE_DEFINITIONS.terms.defaultHtml,
+      html: "",
       isPublished: false,
       updatedAt: null,
     },
     privacy: {
       title: PAGE_DEFINITIONS.privacy.defaultTitle,
-      html: PAGE_DEFINITIONS.privacy.defaultHtml,
+      html: "",
       isPublished: false,
       updatedAt: null,
     },
     about: {
       title: PAGE_DEFINITIONS.about.defaultTitle,
-      html: PAGE_DEFINITIONS.about.defaultHtml,
+      html: "",
       isPublished: false,
       updatedAt: null,
     },
     faq: {
       title: PAGE_DEFINITIONS.faq.defaultTitle,
-      html: PAGE_DEFINITIONS.faq.defaultHtml,
+      html: "",
       isPublished: false,
       updatedAt: null,
     },
@@ -214,35 +234,15 @@ export default function AdminContentPage() {
 
   // Stats
   const [wordCount, setWordCount] = useState(0);
-  const [charCount, setCharCount] = useState(0);
 
   const editorRef = useRef<HTMLDivElement>(null);
-  const loadedKeysRef = useRef<Set<string>>(new Set());
 
-  // Clean HTML from stray wrappers or accidental preview copy-pastes
-  const cleanPageHtml = (rawHtml: string, fallback: string): string => {
-    if (!rawHtml || typeof rawHtml !== "string") return fallback;
-    let cleaned = rawHtml.trim();
-
-    // Strip accidental copy of preview letterhead UI
-    if (cleaned.includes("وثيقة") && cleaned.includes("الرسمية")) {
-      const idx = cleaned.indexOf("</h1>");
-      if (idx !== -1) {
-        cleaned = cleaned.slice(idx + 5).trim();
-      }
-    }
-
-    // Strip empty paragraphs at start
-    cleaned = cleaned.replace(/^(?:&nbsp;|\s|<br\s*\/?>|<\/?p>\s*)+/gi, "").trim();
-
-    return cleaned || fallback;
-  };
+  const cleanPageHtml = (rawHtml: string): string => sanitizeHtml(rawHtml || "");
 
   const updateStats = (htmlText: string) => {
     const text = htmlText.replace(/<[^>]*>/g, " ").trim();
     const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
     setWordCount(words);
-    setCharCount(text.length);
   };
 
   const checkActiveFormats = () => {
@@ -262,80 +262,33 @@ export default function AdminContentPage() {
     }
   };
 
-  // Initial load: fetch list of pages and all 4 pages details in parallel
   useEffect(() => {
     let active = true;
-    (async () => {
-      try {
-        setLoading(true);
-        const [listRes, termsRes, privacyRes, aboutRes, faqRes] = await Promise.allSettled([
-          fetchAdminContentPages(),
-          fetchAdminContentPage("terms"),
-          fetchAdminContentPage("privacy"),
-          fetchAdminContentPage("about"),
-          fetchAdminContentPage("faq"),
-        ]);
-
-        if (!active) return;
-
-        setPagesState((prev) => {
-          const next = { ...prev };
-
-          // 1. Populate publication status from list
-          if (listRes.status === "fulfilled" && listRes.value.success && listRes.value.pages) {
-            listRes.value.pages.forEach((p) => {
-              if (next[p.key]) {
-                next[p.key] = {
-                  ...next[p.key],
-                  title: p.title?.trim() || next[p.key].title,
-                  isPublished: p.isPublished,
-                  updatedAt: p.updatedAt,
-                };
-              }
-            });
-          }
-
-          // 2. Populate page details
-          const applyPage = (key: AdminContentKey, settled: PromiseSettledResult<any>) => {
-            if (settled.status === "fulfilled" && settled.value.success && settled.value.page) {
-              const p = settled.value.page;
-              const fallback = PAGE_DEFINITIONS[key].defaultHtml;
-              const raw = p.html && p.html.trim() ? p.html : fallback;
-              const cleaned = cleanPageHtml(raw, fallback);
-              next[key] = {
-                title: p.title?.trim() || PAGE_DEFINITIONS[key].defaultTitle,
-                html: cleaned,
-                isPublished: p.isPublished,
-                updatedAt: p.updatedAt,
-              };
-            }
-          };
-
-          applyPage("terms", termsRes);
-          applyPage("privacy", privacyRes);
-          applyPage("about", aboutRes);
-          applyPage("faq", faqRes);
-
-          // Apply currently active page into editor canvas
-          const initialContent = next[activeKey]?.html || PAGE_DEFINITIONS[activeKey].defaultHtml;
-          if (editorRef.current) {
-            editorRef.current.innerHTML = initialContent;
-            updateStats(initialContent);
-          }
-
-          return next;
-        });
-      } catch {
-        // ignore
-      } finally {
-        if (active) setLoading(false);
+    const keys = (["terms", "privacy", "about", "faq"] as AdminContentKey[]).filter(key => !loadedKeysRef.current.includes(key));
+    void Promise.all(keys.map(async key => ({ key, res: await fetchAdminContentPage(key) }))).then(results => {
+      if (!active) return;
+      const next: Partial<Record<AdminContentKey, LocalPageState>> = {};
+      const failures: Partial<Record<AdminContentKey, string>> = {};
+      const ready: AdminContentKey[] = [];
+      for (const {key, res} of results) {
+        if (res.success && res.page && typeof res.page.html === "string") {
+          next[key] = { title: res.page.title, html: sanitizeHtml(res.page.html), isPublished: res.page.isPublished, updatedAt: res.page.updatedAt };
+          ready.push(key);
+        } else failures[key] = res.message || "تعذر تحميل هذه الصفحة. أعد المحاولة قبل التعديل أو النشر.";
       }
-    })();
-
-    return () => {
-      active = false;
-    };
-  }, []);
+      setPagesState(prev => ({...prev, ...next}));
+      loadedKeysRef.current = [...new Set([...loadedKeysRef.current, ...ready])];
+      setLoaded(loadedKeysRef.current);
+      setErrors(prev => ({...prev, ...Object.fromEntries(ready.map(key => [key, ""])), ...failures}));
+      const selected = next[activeKeyRef.current];
+      if (selected) {
+        if (editorRef.current) editorRef.current.innerHTML = selected.html;
+        updateStats(selected.html);
+      }
+      setLoading(false);
+    });
+    return () => { active = false; };
+  }, [attempt]);
 
   // Handle switching between pages (terms / privacy / about / faq)
   const handleSelectPage = (newKey: AdminContentKey) => {
@@ -356,10 +309,11 @@ export default function AdminContentPage() {
     };
 
     setPagesState(nextPages);
+    activeKeyRef.current = newKey;
     setActiveKey(newKey);
 
     // 2. Put target page's content into editor immediately
-    const targetHtml = nextPages[newKey]?.html || PAGE_DEFINITIONS[newKey].defaultHtml;
+    const targetHtml = nextPages[newKey]?.html || "";
     if (editorRef.current) {
       editorRef.current.innerHTML = targetHtml;
       updateStats(targetHtml);
@@ -370,7 +324,7 @@ export default function AdminContentPage() {
   const handleSwitchView = (view: "edit" | "preview") => {
     if (view === "preview" && editorRef.current) {
       const current = editorRef.current.innerHTML;
-      const cleaned = cleanPageHtml(current, PAGE_DEFINITIONS[activeKey].defaultHtml);
+      const cleaned = cleanPageHtml(current);
       setPagesState((prev) => ({
         ...prev,
         [activeKey]: {
@@ -379,7 +333,7 @@ export default function AdminContentPage() {
         },
       }));
     } else if (view === "edit" && editorRef.current) {
-      const htmlToRestore = pagesState[activeKey].html || PAGE_DEFINITIONS[activeKey].defaultHtml;
+      const htmlToRestore = pagesState[activeKey].html;
       editorRef.current.innerHTML = htmlToRestore;
       updateStats(htmlToRestore);
     }
@@ -392,7 +346,9 @@ export default function AdminContentPage() {
     if (editorRef.current) {
       editorRef.current.focus();
     }
+    if (!canEdit) return;
     document.execCommand(cmd, false, val);
+    markDirty();
     checkActiveFormats();
     if (editorRef.current) {
       updateStats(editorRef.current.innerHTML);
@@ -401,7 +357,7 @@ export default function AdminContentPage() {
 
   // Insert whitelist-compliant HTML blocks
   const insertCustomBlock = (type: "h2" | "h3" | "quote" | "hr" | "callout" | "qa") => {
-    if (typeof document === "undefined" || !editorRef.current) return;
+    if (!canEdit || typeof document === "undefined" || !editorRef.current) return;
     editorRef.current.focus();
 
     let snippet = "";
@@ -420,6 +376,7 @@ export default function AdminContentPage() {
     }
 
     document.execCommand("insertHTML", false, snippet);
+    markDirty();
     checkActiveFormats();
     if (editorRef.current) {
       updateStats(editorRef.current.innerHTML);
@@ -428,24 +385,26 @@ export default function AdminContentPage() {
 
   // Insert link (compliant with backend target=_blank rel=noopener)
   const handleInsertLink = () => {
-    if (!editorRef.current) return;
+    if (!canEdit || !editorRef.current) return;
     editorRef.current.focus();
     const url = prompt("أدخل رابط الموقع (URL):", "https://");
-    if (url && url.trim() && url !== "https://") {
+    if (url && /^https?:\/\/\S+$/i.test(url.trim()) && url !== "https://") {
       execFormat("createLink", url.trim());
     }
   };
 
   // Save changes to backend
   const handleSave = async () => {
+    if (!canEdit) return;
+    const savedKey = activeKey;
+    setErrors(prev => ({...prev, [savedKey]: ""}));
     setSaving(true);
     const currentPage = pagesState[activeKey];
     const rawHtml = editorRef.current ? editorRef.current.innerHTML : currentPage.html;
-    const fallback = PAGE_DEFINITIONS[activeKey].defaultHtml;
-    const htmlToSave = cleanPageHtml(rawHtml, fallback);
+    const htmlToSave = cleanPageHtml(rawHtml);
 
     if (!htmlToSave.replace(/<[^>]*>/g, "").trim()) {
-      showFlash("المحتوى لا يمكن أن يكون فارغاً! ⚠️");
+      setErrors(prev => ({...prev, [savedKey]: "المحتوى لا يمكن أن يكون فارغاً"}));
       setSaving(false);
       return;
     }
@@ -459,7 +418,7 @@ export default function AdminContentPage() {
       if (res.success && res.page) {
         // Rule 1: The backend sanitizes HTML upon write.
         // The frontend editor state MUST update with res.page.html immediately!
-        const serverSanitizedHtml = res.page.html;
+        const serverSanitizedHtml = sanitizeHtml(res.page.html);
         const serverUpdatedAt = res.page.updatedAt || new Date().toISOString();
 
         setPagesState((prev) => ({
@@ -473,17 +432,20 @@ export default function AdminContentPage() {
           },
         }));
 
-        if (editorRef.current) {
+        setDirtyKeys(keys => keys.filter(key => key !== savedKey));
+        if (editorRef.current && activeKeyRef.current === savedKey) {
           editorRef.current.innerHTML = serverSanitizedHtml;
           updateStats(serverSanitizedHtml);
         }
 
         showFlash(
-          typeof res.message === "string" ? res.message : "حدث خطأ أثناء الحفظ",
+          typeof res.message === "string" ? res.message : "تم حفظ الصفحة بنجاح",
         );
+      } else {
+        setErrors(prev => ({...prev, [savedKey]: Object.values(res.errors || {}).join(" · ") || res.message || "تعذر حفظ الصفحة"}));
       }
     } catch {
-      showFlash("تعذر حفظ الصفحة، يرجى المحاولة لاحقاً");
+      setErrors(prev => ({...prev, [savedKey]: "تعذر حفظ الصفحة، يرجى المحاولة لاحقاً"}));
     } finally {
       setSaving(false);
     }
@@ -491,8 +453,10 @@ export default function AdminContentPage() {
 
   // Reset current page to official template
   const handleReset = () => {
+    if (!canEdit) return;
     const meta = PAGE_DEFINITIONS[activeKey];
     if (confirm(`هل ترغب بإعادة تعيين صفحة "${meta.label}" إلى النموذج الرسمي المعتمد؟`)) {
+      markDirty();
       setPagesState((prev) => ({
         ...prev,
         [activeKey]: {
@@ -537,7 +501,7 @@ export default function AdminContentPage() {
           <Button
             variant="secondary"
             onClick={handleReset}
-            disabled={saving || loading}
+            disabled={!canEdit}
             icon={<RotateCcw className="size-4" />}
           >
             استعادة الافتراضي
@@ -545,7 +509,7 @@ export default function AdminContentPage() {
 
           <Button
             onClick={handleSave}
-            disabled={saving || loading}
+            disabled={!canEdit}
             icon={<Save className="size-4" />}
           >
             {saving ? "جاري الحفظ والنشر..." : "حفظ ونشر الصفحة"}
@@ -553,6 +517,8 @@ export default function AdminContentPage() {
         </div>
       </div>
 
+      <ErrorBanner message={errors[activeKey]} onRetry={!loaded.includes(activeKey) ? () => { setLoading(true); setAttempt(n => n + 1); } : undefined} />
+      {dirtyKeys.length > 0 && <p role="status" className="text-sm text-warning">لديك تعديلات غير محفوظة في {dirtyKeys.length} صفحة.</p>}
       {flash && (
         <div className="flex items-center gap-2 rounded-xl border border-success/20 bg-success-soft px-4 py-3 text-sm font-extrabold text-success shadow-xs">
           <CheckCircle2 className="size-4.5 shrink-0" />
@@ -604,7 +570,7 @@ export default function AdminContentPage() {
                       : "bg-field-bg text-text-secondary border border-border"
                   }`}
                 >
-                  {pageData.isPublished ? "منشورة" : "مسودة"}
+                  {!loaded.includes(key) ? "غير محمّلة" : pageData.isPublished ? "منشورة" : "مسودة"}
                 </span>
               </div>
 
@@ -617,7 +583,7 @@ export default function AdminContentPage() {
                 <span>
                   {pageData.updatedAt
                     ? `آخر تحديث: ${formatDate(pageData.updatedAt)}`
-                    : "جاهزة للتعديل"}
+                    : loaded.includes(key) ? "جاهزة للتعديل" : "بانتظار التحميل"}
                 </span>
               </div>
             </button>
@@ -679,8 +645,11 @@ export default function AdminContentPage() {
               <input
                 type="text"
                 value={currentPage.title}
+                disabled={!canEdit}
+                aria-label="عنوان الصفحة"
                 onChange={(e) => {
                   const val = e.target.value;
+                  markDirty();
                   setPagesState((prev) => ({
                     ...prev,
                     [activeKey]: {
@@ -974,9 +943,22 @@ export default function AdminContentPage() {
         >
           <div
             ref={editorRef}
-            contentEditable
+            contentEditable={canEdit}
+            onDrop={(event) => event.preventDefault()}
+            role="textbox"
+            aria-label="محتوى الصفحة"
+            aria-multiline="true"
+            onPaste={(event) => {
+              event.preventDefault();
+              if (!canEdit) return;
+              const text = document.createElement("div");
+              text.textContent = event.clipboardData.getData("text/plain");
+              document.execCommand("insertHTML", false, sanitizeHtml(event.clipboardData.getData("text/html") || text.innerHTML));
+              markDirty();
+            }}
             suppressContentEditableWarning
             onInput={() => {
+              markDirty();
               if (editorRef.current) {
                 updateStats(editorRef.current.innerHTML);
               }
@@ -1019,10 +1001,7 @@ export default function AdminContentPage() {
             {/* Single Clean Rendered Content */}
             <div
               dangerouslySetInnerHTML={{
-                __html: cleanPageHtml(
-                  currentPage.html,
-                  PAGE_DEFINITIONS[activeKey].defaultHtml,
-                ),
+                __html: cleanPageHtml(currentPage.html),
               }}
               className="text-sm text-heading leading-relaxed font-sans prose prose-neutral max-w-none [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-primary [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-black [&_h3]:text-heading [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-2.5 [&_ul]:list-disc [&_ul]:pr-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pr-5 [&_ol]:mb-3 [&_blockquote]:border-r-4 [&_blockquote]:border-primary/60 [&_blockquote]:bg-field-bg/60 [&_blockquote]:p-3 [&_blockquote]:rounded-lg [&_blockquote]:my-3 [&_hr]:my-4 [&_hr]:border-border"
               dir="rtl"
@@ -1038,7 +1017,7 @@ export default function AdminContentPage() {
 
           <Button
             onClick={handleSave}
-            disabled={saving || loading}
+            disabled={!canEdit}
             icon={<Save className="size-4" />}
           >
             {saving ? "جاري الحفظ..." : "حفظ ونشر التعديلات"}

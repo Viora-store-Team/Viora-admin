@@ -6,35 +6,8 @@
  * تحميل الصفحة — نفس عمر كاش lookups.ts، وهو المطلوب لبيانات تجريبية.
  */
 
-import type {
-  AdminCategoryRoot,
-  AdminReportDetail,
-  AdminStoreDetail,
-  AdminUserDetail,
-  Banner,
-  DeliveryFailure,
-  DeliveryHealth,
-  FeaturedCollection,
-  HomeContent,
-  OccasionFilter,
-  ReportStatus,
-  ReportTarget,
-  Review,
-  SizeGroup,
-  StaticPage,
-  StoreStatus,
-} from "../types";
-import {
-  CITIES,
-  CUSTOMER_NAMES,
-  OWNER_NAMES,
-  REPORT_REASONS,
-  REVIEW_COMMENTS,
-  STORE_NAMES,
-  daysAgo,
-  hoursAgo,
-  spread,
-} from "./seed";
+import type { AdminCategoryRoot, AdminReportDetail, AdminStoreDetail, AdminUserDetail, Banner, DeliveryFailure, DeliveryHealth, HomeContent, Review, SizeGroup, StaticPage } from "../types";
+import { daysAgo, hoursAgo } from "./seed";
 
 /** اسم المشرف المنفّذ — بالحقيقة السيرفر هو اللي بيحطّه من التوكن */
 const ACTOR = "مالك المنصة";
@@ -49,17 +22,10 @@ const ACTOR = "مالك المنصة";
   بدل ما يبيّنها — وهذا أسوأ من إنه ما يكون موجود.
 */
 
-function storeStatus(i: number): StoreStatus {
-  if (i % 9 === 4) return "PENDING";
-  if (i % 11 === 7) return "REJECTED";
-  return "APPROVED";
-}
 
 const stores: AdminStoreDetail[] = [];
 
-const merchants: AdminUserDetail[] = [];
 
-const customers: AdminUserDetail[] = [];
 
 const users: AdminUserDetail[] = [];
 
@@ -473,178 +439,6 @@ const deliveryFailures: DeliveryFailure[] = Array.from({ length: 11 }, (_, i) =>
   };
 });
 
-// ─── وسوم وفلاتر المناسبات ─────────────────────────────────────
-
-const occasions: OccasionFilter[] = [
-  {
-    id: 1,
-    name: "يومي وكاجوال",
-    slug: "casual-daily",
-    icon: "coffee",
-    description: "إطلالات مريحة للمشاوير اليومية، الجامعة، والتسوق.",
-    productsCount: 148,
-    isActive: true,
-    isFeaturedOnHome: true,
-    sortOrder: 1,
-    targetCategories: ["ملابس نسائية", "ملابس رجالية", "أطفال ومحير", "أحذية"],
-  },
-  {
-    id: 2,
-    name: "عمل ورسمي",
-    slug: "work-formal",
-    icon: "briefcase",
-    description: "بدل رسمية، بليزرات، قمصان، وأحذية كلاسيكية للمكتب والمقابلات.",
-    productsCount: 86,
-    isActive: true,
-    isFeaturedOnHome: true,
-    sortOrder: 2,
-    targetCategories: ["ملابس نسائية", "ملابس رجالية", "أحذية", "إكسسوارات وحقائب"],
-  },
-  {
-    id: 3,
-    name: "سهرة ومناسبات خاصة",
-    slug: "evening-occasions",
-    icon: "sparkles",
-    description: "فساتين سهرة راقية، بدل توكسيدو، أحذية كعب، وكلاتشات لامعة.",
-    productsCount: 0,
-    isActive: true,
-    isFeaturedOnHome: true,
-    sortOrder: 3,
-    targetCategories: ["ملابس نسائية", "ملابس رجالية", "أحذية", "مستحضرات التجميل والعناية"],
-  },
-  {
-    id: 4,
-    name: "أعراس وخطوبة",
-    slug: "weddings-engagements",
-    icon: "heart",
-    description: "أزياء المناسبات الكبرى للعرائس، المعازيم، والخطوبة بأرقى التصاميم.",
-    productsCount: 0,
-    isActive: true,
-    isFeaturedOnHome: false,
-    sortOrder: 4,
-    targetCategories: ["ملابس نسائية", "ملابس رجالية", "أحذية", "إكسسوارات وحقائب"],
-  },
-  {
-    id: 5,
-    name: "حفلات وتخرج",
-    slug: "parties-graduation",
-    icon: "party-popper",
-    description: "ملابس أنيقة ومميزة لحفلات التخرج، أعياد الميلاد والاحتفالات.",
-    productsCount: 0,
-    isActive: true,
-    isFeaturedOnHome: false,
-    sortOrder: 5,
-    targetCategories: ["ملابس نسائية", "ملابس رجالية", "أطفال ومحير"],
-  },
-  {
-    id: 6,
-    name: "أعياد ومواسم",
-    slug: "eid-festive",
-    icon: "moon",
-    description: "تشكيلات العيد، الأطقم الجديدة والعبايات والجلابيب والقفاطين.",
-    productsCount: 0,
-    isActive: true,
-    isFeaturedOnHome: true,
-    sortOrder: 6,
-    targetCategories: ["ملابس نسائية", "ملابس رجالية", "أطفال ومحير", "مواليد ورضع"],
-  },
-  {
-    id: 7,
-    name: "رياضة ونشاطات",
-    slug: "sports-activewear",
-    icon: "activity",
-    description: "ملابس رياضية، سنيكرز، أطقم تدريب، وترنقات نشطة.",
-    productsCount: 0,
-    isActive: true,
-    isFeaturedOnHome: false,
-    sortOrder: 7,
-    targetCategories: ["ملابس رجالية", "ملابس نسائية", "أطفال ومحير", "أحذية"],
-  },
-  {
-    id: 8,
-    name: "ملابس تنكرية ومناسبات أطفال",
-    slug: "kids-costumes",
-    icon: "sun",
-    description: "أزياء شخصيات كرتونية وتنكرية لحفلات المدارس وأعياد الأطفال.",
-    productsCount: 0,
-    isActive: true,
-    isFeaturedOnHome: false,
-    sortOrder: 8,
-    targetCategories: ["أطفال ومحير"],
-  },
-];
-
-// ─── المجموعات المميزة ──────────────────────────────────────────
-
-const collections: FeaturedCollection[] = [
-  {
-    id: 1,
-    title: "تشكيلة العيد الفاخرة",
-    slug: "eid-luxe-collection",
-    subtitle: "أرقى الفساتين والبدل وأطقم العيد الجديدة لجميع أفراد العائلة.",
-    badge: "الأكثر طلباً",
-    imageUrl: null,
-    productsCount: 0,
-    isActive: true,
-    sortOrder: 1,
-  },
-  {
-    id: 2,
-    title: "إطلالات العمل والجامعة",
-    slug: "back-to-work-uni",
-    subtitle: "بليزرات، قمصان، وبناطيل كلاسيكية أنيقة وعملية تضمن لك الراحة والتميز.",
-    badge: "أحدث الإطلالات",
-    imageUrl: null,
-    productsCount: 0,
-    isActive: true,
-    sortOrder: 2,
-  },
-  {
-    id: 3,
-    title: "سهرات وأعراس 2026",
-    slug: "evening-glam-2026",
-    subtitle: "فساتين سهرة مذهلة، بدل توكسيدو فخمة، وأطقم مجوهرات وأحذية برّاقة.",
-    badge: "حصري",
-    imageUrl: null,
-    productsCount: 0,
-    isActive: true,
-    sortOrder: 3,
-  },
-  {
-    id: 4,
-    title: "تشكيلة الصيف المنعشة",
-    slug: "summer-refresh",
-    subtitle: "ألوان مبهجة وأقمشة باردة خفيفة تناسب حر الصيف والنزهات البحرية.",
-    badge: "موسمي",
-    imageUrl: null,
-    productsCount: 0,
-    isActive: true,
-    sortOrder: 4,
-  },
-  {
-    id: 5,
-    title: "أطقم ومستلزمات المواليد الجدد",
-    slug: "newborn-essentials",
-    subtitle: "أطقم قطنية ناعمة 100%، سالوبيتات، ولفافات دافئة تليق بطفلك الجديد.",
-    badge: "هدايا مواليد",
-    imageUrl: null,
-    productsCount: 0,
-    isActive: true,
-    sortOrder: 5,
-  },
-  {
-    id: 6,
-    title: "الراحة المنزلية واللانجري (Loungewear)",
-    slug: "cozy-loungewear",
-    subtitle: "بيجامات قطنية فاخرة، أرواب مريحة، وترنقات منزلية ناعمة للاسترخاء التام.",
-    badge: "راحة تامة",
-    imageUrl: null,
-    productsCount: 0,
-    isActive: true,
-    sortOrder: 6,
-  },
-];
-
 // ─── الحالة المشتركة ───────────────────────────────────────────
 
 export const db = {
@@ -657,13 +451,9 @@ export const db = {
   banners,
   pages,
   home,
-  occasions,
-  collections,
   deliveryHealth,
   deliveryFailures,
   actor: ACTOR,
   /** عدّادات المعرّفات — عشان الإنشاء بالجلسة ما يكرّر id */
   nextCategoryId: 900,
-  nextOccasionId: 50,
-  nextCollectionId: 50,
 };

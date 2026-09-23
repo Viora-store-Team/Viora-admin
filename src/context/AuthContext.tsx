@@ -32,6 +32,7 @@ interface LoginOptions {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  authError: string;
   /**
    * بتنعرض على شاشة الدخول بعد طرد المستخدم (جلسة منتهية · حساب مش أدمن ·
    * حساب موقوف). بتعيش بالذاكرة بس — بتختفي مع إعادة تحميل الصفحة.
@@ -81,6 +82,7 @@ function isPublic(pathname: string): boolean {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [authError, setAuthError] = useState("");
   const [notice, setNotice] = useState<AuthNotice | null>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -133,6 +135,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // ── جلب بيانات المستخدم الحالي GET /api/admin/me ────────────────
   const refetchUser = useCallback(async () => {
+    setLoading(true);
+    setAuthError("");
     const token = getToken();
     if (!token) {
       setUser(null);
@@ -143,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const res = await getMe();
+      if (getToken() !== token) return;
       /* `/admin/me` بيرجّع المستخدم بالمستوى الأعلى — انفحص على السيرفر.
          ما في نسخة ملفوفة بـ`data` فما بنحتاط لشكل تاني. */
       const fetched = res.user;
@@ -169,13 +174,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         eject(
           res.message ||
             (res.status === 403 ? t.auth.notAdmin : t.auth.sessionExpired),
+          res.accountSuspended === true,
         );
       } else {
         // خطأ شبكة أو خادم ناشئ/نائم — لا نمسح التوكن
-        console.warn("تعذّر الاتصال بخادم المصادقة حالياً:", res.message);
+        setAuthError(res.message || "تعذر التحقق من الجلسة. أعد المحاولة.");
       }
-    } catch (err) {
-      console.error("فشل جلب بيانات المستخدم:", err);
+    } catch {
+      setAuthError("تعذر التحقق من الجلسة. أعد المحاولة.");
     } finally {
       setLoading(false);
     }
@@ -213,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginUser = useCallback(
     (userData: User, token: string, options: LoginOptions = {}) => {
       setToken(token);
+      setAuthError("");
       setUser(userData);
       setNotice(null);
       setLoading(false);
@@ -234,7 +241,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, notice, setNotice, loginUser, logout, refetchUser }}
+      value={{ user, loading, authError, notice, setNotice, loginUser, logout, refetchUser }}
     >
       {children}
     </AuthContext.Provider>

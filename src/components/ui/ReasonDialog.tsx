@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useDialog } from "@/lib/useDialog";
 import { t } from "@/lib/strings";
 import { ADMIN_LIMITS } from "@/lib/admin/types";
 import Button from "./Button";
@@ -59,22 +60,7 @@ export default function ReasonDialog({
     }
   }
 
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !loading) onCancel();
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open, loading, onCancel]);
+  const dialogRef = useDialog(open, onCancel, loading);
 
   if (!open) return null;
 
@@ -120,6 +106,8 @@ export default function ReasonDialog({
 
       <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center p-4">
         <div
+          ref={dialogRef}
+          tabIndex={-1}
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}

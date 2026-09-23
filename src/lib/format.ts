@@ -50,7 +50,8 @@ export function formatPrice(value: string | number): string {
  * اليوم المجرّد بينضاف إله `T00:00:00` عشان JS يفسّره كوقت محلي؛ بدونها
  * بيتفسّر UTC وبينزاح ليوم قبل عند المستخدمين اللي توقيتهم خلف UTC.
  */
-export function formatDate(iso: string): string {
+export function formatDate(iso: string | null | undefined): string {
+  if (typeof iso !== "string" || !iso.trim()) return "—";
   // الطابع الكامل فيه وقت أصلاً — بينفهم متل ما هو
   const date = new Date(iso.includes("T") ? iso : `${iso}T00:00:00`);
 

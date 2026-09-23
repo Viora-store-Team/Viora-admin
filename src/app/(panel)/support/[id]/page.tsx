@@ -21,11 +21,12 @@ import { formatDateTime } from "@/lib/format";
 import { useFlash } from "@/lib/useFlash";
 import { t } from "@/lib/strings";
 
-export default function AdminSupportTicketDetailPage() {
+function AdminSupportTicketDetailPageContent() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const rawId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const ticketId = rawId ? Number(rawId) : NaN;
+  const validId = Number.isSafeInteger(ticketId) && ticketId > 0;
   const [ticket, setTicket] = useState<AdminSupportTicket | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -42,15 +43,10 @@ export default function AdminSupportTicketDetailPage() {
   };
 
   useEffect(() => {
-    if (!ticketId || Number.isNaN(ticketId) || ticketId <= 0) {
-      setLoading(false);
-      setNotFound(true);
+    if (!validId) {
       return;
     }
     let cancelled = false;
-    setLoading(true);
-    setNotFound(false);
-    setError("");
 
     void (async () => {
       const res = await fetchSupportTicket(ticketId);
@@ -69,7 +65,7 @@ export default function AdminSupportTicketDetailPage() {
     })();
 
     return () => { cancelled = true; };
-  }, [ticketId, attempt]);
+  }, [ticketId, validId, attempt]);
 
   const resolveTicket = async () => {
     if (!ticket) return;
@@ -89,8 +85,8 @@ export default function AdminSupportTicketDetailPage() {
     if (failure.kind === "conflict") reload();
   };
 
-  if (loading) return <Spinner />;
-  if (notFound) {
+  if (loading && validId) return <Spinner />;
+  if (notFound || !validId) {
     return <Card className="overflow-hidden border border-border shadow-xs"><CardBody className="p-8"><EmptyState icon={Headphones} title={t.admin.common.notFound} hint={t.admin.common.notFoundHint} action={<Button onClick={() => router.push("/support")}>{t.admin.common.backToList}</Button>} /></CardBody></Card>;
   }
   if (!ticket) return <ErrorBanner message={error || t.admin.common.loadFailed} onRetry={reload} />;
@@ -124,4 +120,9 @@ export default function AdminSupportTicketDetailPage() {
       <ConfirmDialog open={dialogOpen} tone="primary" title={t.admin.support.resolveTitle} body={t.admin.support.resolveBody} confirmLabel={t.admin.support.resolve} loading={busy} onConfirm={resolveTicket} onCancel={() => setDialogOpen(false)} extraAction={<div className="space-y-1.5"><Input id="support-admin-note" label={t.admin.support.adminNote} value={adminNote} onChange={setAdminNote} placeholder={t.admin.support.adminNotePlaceholder} multiline rows={4} maxLength={1000} /><p className="text-xs text-text-secondary">{adminNote.length}/1000 — {t.admin.support.noteLimit}</p></div>} />
     </div>
   );
+}
+
+export default function AdminSupportTicketDetailPage() {
+  const params = useParams<{id: string}>();
+  return <AdminSupportTicketDetailPageContent key={params.id} />;
 }

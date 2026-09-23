@@ -1,82 +1,34 @@
 import { apiFetch, type ApiResponse } from "@/lib/api";
-import { mockFetch } from "./mock";
 
-/**
- * الموجّه بين الباك إند الحقيقي والبيانات التجريبية — **لكل مسار على حدة**.
- *
- * القسم مربوط على مرحلتين لأن الباك إند وصّل جزء من المسارات بس. بدل ما
- * القسم كله يكون تجريبي أو كله حقيقي، كل مسار بيروح على مصدره:
- *
- * - `/admin/stats` · `/admin/stores*` · `/admin/users*` · `/admin/categories*`
- *   → السيرفر الحقيقي
- * - الباقي (بلاغات · محتوى · توصيل) → mock/
- *
- * لما يوصل أي مسار جديد من الباك إند: ضيف بادئته لـ `LIVE_PREFIXES` وضيف
- * صفحته لـ `LIVE_PAGES`. لما توصل كلها: احذف mock/ وخلّي الجسم `apiFetch`
- * مباشرة. ولا صفحة بتتغيّر — الصفحات بتستورد من api.ts بس.
- */
-const LIVE_PREFIXES = [
-  "/admin/stats",
-  "/admin/stores",
-  "/admin/users",
-  "/admin/ratings",
-  "/admin/categories",
-  "/admin/occasions",
-  "/admin/collections",
-  "/admin/content",
-  "/admin/banners",
-  "/admin/orders",
-  "/admin/support",
-  "/notifications",
-] as const;
+// Mock is an explicit development choice, never a production fallback.
+export const ADMIN_FORCE_MOCK = process.env.NODE_ENV === "development" &&
+  process.env.NEXT_PUBLIC_ADMIN_MOCK === "true";
 
-/**
- * مسارات الصفحات اللي بتقرأ من السيرفر الحقيقي — بتغذّي شريط التنبيه بس.
- * مطابقة **بادئة**: `/stores/18` بتنحسب تحت `/stores`.
- */
-const LIVE_PAGES = ["/", "/stores", "/users", "/categories", "/reviews", "/orders", "/content", "/support", "/banners"] as const;
-
-/**
- * مفتاح طوارئ: `NEXT_PUBLIC_ADMIN_MOCK=true` بيرجّع **كل** المسارات
- * للبيانات التجريبية.
- *
- * موجود لأن الاستضافة مجانية والسيرفر بينام بعد ~15 دقيقة — لما تشتغل
- * على شغل واجهة بحت، هذا بيوفّر عليك انتظار 60 ثانية بكل إقلاع.
- *
- * ⚠️ Next بيحقن NEXT_PUBLIC_* وقت البناء — لازم تعيد تشغيل سيرفر التطوير.
- */
-export const ADMIN_FORCE_MOCK = process.env.NEXT_PUBLIC_ADMIN_MOCK === "true";
-
-/** المسار بيروح على الباك إند الحقيقي؟ */
 export function isLiveEndpoint(endpoint: string): boolean {
-  if (ADMIN_FORCE_MOCK) return false;
-  return LIVE_PREFIXES.some((prefix) => endpoint.startsWith(prefix));
+  return Boolean(endpoint) && !ADMIN_FORCE_MOCK;
 }
 
-/** الصفحة بتعرض بيانات حقيقية؟ — مستهلكها الوحيد MockNotice */
 export function isLivePage(pathname: string): boolean {
-  if (ADMIN_FORCE_MOCK) return false;
-  return LIVE_PAGES.some(
-    (page) => pathname === page || pathname.startsWith(`${page}/`),
-  );
+  return Boolean(pathname) && !ADMIN_FORCE_MOCK;
 }
 
-export function adminFetch(
-  endpoint: string,
-  options: RequestInit = {},
-): Promise<ApiResponse> {
-  return isLiveEndpoint(endpoint)
-    ? apiFetch(endpoint, options)
-    : mockFetch(endpoint, options);
+export async function adminFetch(endpoint: string, options: RequestInit = {}): Promise<ApiResponse> {
+  if (ADMIN_FORCE_MOCK) {
+    const { mockFetch } = await import("./mock");
+    return mockFetch(endpoint, options);
+  }
+  const result = await apiFetch(endpoint, options);
+  if (result.status === 404 && /^\/admin\/(reports|delivery|reviews)(\/|\?|$)/.test(endpoint)) {
+    return { ...result, message: "هذه الميزة غير متاحة من الخادم حالياً. أعد المحاولة لاحقاً." };
+  }
+  return result;
 }
 
-/** بنّاء سلسلة الاستعلام — بيتجاهل القيم الفاضية بدل ما يبعث q= فاضية */
 export function query(params: Record<string, string | number | undefined>): string {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === "") continue;
     search.set(key, String(value));
   }
-  const text = search.toString();
-  return text ? `?${text}` : "";
+  return search.size ? `?${search}` : "";
 }

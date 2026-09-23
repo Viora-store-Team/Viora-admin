@@ -83,9 +83,7 @@ export async function apiFetch(
 ): Promise<ApiResponse> {
   const token = getToken();
 
-  const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string>),
-  };
+  const headers = new Headers(options.headers);
 
   /*
     Content-Type بينتحط بس لما يكون في body.
@@ -95,9 +93,9 @@ export async function apiFetch(
   if (
     options.body !== undefined &&
     !(options.body instanceof FormData) &&
-    !headers["Content-Type"]
+    !headers.has("Content-Type")
   ) {
-    headers["Content-Type"] = "application/json";
+    headers.set("Content-Type", "application/json");
   }
 
   /*
@@ -105,25 +103,30 @@ export async function apiFetch(
     مسارات زي /auth/google/complete و /auth/reset-password بتشتغل بتوكن مؤقت
     (setupToken / resetToken) مش بتوكن الجلسة، فلازم ما ندهس هيدرهم.
   */
-  const usesSessionToken = !headers["Authorization"];
+  const usesSessionToken = !headers.has("Authorization") && endpoint !== "/admin/login";
 
   if (usesSessionToken && token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
   let response: Response;
+  const timeout = AbortSignal.timeout(45_000);
+  const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
 
   try {
     response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
+      signal,
     });
   } catch {
     // فشل شبكة حقيقي — ما وصلنا للسيرفر أصلاً
     return {
       success: false,
       status: 0,
-      message: "حدث خطأ في الاتصال بالخادم. يرجى المحاولة لاحقاً.",
+      message: timeout.aborted
+        ? "الخادم تأخر بالرد. أعد المحاولة."
+        : "حدث خطأ في الاتصال بالخادم. يرجى المحاولة لاحقاً.",
     };
   }
 
@@ -134,6 +137,7 @@ export async function apiFetch(
   */
   try {
     const data = await response.json();
+    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("Invalid response");
 
     /*
       🚪 موت الجلسة — الفرع الوحيد اللي بيمسح التوكن.
@@ -149,7 +153,7 @@ export async function apiFetch(
       ⚠️ وكمان مش على الرسالة العربية — نص للعرض مش مُعرّف، وصياغته ممكن
       تتغيّر بأي وقت بلا ما تنعتبر كسر عقد.
     */
-    if (data.forceLogout === true && typeof window !== "undefined") {
+    if (usesSessionToken && token && token === getToken() && data.forceLogout === true && typeof window !== "undefined") {
       removeToken();
       sessionDeathHandler?.({
         message: typeof data.message === "string" ? data.message : "",
@@ -165,13 +169,19 @@ export async function apiFetch(
       */
       response.status === 401 &&
       usesSessionToken &&
+      token && token === getToken() &&
       typeof window !== "undefined"
     ) {
       removeToken();
+      sessionDeathHandler?.({ message: typeof data.message === "string" ? data.message : "", accountSuspended: false });
     }
 
-    return { ...data, status: response.status };
+    return { ...data, success: response.ok && data.success === true, status: response.status };
   } catch {
+    if (response.status === 401 && usesSessionToken && token && token === getToken() && typeof window !== "undefined") {
+      removeToken();
+      sessionDeathHandler?.({ message: "", accountSuspended: false });
+    }
     return {
       success: false,
       status: response.status,

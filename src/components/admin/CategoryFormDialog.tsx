@@ -1,4 +1,5 @@
 "use client";
+import { useDialog } from "@/lib/useDialog";
 
 import { useRef, useState } from "react";
 import { Trash2, Upload } from "lucide-react";
@@ -81,6 +82,8 @@ export default function CategoryFormDialog({
     setSortOrder(mode?.kind === "edit" ? String(mode.node.sortOrder) : "");
     setSizeGroup("");
   }
+
+  const dialogRef = useDialog(!!mode, onCancel, loading || uploading);
 
   if (!mode) return null;
 
@@ -176,7 +179,10 @@ export default function CategoryFormDialog({
 
       <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center p-4">
         <div
-          role="dialog"
+          ref={dialogRef}
+        tabIndex={-1}
+        aria-label="التصنيف"
+        role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
           className="pointer-events-auto max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-surface p-6 shadow-2xl"

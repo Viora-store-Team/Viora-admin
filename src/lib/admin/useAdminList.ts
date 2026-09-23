@@ -110,22 +110,25 @@ export function useAdminList<T>({
   const startLoading = () => setState((s) => ({ ...s, loading: true, error: "" }));
 
   const changePage = useCallback((next: number) => {
+    if (next === page) return;
     startLoading();
     setPage(next);
-  }, []);
+  }, [page]);
 
   /** البحث والفلاتر بيرجّعوا لأول صفحة — الصفحة 5 من نتيجة قديمة ما إلها معنى */
   const changeQuery = useCallback((next: string) => {
+    if (next === q && page === 1) return;
     startLoading();
     setPage(1);
     setQ(next);
-  }, []);
+  }, [q, page]);
 
   const changeFilter = useCallback((key: string, value: string) => {
+    if (filters[key] === value && page === 1) return;
     startLoading();
     setPage(1);
     setFilters((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  }, [filters, page]);
 
   const reload = useCallback(() => {
     startLoading();
@@ -133,15 +136,16 @@ export function useAdminList<T>({
   }, []);
 
   const clearFilters = useCallback(() => {
+    if (page === 1 && q === "" && filterKey === initialKey) return;
     startLoading();
     setPage(1);
     setQ("");
     setFilters(JSON.parse(initialKey) as Record<string, string>);
-  }, [initialKey]);
+  }, [initialKey, filterKey, page, q]);
 
   /** في فلترة فعّالة؟ بيفرّق بين "ما في بيانات" و"ما في نتائج بحث" */
   const isFiltered =
-    q.trim() !== "" || Object.values(filters).some((v) => v !== "");
+    q.trim() !== "" || filterKey !== initialKey;
 
   return {
     ...state,

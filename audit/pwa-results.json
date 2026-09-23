@@ -1,0 +1,61 @@
+{
+  "headers": {
+    "cache-control": "s-maxage=31536000",
+    "connection": "keep-alive",
+    "content-encoding": "gzip",
+    "content-type": "text/html; charset=utf-8",
+    "date": "Wed, 23 Sep 2026 07:42:11 GMT",
+    "etag": "\"21yqg0l4sqbft\"",
+    "keep-alive": "timeout=5",
+    "permissions-policy": "camera=(), microphone=(), geolocation=()",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "strict-transport-security": "max-age=63072000; includeSubDomains; preload",
+    "transfer-encoding": "chunked",
+    "vary": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+    "x-powered-by": "Next.js",
+    "x-nextjs-cache": "HIT",
+    "x-nextjs-prerender": "1, 1",
+    "x-nextjs-stale-time": "300"
+  },
+  "manifest": {
+    "id": "/",
+    "name": "Viora Admin — إدارة فيورا",
+    "short_name": "Viora Admin",
+    "description": "لوحة إدارة منصة فيورا",
+    "lang": "ar",
+    "dir": "rtl",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#faf7f2",
+    "theme_color": "#7d1d29",
+    "icons": [
+      {
+        "src": "/icons/icon-192.png?v=2",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any"
+      },
+      {
+        "src": "/icons/icon-512.png?v=2",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any"
+      },
+      {
+        "src": "/icons/icon-maskable-512.png?v=2",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "maskable"
+      }
+    ]
+  },
+  "cache": {
+    "viora-admin-offline-v1": [
+      "/offline.html"
+    ]
+  },
+  "offlineText": "تعذّر الاتصال بالإنترنت\n\nإدارة فيورا تحتاج اتصالًا بالإنترنت لعرض أحدث البيانات وتنفيذ العمليات. تأكّد من اتصالك وحاول مرة ثانية.\n\nإعادة المحاولة"
+}

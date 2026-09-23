@@ -1,4 +1,5 @@
 "use client";
+import { useDialog } from "@/lib/useDialog";
 
 import {
   Calendar,
@@ -58,6 +59,8 @@ export default function CategoryDetailDialog({
   onDelete,
   onAddChild,
 }: CategoryDetailDialogProps) {
+  const dialogRef = useDialog(!!node, onClose, false);
+
   if (!node) return null;
 
   const isRoot = node.parentId === null;
@@ -71,6 +74,9 @@ export default function CategoryDetailDialog({
       />
 
       <div
+        ref={dialogRef}
+        tabIndex={-1}
+        aria-label="التصنيف"
         role="dialog"
         aria-modal="true"
         className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"

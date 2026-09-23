@@ -1,0 +1,74 @@
+[
+  {
+    "path": "/admin/stores/489",
+    "status": 500,
+    "success": false,
+    "keys": [
+      "success",
+      "message"
+    ],
+    "message": "صار خطأ داخلي بالسيرفر"
+  },
+  {
+    "path": "/admin/stores/623",
+    "status": 500,
+    "success": false,
+    "keys": [
+      "success",
+      "message"
+    ],
+    "message": "صار خطأ داخلي بالسيرفر"
+  },
+  {
+    "path": "/admin/stores/624",
+    "status": 500,
+    "success": false,
+    "keys": [
+      "success",
+      "message"
+    ],
+    "message": "صار خطأ داخلي بالسيرفر"
+  },
+  {
+    "path": "/admin/categories",
+    "authenticated": false,
+    "status": 401,
+    "success": false
+  },
+  {
+    "path": "/admin/orders",
+    "authenticated": false,
+    "status": 401,
+    "success": false
+  },
+  {
+    "path": "/admin/users",
+    "authenticated": false,
+    "status": 401,
+    "success": false
+  },
+  {
+    "path": "/admin/content",
+    "authenticated": false,
+    "status": 401,
+    "success": false
+  },
+  {
+    "path": "/admin/banners",
+    "authenticated": false,
+    "status": 401,
+    "success": false
+  },
+  {
+    "path": "/admin/support/tickets",
+    "authenticated": false,
+    "status": 401,
+    "success": false
+  },
+  {
+    "path": "/notifications",
+    "authenticated": false,
+    "status": 401,
+    "success": false
+  }
+]

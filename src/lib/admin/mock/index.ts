@@ -17,8 +17,6 @@ import type {
   BannerPayload,
   CategoryPayload,
   CategoryUpdatePayload,
-  FeaturedCollectionPayload,
-  OccasionFilterPayload,
   OrdersPoint,
   ProductReview,
   ReportStatus,
@@ -254,7 +252,7 @@ function reportListItem(r: (typeof db.reports)[number]) {
   };
 }
 
-function generateStoreOrders(storeId: number): StoreOrder[] {
+function generateStoreOrders(): StoreOrder[] {
   const customerList = [
     { name: "أحمد حسن", phone: "0599112233", email: "ahmad.h@example.com", city: "غزة", address: "غزة - الرمال" },
     { name: "رائد علي", phone: "0598774411", email: "raed.ali@example.com", city: "خانيونس", address: "خانيونس - الكتيبة" },
@@ -468,7 +466,7 @@ const MOCK_PRODUCT_REVIEWS_SEED: ProductReview[] = [
   },
 ];
 
-let liveProductReviews = [...MOCK_PRODUCT_REVIEWS_SEED];
+const liveProductReviews = [...MOCK_PRODUCT_REVIEWS_SEED];
 
 // ─── الموجّه ───────────────────────────────────────────────────
 
@@ -542,7 +540,7 @@ export async function mockFetch(
       // القبول بيمسح أثر الرفض السابق — انفحص على السيرفر
       store.rejectionReason = null;
       store.reviewedAt = today();
-      store.reviewedBy = { id: 398, name: db.actor, email: "owner@viora.com" };
+      store.reviewedBy = { id: 398, name: db.actor, email: "admin@example.test" };
       const merchant = db.users.find(
         (u) => u.store?.id === store.id || u.id === store.owner.id,
       );
@@ -568,7 +566,7 @@ export async function mockFetch(
       store.owner.isActive = false;
       store.rejectionReason = (body.reason ?? "").trim();
       store.reviewedAt = today();
-      store.reviewedBy = { id: 398, name: db.actor, email: "owner@viora.com" };
+      store.reviewedBy = { id: 398, name: db.actor, email: "admin@example.test" };
       const merchant = db.users.find(
         (u) => u.store?.id === store.id || u.id === store.owner.id,
       );
@@ -606,7 +604,7 @@ export async function mockFetch(
     }
 
     if (action === "orders" && method === "GET") {
-      const allOrders = generateStoreOrders(id);
+      const allOrders = generateStoreOrders();
       const statusFilter = q.get("status");
       const sort = q.get("sort") || "newest";
 
@@ -1077,101 +1075,6 @@ export async function mockFetch(
       return ok({ banner: db.banners[index] });
     }
     return fail(405, "العملية غير مدعومة");
-  }
-
-  // ─── وسوم وفلاتر المناسبات ───────────────────────────────────
-  if (resource === "occasions") {
-    if (!rawId) {
-      if (method === "GET") {
-        const rows = emptyMode
-          ? []
-          : [...db.occasions].sort((a, b) => a.sortOrder - b.sortOrder);
-        return ok({ occasions: rows });
-      }
-
-      if (method === "POST") {
-        const body = readBody<OccasionFilterPayload>(options);
-        const name = (body.name ?? "").trim();
-        if (!name) return fail(400, "بيانات غير صحيحة", { name: "اسم الفلتر مطلوب" });
-
-        const newId = ++db.nextOccasionId;
-        const newOccasion = {
-          id: newId,
-          name,
-          slug: body.slug?.trim() || `occasion-${newId}`,
-          icon: body.icon || "sparkles",
-          description: body.description?.trim() || "",
-          productsCount: 0,
-          isActive: body.isActive ?? true,
-          isFeaturedOnHome: body.isFeaturedOnHome ?? false,
-          sortOrder: body.sortOrder ?? db.occasions.length + 1,
-          targetCategories: body.targetCategories || [],
-        };
-        db.occasions.push(newOccasion);
-        return ok({ occasions: db.occasions });
-      }
-    }
-
-    const index = db.occasions.findIndex((o) => o.id === id);
-    if (index === -1) return notFound();
-
-    if (method === "PATCH") {
-      const body = readBody<Partial<OccasionFilterPayload>>(options);
-      db.occasions[index] = { ...db.occasions[index], ...body, id };
-      return ok({ occasions: db.occasions });
-    }
-
-    if (method === "DELETE") {
-      db.occasions.splice(index, 1);
-      return ok({ occasions: db.occasions });
-    }
-  }
-
-  // ─── المجموعات المميزة ──────────────────────────────────────────
-  if (resource === "collections") {
-    if (!rawId) {
-      if (method === "GET") {
-        const rows = emptyMode
-          ? []
-          : [...db.collections].sort((a, b) => a.sortOrder - b.sortOrder);
-        return ok({ collections: rows });
-      }
-
-      if (method === "POST") {
-        const body = readBody<FeaturedCollectionPayload>(options);
-        const title = (body.title ?? "").trim();
-        if (!title) return fail(400, "بيانات غير صحيحة", { title: "عنوان المجموعة مطلوب" });
-
-        const newId = ++db.nextCollectionId;
-        const newCollection = {
-          id: newId,
-          title,
-          slug: body.slug?.trim() || `collection-${newId}`,
-          subtitle: body.subtitle?.trim() || "",
-          badge: body.badge?.trim() || null,
-          imageUrl: body.imageUrl || null,
-          productsCount: 0,
-          isActive: body.isActive ?? true,
-          sortOrder: body.sortOrder ?? db.collections.length + 1,
-        };
-        db.collections.push(newCollection);
-        return ok({ collections: db.collections });
-      }
-    }
-
-    const index = db.collections.findIndex((c) => c.id === id);
-    if (index === -1) return notFound();
-
-    if (method === "PATCH") {
-      const body = readBody<Partial<FeaturedCollectionPayload>>(options);
-      db.collections[index] = { ...db.collections[index], ...body, id };
-      return ok({ collections: db.collections });
-    }
-
-    if (method === "DELETE") {
-      db.collections.splice(index, 1);
-      return ok({ collections: db.collections });
-    }
   }
 
   // ─── التوصيل ────────────────────────────────────────────────

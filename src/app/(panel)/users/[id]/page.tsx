@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, use } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -33,28 +33,12 @@ import { t } from "@/lib/strings";
 
 type Dialog = "suspend" | "activate" | "delete" | null;
 
-export default function AdminUserDetailPage({
-  params: paramsPromise,
-}: {
-  params?: Promise<{ id: string }>;
-} = {}) {
+function AdminUserDetailPageContent() {
   const router = useRouter();
   const routeParams = useParams<{ id: string }>();
-
-  let rawId: string | undefined = Array.isArray(routeParams?.id)
-    ? routeParams.id[0]
-    : routeParams?.id;
-
-  if (!rawId && paramsPromise) {
-    try {
-      const resolved = use(paramsPromise);
-      rawId = Array.isArray(resolved?.id) ? resolved.id[0] : resolved?.id;
-    } catch {
-      // fallback
-    }
-  }
-
+  const rawId = routeParams?.id;
   const userId = rawId ? Number(rawId) : NaN;
+  const validId = Number.isSafeInteger(userId) && userId > 0;
 
   const [user, setUser] = useState<AdminUserDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,14 +51,11 @@ export default function AdminUserDetailPage({
   const [flash, showFlash] = useFlash();
 
   useEffect(() => {
-    if (!userId || Number.isNaN(userId) || userId <= 0) {
+    if (!validId) {
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
-    setNotFound(false);
-    setError("");
 
     (async () => {
       const res = await fetchUser(userId);
@@ -104,7 +85,7 @@ export default function AdminUserDetailPage({
     return () => {
       cancelled = true;
     };
-  }, [userId, attempt]);
+  }, [userId, validId, attempt]);
 
   /** كل رد نجاح بيرجّع المستخدم كامل، فبنعيد بذر الحالة منه بدل إعادة جلب */
   const run = useCallback(
@@ -168,9 +149,9 @@ export default function AdminUserDetailPage({
     router.push("/users");
   }, [userId, router, showFlash]);
 
-  if (loading) return <Spinner />;
+  if (loading && validId) return <Spinner />;
 
-  if (notFound) {
+  if (notFound || !validId) {
     return (
       <Card className="overflow-hidden border border-border shadow-xs">
         <CardBody className="p-8">
@@ -454,4 +435,9 @@ export default function AdminUserDetailPage({
       />
     </div>
   );
+}
+
+export default function AdminUserDetailPage() {
+  const params = useParams<{id: string}>();
+  return <AdminUserDetailPageContent key={params.id} />;
 }

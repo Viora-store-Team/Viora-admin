@@ -1,6 +1,7 @@
 "use client";
 
 import Spinner from "@/components/ui/Spinner";
+import ErrorBanner from "@/components/ui/ErrorBanner";
 import { useAuth } from "@/context/AuthContext";
 
 /**
@@ -18,7 +19,7 @@ export default function PanelGuard({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { user, loading, authError, refetchUser } = useAuth();
 
   if (loading) {
     return (
@@ -29,7 +30,11 @@ export default function PanelGuard({
   }
 
   // ما في مستخدم = التوجيه على /login شغّال هلق — ما بنرسم إشي بالوقت الضائع
-  if (!user) return null;
+  if (!user) return authError ? (
+    <div className="mx-auto max-w-xl p-6 pt-24">
+      <ErrorBanner message={authError} onRetry={() => void refetchUser()} />
+    </div>
+  ) : null;
 
   return <>{children}</>;
 }

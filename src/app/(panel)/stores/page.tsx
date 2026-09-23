@@ -14,9 +14,9 @@ import Pagination from "@/components/ui/Pagination";
 import Button from "@/components/ui/Button";
 import StoresTable from "@/components/admin/StoresTable";
 import { fetchStores } from "@/lib/admin/api";
-import { STORE_STATUS } from "@/lib/admin/status";
+
 import type { AdminStoreListItem, StoreStatus } from "@/lib/admin/types";
-import { STORE_STATUS_KEYS } from "@/lib/admin/types";
+
 import { useAdminList } from "@/lib/admin/useAdminList";
 import { formatNumber } from "@/lib/format";
 import { t } from "@/lib/strings";

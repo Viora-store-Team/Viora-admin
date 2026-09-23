@@ -1,0 +1,38 @@
+[
+  {
+    "name": "deep approval ignores owner activation failure",
+    "evidence": {
+      "writes": [
+        {
+          "path": "/admin/stores/1/approve",
+          "method": "PATCH",
+          "query": ""
+        },
+        {
+          "path": "/admin/users/2/activate",
+          "method": "PATCH",
+          "query": ""
+        }
+      ],
+      "falseSuccess": true,
+      "activationErrorVisible": false
+    },
+    "errors": []
+  },
+  {
+    "name": "deep failed notification read is shown as success",
+    "evidence": {
+      "text": false,
+      "badge": 0
+    },
+    "errors": []
+  },
+  {
+    "name": "deep content save response overwrites another active document",
+    "evidence": {
+      "editor": "QA SAVED TERMS",
+      "text": true
+    },
+    "errors": []
+  }
+]

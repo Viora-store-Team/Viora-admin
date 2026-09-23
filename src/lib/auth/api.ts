@@ -19,14 +19,29 @@ export type SessionResponse = ApiResponse & {
  * أكواد الفشل زي باقي مسارات الدخول: 400 حقل ناقص · 401 بيانات غلط ·
  * 403 حساب موقوف · 429 محاولات كتير. الرسائل جاهزة بالعربي من السيرفر.
  */
-export function adminLogin(
+export async function adminLogin(
   email: string,
   password: string,
 ): Promise<SessionResponse> {
-  return apiFetch("/admin/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const response = await apiFetch("/admin/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+      signal: controller.signal,
+    });
+    if (controller.signal.aborted) {
+      return {
+        success: false,
+        status: 0,
+        message: "الخادم تأخّر بالرد. تأكّد من اتصال الإنترنت وحاول مرة ثانية.",
+      };
+    }
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 /**

@@ -1,0 +1,433 @@
+[
+  {
+    "path": "/",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/stats",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/stores",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/stores",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/users",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/users",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/orders",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/orders",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/orders/290",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "orderDetailOpened": 1,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/categories",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/occasions",
+        "status": 404
+      },
+      {
+        "path": "/api/admin/collections",
+        "status": 404
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/categories",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/reviews",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/ratings",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/support",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/support/tickets",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/content",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/content/privacy",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/content/terms",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/content/about",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/content/faq",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/content",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/banners",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/banners",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/reports",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/ratings",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/delivery",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/stores/489",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/stores/489",
+        "status": 500
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/users/1609",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/users/1609",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  },
+  {
+    "path": "/support/4",
+    "errors": [],
+    "responses": [
+      {
+        "path": "/api/health",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/me",
+        "status": 200
+      },
+      {
+        "path": "/api/notifications/count",
+        "status": 200
+      },
+      {
+        "path": "/api/admin/support/tickets/4",
+        "status": 200
+      }
+    ],
+    "main": 1,
+    "spinners": 0,
+    "desktopOverflow": false,
+    "mobileOverflow": {
+      "viewport": 390,
+      "width": 390
+    }
+  }
+]

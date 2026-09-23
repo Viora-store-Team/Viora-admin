@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -29,8 +29,7 @@ import ErrorBanner from "@/components/ui/ErrorBanner";
 import Pagination from "@/components/ui/Pagination";
 import Spinner from "@/components/ui/Spinner";
 import {
-  fetchRatings,
-  fetchStoreRatings,
+  fetchRatingsSnapshot,
   hideRating,
   unhideRating,
 } from "@/lib/admin/api";
@@ -75,7 +74,7 @@ export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<AdminRatingItem[]>([]);
   const [overview, setOverview] = useState<ReviewsOverviewStats | null>(null);
   const [storesRatings, setStoresRatings] = useState<StoreRatingSummary[]>([]);
-  const [pagination, setPagination] = useState<PaginationType | null>(null);
+  const loadController = useRef<AbortController | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -90,39 +89,36 @@ export default function AdminReviewsPage() {
   const [flash, showFlash] = useFlash();
 
   const loadData = useCallback(async () => {
+    loadController.current?.abort();
+    const controller = new AbortController();
+    loadController.current = controller;
     setLoading(true);
     setError("");
 
-    let isHiddenFilter: boolean | "" = "";
-    if (activeTab === "hidden") isHiddenFilter = true;
-
-    const ratingsRes = await fetchRatings({
-      page,
-      limit: 10,
-      hidden: isHiddenFilter,
-    });
+    const ratingsRes = await fetchRatingsSnapshot(controller.signal);
+    if (controller.signal.aborted) return;
 
     setLoading(false);
 
     if (ratingsRes.success) {
       const items: AdminRatingItem[] = ratingsRes.ratings || [];
       setReviews(items);
-      if (ratingsRes.pagination) setPagination(ratingsRes.pagination);
 
       // Compute overview KPIs strictly from data
-      const total = ratingsRes.pagination?.total ?? items.length;
-      const positiveCount = items.filter((r) => r.rating >= 4).length;
+      const total = items.length;
+      const visibleItems = items.filter(r => !(r.isHidden || r.hidden));
+      const positiveCount = visibleItems.filter((r) => r.rating >= 4).length;
       const hiddenCount = items.filter((r) => r.isHidden || r.hidden).length;
       const avg =
-        items.length > 0
-          ? items.reduce((s, r) => s + r.rating, 0) / items.length
+        visibleItems.length > 0
+          ? visibleItems.reduce((s, r) => s + r.rating, 0) / visibleItems.length
           : 0;
 
       setOverview({
         platformAverage: Number(avg.toFixed(1)),
         totalReviews: total,
         positivePercentage:
-          items.length > 0 ? Math.round((positiveCount / items.length) * 100) : 0,
+          visibleItems.length > 0 ? Math.round((positiveCount / visibleItems.length) * 100) : 0,
         hiddenCount,
         starCounts: {
           5: items.filter((r) => r.rating === 5).length,
@@ -135,7 +131,7 @@ export default function AdminReviewsPage() {
 
       // Compute store ratings aggregation strictly from live ratings items
       const storesMap = new Map<number, { name: string; city: string | null; ratings: number[] }>();
-      for (const r of items) {
+      for (const r of visibleItems) {
         const sId = r.store?.id ?? r.storeId;
         if (!sId) continue;
         const sName = r.store?.name ?? r.storeName ?? "متجر";
@@ -175,11 +171,17 @@ export default function AdminReviewsPage() {
       }
     } else {
       setError(ratingsRes.message || t.admin.common.loadFailed);
+      setReviews([]);
+      setOverview(null);
+      setStoresRatings([]);
     }
-  }, [page, activeTab]);
+  }, []);
 
   useEffect(() => {
-    loadData();
+    // Synchronize the initial network request with the component lifecycle.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadData();
+    return () => loadController.current?.abort();
   }, [loadData]);
 
   const handleHide = async () => {
@@ -199,6 +201,7 @@ export default function AdminReviewsPage() {
       );
       setHidingReviewId(null);
       showFlash(t.admin.reviews.didHide);
+      await loadData();
     } else {
       setError(res.message || t.admin.common.loadFailed);
     }
@@ -221,6 +224,7 @@ export default function AdminReviewsPage() {
       );
       setUnhidingReviewId(null);
       showFlash(t.admin.reviews.didUnhide);
+      await loadData();
     } else {
       setError(res.message || t.admin.common.loadFailed);
     }
@@ -263,6 +267,11 @@ export default function AdminReviewsPage() {
     return (b.createdAt || "").localeCompare(a.createdAt || "");
   });
 
+  const totalPages = Math.ceil(filteredReviews.length / 10);
+  const visiblePage = Math.min(page, Math.max(totalPages, 1));
+  const pagination: PaginationType = {page: visiblePage, limit: 10, total: filteredReviews.length, totalPages};
+  const visibleReviews = filteredReviews.slice((visiblePage - 1) * 10, visiblePage * 10);
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -300,7 +309,7 @@ export default function AdminReviewsPage() {
               </span>
             </div>
             <p className="mt-2 text-[11px] font-bold text-text-secondary/80">
-              {t.admin.reviews.basedOnOrders}
+              محسوب من التقييمات الظاهرة فقط
             </p>
           </Card>
 
@@ -338,7 +347,7 @@ export default function AdminReviewsPage() {
               </span>
             </div>
             <p className="mt-2 text-[11px] font-bold text-text-secondary/80">
-              تقييمات 4 و 5 نجوم
+              تقييمات 4 و 5 نجوم من التقييمات الظاهرة
             </p>
           </Card>
 
@@ -414,6 +423,7 @@ export default function AdminReviewsPage() {
               <Search className="absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-text-secondary" />
               <input
                 type="search"
+                aria-label="البحث في جميع التقييمات"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -427,6 +437,7 @@ export default function AdminReviewsPage() {
             <div className="flex items-center gap-2">
               <div className="relative">
                 <select
+                  aria-label="ترتيب التقييمات"
                   value={sortOption}
                   onChange={(e) => {
                     setSortOption(e.target.value as "newest" | "highest" | "lowest");
@@ -473,7 +484,7 @@ export default function AdminReviewsPage() {
             </Card>
           ) : (
             <div className="flex flex-col gap-4">
-              {filteredReviews.map((review) => {
+              {visibleReviews.map((review) => {
                 const customerName = review.user?.name || review.customerName || "عميل";
                 const customerEmail = review.user?.email || "";
                 const productName = review.product?.name || review.productName || "منتج";

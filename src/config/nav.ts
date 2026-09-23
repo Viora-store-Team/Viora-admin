@@ -1,5 +1,6 @@
 import {
   FileText,
+  Flag,
   ImageIcon,
   FolderTree,
   LayoutDashboard,
@@ -26,6 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/users", label: t.admin.nav.users, icon: Users },
   { href: "/categories", label: t.admin.nav.categories, icon: FolderTree },
   { href: "/reviews", label: t.admin.nav.reviews, icon: Star },
+  { href: "/reports", label: t.admin.nav.reports, icon: Flag },
   { href: "/orders", label: t.admin.nav.orders, icon: ShoppingBag },
   { href: "/support", label: t.admin.nav.support, icon: Headphones },
   { href: "/banners", label: "بنرات التطبيق", icon: ImageIcon },

@@ -1,0 +1,347 @@
+{
+  "at": "2026-09-23T07:35:16.762Z",
+  "results": [
+    {
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "message",
+        "timestamp"
+      ],
+      "ms": 952,
+      "authenticated": false
+    },
+    {
+      "method": "GET",
+      "path": "/admin/stats",
+      "status": 401,
+      "success": false,
+      "keys": [
+        "success",
+        "message",
+        "forceLogout"
+      ],
+      "ms": 229,
+      "authenticated": false
+    },
+    {
+      "method": "POST",
+      "path": "/admin/login",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "message",
+        "user",
+        "token"
+      ],
+      "ms": 1007,
+      "authenticated": false
+    },
+    {
+      "method": "GET",
+      "path": "/admin/me",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "user"
+      ],
+      "ms": 306,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/stores?limit=1",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "stores",
+        "pagination"
+      ],
+      "ms": 702,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/stats?period=7",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "period",
+        "stats",
+        "topStores",
+        "charts"
+      ],
+      "ms": 982,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/occasions",
+      "status": 404,
+      "success": false,
+      "keys": [
+        "success",
+        "message"
+      ],
+      "ms": 245,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/users?limit=1",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "users",
+        "pagination"
+      ],
+      "ms": 433,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/categories",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "count",
+        "flat",
+        "categories"
+      ],
+      "ms": 448,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/collections",
+      "status": 404,
+      "success": false,
+      "keys": [
+        "success",
+        "message"
+      ],
+      "ms": 252,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/orders?limit=1",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "orders",
+        "statusCounts",
+        "pagination"
+      ],
+      "ms": 618,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/ratings?limit=1",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "ratings",
+        "pagination"
+      ],
+      "ms": 744,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/content",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "pages"
+      ],
+      "ms": 359,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/content/terms",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "page"
+      ],
+      "ms": 360,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/support/tickets?limit=1",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "tickets",
+        "pagination"
+      ],
+      "ms": 542,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/content/about",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "page"
+      ],
+      "ms": 330,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/content/faq",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "page"
+      ],
+      "ms": 354,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/content/privacy",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "page"
+      ],
+      "ms": 356,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/banners",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "count",
+        "banners"
+      ],
+      "ms": 357,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/notifications?limit=1",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "unread",
+        "notifications",
+        "pagination"
+      ],
+      "ms": 390,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/notifications/count",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "unread"
+      ],
+      "ms": 426,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/delivery/failures?limit=1",
+      "status": 404,
+      "success": false,
+      "keys": [
+        "success",
+        "message"
+      ],
+      "ms": 248,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/reports?limit=1",
+      "status": 404,
+      "success": false,
+      "keys": [
+        "success",
+        "message"
+      ],
+      "ms": 249,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/delivery/health",
+      "status": 404,
+      "success": false,
+      "keys": [
+        "success",
+        "message"
+      ],
+      "ms": 255,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/reviews/overview",
+      "status": 404,
+      "success": false,
+      "keys": [
+        "success",
+        "message"
+      ],
+      "ms": 245,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/admin/reviews/stores",
+      "status": 404,
+      "success": false,
+      "keys": [
+        "success",
+        "message"
+      ],
+      "ms": 246,
+      "authenticated": true
+    },
+    {
+      "method": "GET",
+      "path": "/health/db",
+      "status": 200,
+      "success": true,
+      "keys": [
+        "success",
+        "message"
+      ],
+      "ms": 302,
+      "authenticated": true
+    }
+  ]
+}

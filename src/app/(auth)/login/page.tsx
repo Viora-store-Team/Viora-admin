@@ -67,43 +67,48 @@ export default function AdminLoginPage() {
     }
 
     setLoading(true);
-    const res = await adminLogin(trimmed, password);
-    setLoading(false);
+    try {
+      const res = await adminLogin(trimmed, password);
 
-    if (res.success && res.user && res.token) {
-      /*
-        بوابة الدور هون كمان مش بس بالحارس: لو حساب غير أدمن نجح بالدخول
-        من هالمسار يوماً، بنوقفه على الشاشة بدل ما نخزّن توكنه ونطرده بعدين
-        من AuthContext — الطرد بعد الدخول بيبيّن للمستخدم كأنه عطل.
-      */
-      if (res.user.role !== ADMIN_ROLE) {
-        setBanner(t.auth.notAdmin);
+      if (res.success && res.user && res.token) {
+        /*
+          بوابة الدور هون كمان مش بس بالحارس: لو حساب غير أدمن نجح بالدخول
+          من هالمسار يوماً، بنوقفه على الشاشة بدل ما نخزّن توكنه ونطرده بعدين
+          من AuthContext — الطرد بعد الدخول بيبيّن للمستخدم كأنه عطل.
+        */
+        if (res.user.role !== ADMIN_ROLE) {
+          setBanner(t.auth.notAdmin);
+          return;
+        }
+        loginUser(res.user, res.token);
         return;
       }
-      loginUser(res.user, res.token);
-      return;
-    }
 
-    // 400 = حقل ناقص، والمفاتيح أسماء الحقول بالضبط
-    if (res.status === 400 && res.errors) {
-      setFieldErrors(res.errors);
-      if (res.message) setBanner(res.message);
-      return;
-    }
+      // 400 = حقل ناقص، والمفاتيح أسماء الحقول بالضبط
+      if (res.status === 400 && res.errors) {
+        setFieldErrors(res.errors);
+        if (res.message) setBanner(res.message);
+        return;
+      }
 
-    /*
-      الحساب موقوف وقت الدخول: 403 مع `accountSuspended` وبلا `forceLogout`
-      (ما في جلسة عشان تنقتل أصلاً). التفريع على العلم مش على الـstatus —
-      نفس الـ403 بيرجع كمان لرفض الدور وللإيميل اللي ما تأكّد.
-    */
-    if (res.accountSuspended === true) {
-      setSuspended(true);
-      setBanner(res.message || "");
-      return;
-    }
+      /*
+        الحساب موقوف وقت الدخول: 403 مع `accountSuspended` وبلا `forceLogout`
+        (ما في جلسة عشان تنقتل أصلاً). التفريع على العلم مش على الـstatus —
+        نفس الـ403 بيرجع كمان لرفض الدور وللإيميل اللي ما تأكّد.
+      */
+      if (res.accountSuspended === true) {
+        setSuspended(true);
+        setBanner(res.message || "");
+        return;
+      }
 
-    // 401 بيانات غلط · 429 محاولات كتير — الرسائل جاهزة بالعربي
-    setBanner(res.message || t.errors.genericTitle);
+      // 401 بيانات غلط · 429 محاولات كتير — الرسائل جاهزة بالعربي
+      setBanner(res.message || t.errors.genericTitle);
+    } catch {
+      setBanner("تعذّر إكمال تسجيل الدخول. تأكّد من السماح بتخزين بيانات الموقع وحاول مرة ثانية.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
