@@ -54,6 +54,8 @@ function AdminSupportTicketDetailPageContent() {
       setLoading(false);
       if (res.success && res.ticket) {
         setTicket(res.ticket);
+        setError("");
+        setNotFound(false);
         return;
       }
       const failure = classifyStatus(res);

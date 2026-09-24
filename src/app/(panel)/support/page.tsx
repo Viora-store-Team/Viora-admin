@@ -53,7 +53,7 @@ export default function AdminSupportTicketsPage() {
       <p className="text-xs leading-relaxed text-text-secondary">{t.admin.support.contactOutside}</p>
       <Tabs items={STATUS_TABS} active={list.filters.status ?? ""} onChange={(key) => list.changeFilter("status", key)} />
 
-      {list.loading ? <Spinner /> : list.rows.length === 0 ? (
+      {list.loading ? <Spinner /> : list.error ? null : list.rows.length === 0 ? (
         <Card className="overflow-hidden border border-border shadow-xs">
           <CardBody className="p-8">
             <EmptyState

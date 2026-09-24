@@ -202,3 +202,40 @@ test("hidden ratings remain reviewable but do not lower public averages",async({
   await expect(page.getByText("100%",{exact:true}).first()).toBeVisible();
   await expect(page.getByText("QA hidden",{exact:true})).toBeVisible();
 });
+
+
+const supportFixture={id:7,subject:"QA complaint",message:"QA complaint message",status:"OPEN",user:{id:2,name:"QA merchant",email:"merchant@example.test",phone:null},createdAt:"2026-09-01T00:00:00Z",adminNote:null,resolvedAt:null,resolvedBy:null};
+test("support list failure is not an empty inbox",async({page})=>{
+ await page.route(`${api}/admin/support/tickets?*`,r=>r.fulfill({status:503,json:{success:false,message:"QA support unavailable"}}));
+ await page.goto("/support");await expect(page.getByText("QA support unavailable",{exact:true})).toBeVisible();
+ await expect(page.getByText("لا توجد تذاكر دعم",{exact:true})).toHaveCount(0);
+});
+test("support detail retry clears old error",async({page})=>{
+ let calls=0;
+ await page.route(`${api}/admin/support/tickets/7`,r=>r.fulfill(++calls===1?{status:503,json:{success:false,message:"QA retry ticket"}}:{json:{success:true,ticket:supportFixture}}));
+ await page.goto("/support/7");await page.getByRole("button",{name:"إعادة المحاولة"}).click();
+ await expect(page.getByText("QA complaint message",{exact:true})).toBeVisible();await expect(page.getByText("QA retry ticket",{exact:true})).toHaveCount(0);
+});
+for(const failed of [false,true]) test(`support resolution success=${!failed}`,async({page})=>{
+ let body:unknown;
+ await page.route(`${api}/admin/support/tickets/7`,r=>r.fulfill({json:{success:true,ticket:supportFixture}}));
+ await page.route(`${api}/admin/support/tickets/7/resolve`,r=>{body=r.request().postDataJSON();return r.fulfill(failed?{status:500,json:{success:false,message:"QA resolve failed"}}:{json:{success:true,ticket:{...supportFixture,status:"RESOLVED",adminNote:"QA note"}}});});
+ await page.goto("/support/7");await page.getByRole("button",{name:"إقفال التذكرة",exact:true}).click();await page.getByRole("dialog").getByRole("textbox").fill("QA note");await page.getByRole("dialog").getByRole("button",{name:"إقفال التذكرة",exact:true}).click();
+ await expect(page.getByText(failed?"QA resolve failed":"تم إقفال التذكرة",{exact:true})).toBeVisible();expect(body).toEqual({adminNote:"QA note"});
+ if(failed)await expect(page.getByRole("button",{name:"إقفال التذكرة",exact:true})).toBeVisible();
+ else await expect(page.getByRole("button",{name:"إقفال التذكرة",exact:true})).toHaveCount(0);
+});
+test("unavailable reports do not show a misleading empty list",async({page})=>{
+ await page.goto("/reports");await expect(page.getByText("هذه الميزة غير متاحة من الخادم حالياً. أعد المحاولة لاحقاً.",{exact:true})).toBeVisible();await expect(page.getByText("ما في بلاغات",{exact:true})).toHaveCount(0);
+});
+
+for(const failed of [false,true]) test(`report resolution success=${!failed} with proposed contract`,async({page})=>{
+ const report={id:8,targetType:"STORE",targetId:1,targetPreview:"QA Store",reason:"QA report reason",reporter:{id:2,name:"QA reporter"},status:"OPEN",createdAt:"2026-09-01T00:00:00Z",note:null,content:{review:null,product:null,store:null},relatedCount:0,resolvedAt:null};
+ let body:unknown;
+ await page.route(`${api}/admin/reports/8`,r=>{
+   if(r.request().method()==="PATCH"){body=r.request().postDataJSON();return r.fulfill(failed?{status:500,json:{success:false,message:"QA report failed"}}:{json:{success:true,report:{...report,status:"RESOLVED"}}});}
+   return r.fulfill({json:{success:true,report}});
+ });
+ await page.goto("/reports/8");await page.getByRole("button",{name:"تعليم كمعالج",exact:true}).click();await page.getByRole("dialog").getByRole("button",{name:"تعليم كمعالج",exact:true}).click();
+ await expect(page.getByText(failed?"QA report failed":"تم تعليم البلاغ كمعالج",{exact:true})).toBeVisible();expect(body).toEqual({status:"RESOLVED"});
+});
