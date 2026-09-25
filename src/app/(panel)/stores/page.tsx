@@ -85,6 +85,11 @@ export default function AdminStoresPage() {
     initialFilters: { tab: "all" },
   });
 
+  const newestStores = [...list.rows].sort((a, b) => {
+    const dateDiff = Date.parse(b.createdAt) - Date.parse(a.createdAt);
+    return Number.isFinite(dateDiff) && dateDiff !== 0 ? dateDiff : b.id - a.id;
+  });
+
   const total = list.pagination?.total ?? 0;
 
   return (
@@ -147,7 +152,7 @@ export default function AdminStoresPage() {
         <div className="flex flex-col gap-4">
           <Card className="overflow-hidden border border-border shadow-xs">
             <StoresTable
-              stores={list.rows}
+              stores={newestStores}
               onOpen={(id) => router.push(`/stores/${id}`)}
             />
           </Card>

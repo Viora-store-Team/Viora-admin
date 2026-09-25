@@ -8,6 +8,7 @@ import ErrorBanner from "@/components/ui/ErrorBanner";
 import { Card, CardBody } from "@/components/ui/Card";
 import { useAuth } from "@/context/AuthContext";
 import { adminLogin, ADMIN_ROLE } from "@/lib/auth/api";
+import { dispatchToast } from "@/lib/toast";
 import { t } from "@/lib/strings";
 
 /** فحص محلي بسيط — بيوفّر رحلة شبكة على حقل فاضي أو إيميل بلا @ */
@@ -78,6 +79,7 @@ export default function AdminLoginPage() {
         */
         if (res.user.role !== ADMIN_ROLE) {
           setBanner(t.auth.notAdmin);
+          dispatchToast("error", t.auth.notAdmin);
           return;
         }
         loginUser(res.user, res.token);
@@ -104,8 +106,11 @@ export default function AdminLoginPage() {
 
       // 401 بيانات غلط · 429 محاولات كتير — الرسائل جاهزة بالعربي
       setBanner(res.message || t.errors.genericTitle);
+      dispatchToast("error", res.message || t.errors.genericTitle);
     } catch {
-      setBanner("تعذّر إكمال تسجيل الدخول. تأكّد من السماح بتخزين بيانات الموقع وحاول مرة ثانية.");
+      const message = "تعذّر إكمال تسجيل الدخول. تأكّد من السماح بتخزين بيانات الموقع وحاول مرة ثانية.";
+      setBanner(message);
+      dispatchToast("error", message);
     } finally {
       setLoading(false);
     }

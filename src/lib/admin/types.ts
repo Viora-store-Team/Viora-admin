@@ -826,4 +826,3 @@ export const ADMIN_LIMITS = {
   pageTitleMax: 120,
   pageBodyMax: 20000,
 } as const;
-

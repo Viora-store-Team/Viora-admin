@@ -36,6 +36,7 @@ import { classifyStatus } from "@/lib/apiFailure";
 import type { ApiResponse } from "@/lib/api";
 import { formatNumber } from "@/lib/format";
 import { useFlash } from "@/lib/useFlash";
+import { dispatchToast } from "@/lib/toast";
 import { t } from "@/lib/strings";
 
 const STATUS_TABS: TabItem[] = [
@@ -144,6 +145,7 @@ export default function AdminCategoriesPage() {
 
       if (failure.kind === "validation" && failure.errors) {
         setFieldErrors(failure.errors);
+        dispatchToast("warning", "راجعي الحقول المطلوبة ثم حاولي الحفظ من جديد.");
         return;
       }
 
@@ -156,6 +158,7 @@ export default function AdminCategoriesPage() {
           ? t.admin.common.sessionInvalid
           : failure.message,
       );
+      dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
     },
     [load, showFlash],
   );
@@ -176,6 +179,7 @@ export default function AdminCategoriesPage() {
     }
     const failure = classifyStatus(res);
     setError(failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
+    dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
   };
 
   const moveCategory = async (

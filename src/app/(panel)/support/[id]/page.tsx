@@ -19,6 +19,7 @@ import type { AdminSupportTicket } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
 import { formatDateTime } from "@/lib/format";
 import { useFlash } from "@/lib/useFlash";
+import { dispatchToast } from "@/lib/toast";
 import { t } from "@/lib/strings";
 
 function AdminSupportTicketDetailPageContent() {
@@ -84,6 +85,7 @@ function AdminSupportTicketDetailPageContent() {
     const failure = classifyStatus(res);
     setDialogOpen(false);
     setError(failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
+    dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
     if (failure.kind === "conflict") reload();
   };
 

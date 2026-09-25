@@ -13,6 +13,7 @@ import {
 } from "@/lib/admin/api";
 import type { AppNotification } from "@/lib/admin/types";
 import { formatDate } from "@/lib/format";
+import { dispatchToast } from "@/lib/toast";
 
 export default function NotificationsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -108,7 +109,7 @@ export default function NotificationsDropdown() {
       setReadingId(notif.id);
       try {
         const res = await markNotificationAsRead(notif.id);
-        if (!res.success) { setError(res.message || "تعذر تعليم الإشعار كمقروء"); return; }
+        if (!res.success) { const message = res.message || "تعذر تعليم الإشعار كمقروء"; setError(message); dispatchToast("error", message); return; }
         setUnreadCount((prev) => res.unread ?? Math.max(0, prev - 1));
         setNotifications((prev) =>
           prev.map((n) =>
@@ -117,6 +118,7 @@ export default function NotificationsDropdown() {
         );
       } catch {
         setError("تعذر تعليم الإشعار كمقروء");
+        dispatchToast("error", "تعذر تعليم الإشعار كمقروء.");
         return;
       } finally { setReadingId(null); }
     }
@@ -147,9 +149,11 @@ export default function NotificationsDropdown() {
             readAt: n.readAt || new Date().toISOString(),
           })),
         );
-      } else setError(res.message || "تعذر تعليم الإشعارات كمقروءة");
+        dispatchToast("success", "تم تعليم الإشعارات كمقروءة.");
+      } else { const message = res.message || "تعذر تعليم الإشعارات كمقروءة"; setError(message); dispatchToast("error", message); }
     } catch {
       setError("تعذر تعليم الإشعارات كمقروءة");
+      dispatchToast("error", "تعذر تعليم الإشعارات كمقروءة.");
     } finally {
       setMarkingAll(false);
     }

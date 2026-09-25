@@ -106,6 +106,7 @@ export const t = {
       reports: "البلاغات",
       content: "المحتوى",
       delivery: "التوصيل",
+      finance: "العمولات والدفعات",
     },
 
     common: {

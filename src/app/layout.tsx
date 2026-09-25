@@ -3,6 +3,7 @@ import { PwaProvider } from "@/components/pwa/PwaProvider";
 import { Cairo } from "next/font/google";
 import { t } from "@/lib/strings";
 import { AuthProvider } from "@/context/AuthContext";
+import ToastViewport from "@/components/ui/ToastViewport";
 import "./globals.css";
 
 const cairo = Cairo({
@@ -34,7 +35,7 @@ export default function RootLayout({
     // lang + dir على الجذر مرة وحدة — بدل ما تتكرر dir="rtl" على div بكل صفحة
     <html lang="ar" dir="rtl" className={`${cairo.variable} h-full`}>
       <body className="min-h-full antialiased">
-        <PwaProvider><AuthProvider>{children}</AuthProvider></PwaProvider>
+        <PwaProvider><AuthProvider>{children}<ToastViewport /></AuthProvider></PwaProvider>
       </body>
     </html>
   );

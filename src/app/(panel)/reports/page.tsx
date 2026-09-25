@@ -29,8 +29,8 @@ const STATUS_TABS: TabItem[] = [
 export default function AdminReportListItemsPage() {
   const router = useRouter();
   const fetcher = useCallback(
-    ({ page, filters }: { page: number; q: string; filters: Record<string, string> }) =>
-      fetchReports({ page, status: filters.status as ReportStatus | "" }),
+    ({ page, q, filters }: { page: number; q: string; filters: Record<string, string> }) =>
+      fetchReports({ page, q, status: filters.status as ReportStatus | "" }),
     [],
   );
   const select = useCallback(

@@ -395,15 +395,132 @@ export function reorderCategories(
 export function fetchReports(
   params: ListParams & { targetType?: ReportTarget | ""; status?: ReportStatus | "" } = {},
 ): Promise<Paged<"reports", AdminReportListItem>> {
+  // واجهة الأدمن تسمي الحالة OPEN، بينما عقد الـAPI يستخدم PENDING.
+  const apiStatus = params.status === "OPEN" ? "PENDING" : params.status;
   return adminFetch(
     `/admin/reports${query({
       page: params.page ?? 1,
       limit: params.limit ?? ADMIN_LIMITS.pageLimit,
       q: params.q,
       targetType: params.targetType,
-      status: params.status,
+      status: apiStatus,
     })}`,
   );
+}
+
+// ─── العمولات والدفعات والتسويات (مسارات PDF Viora-New-Routes) ──
+
+export interface CommissionSettings {
+  defaultRate?: number;
+  percent?: number | string;
+  customStoresCount?: number;
+  customRateStores?: number;
+}
+
+export interface AdminPayoutBalance {
+  storeId: number;
+  storeName: string;
+  earned?: string | number | Record<string, unknown> | null;
+  paid?: string | number | Record<string, unknown> | null;
+  outstanding?: string | number | Record<string, unknown> | null;
+  payoutAccount?: Record<string, unknown> | null;
+  store?: { id?: number; name?: string } | null;
+  merchant?: { id?: number; name?: string; storeName?: string } | null;
+  [key: string]: unknown;
+}
+
+export interface AdminPayoutRecord {
+  id: number;
+  storeId: number;
+  storeName?: string;
+  amount: string | number;
+  status: "current" | "voided" | string;
+  createdAt: string;
+  orderIds?: number[];
+  reason?: string | null;
+}
+
+export interface AdminSettlement {
+  id: number;
+  storeId: number;
+  storeName?: string;
+  orderId: number;
+  amount: string | number;
+  paid: boolean;
+  createdAt: string;
+  store?: { id?: number; name?: string } | null;
+  order?: { id?: number; orderNumber?: string; createdAt?: string } | null;
+  [key: string]: unknown;
+}
+
+export function fetchCommissionSettings(): Promise<ApiResponse & {
+  settings?: CommissionSettings;
+  commission?: CommissionSettings;
+  defaultRate?: number;
+  customStoresCount?: number;
+}> {
+  return adminFetch("/admin/settings/commission");
+}
+
+export function updateCommissionSettings(defaultRate: number): Promise<ApiResponse> {
+  return adminFetch("/admin/settings/commission", {
+    method: "PATCH",
+    ...json({ percent: defaultRate }),
+  });
+}
+
+export function fetchPayoutBalances(): Promise<ApiResponse & {
+  stores?: AdminPayoutBalance[];
+  balances?: AdminPayoutBalance[];
+  totals?: { unpaidAmount?: string | number; storesCount?: number };
+}> {
+  return adminFetch("/admin/payouts/balances");
+}
+
+/** الخادم يحسب المبلغ المستحق تلقائياً؛ نرسل المتجر فقط. */
+export function createPayout(storeId: number): Promise<ApiResponse & {
+  payout?: AdminPayoutRecord;
+}> {
+  return adminFetch("/admin/payouts", {
+    method: "POST",
+    ...json({ storeId }),
+  });
+}
+
+export function fetchPayouts(
+  params: ListParams & { storeId?: number; from?: string; to?: string; status?: "current" | "voided" | "" } = {},
+): Promise<Paged<"payouts", AdminPayoutRecord>> {
+  return adminFetch(`/admin/payouts${query({
+    page: params.page ?? 1,
+    limit: params.limit ?? ADMIN_LIMITS.pageLimit,
+    q: params.q,
+    storeId: params.storeId,
+    from: params.from,
+    to: params.to,
+    status: params.status,
+  })}`);
+}
+
+export function fetchPayout(id: number): Promise<ApiResponse & { payout?: AdminPayoutRecord }> {
+  return adminFetch(`/admin/payouts/${id}`);
+}
+
+export function voidPayout(id: number, reason: string): Promise<ApiResponse & { payout?: AdminPayoutRecord }> {
+  return adminFetch(`/admin/payouts/${id}/void`, {
+    method: "PATCH",
+    ...json({ reason }),
+  });
+}
+
+export function fetchAdminSettlements(
+  params: ListParams & { paid?: boolean } = {},
+): Promise<Paged<"settlements", AdminSettlement>> {
+  return adminFetch(`/admin/settlements${query({
+    page: params.page ?? 1,
+    limit: params.limit ?? ADMIN_LIMITS.pageLimit,
+    q: params.q,
+    paid: params.paid === undefined ? undefined : String(params.paid),
+  })}`);
 }
 
 export function fetchReport(
@@ -443,16 +560,22 @@ export function fetchRatings(
   );
 }
 
+export type AdminRatingApiItem = Omit<AdminRatingItem, "rating"> & {
+  rating?: number | string | null;
+  stars?: number | string | null;
+};
+
 /** Read a complete, bounded snapshot before offering global client-side analytics.
  * Stops explicitly rather than labelling a partial page as a platform statistic.
  * Replace with server aggregation once that contract is available.
  */
-export async function fetchRatingsSnapshot(signal?: AbortSignal): Promise<ApiResponse & { ratings?: AdminRatingItem[] }> {
-  const items = new Map<number, AdminRatingItem>();
+export async function fetchRatingsSnapshot(signal?: AbortSignal): Promise<ApiResponse & { ratings?: AdminRatingApiItem[]; pagination?: Pagination }> {
+  const items = new Map<number, AdminRatingApiItem>();
   let total: number | undefined;
   for (let page = 1; page <= 100; page++) {
     if (signal?.aborted) return { success: false, status: 0, message: "تم إلغاء التحميل" };
-    const res = await adminFetch(`/admin/ratings${query({page, limit: 100})}`, {signal}) as Paged<"ratings", AdminRatingItem>;
+    // Live API validation caps this endpoint at limit=50.
+    const res = await adminFetch(`/admin/ratings${query({page, limit: 50})}`, {signal}) as Paged<"ratings", AdminRatingApiItem>;
     if (!res.success) return res;
     const pagination = res.pagination;
     if (!Array.isArray(res.ratings) || !pagination || pagination.page !== page || !Number.isSafeInteger(pagination.total) || pagination.total < 0 || !Number.isSafeInteger(pagination.totalPages) || pagination.totalPages < 0) {
@@ -464,7 +587,7 @@ export async function fetchRatingsSnapshot(signal?: AbortSignal): Promise<ApiRes
     for (const item of res.ratings) items.set(item.id,item);
     if (page >= pagination.totalPages) {
       if (items.size !== total) return {success:false,status:409,message:"بيانات التقييمات غير مكتملة أو تغيرت أثناء التحميل. أعد المحاولة."};
-      return {success:true,status:200,ratings:[...items.values()]};
+      return {success:true,status:200,ratings:[...items.values()],pagination};
     }
   }
   return {success:false,status:413,message:"تعذر تحميل كل التقييمات. يلزم تجميع من الخادم."};
@@ -771,4 +894,3 @@ export function markAllNotificationsAsRead(): Promise<
 > {
   return adminFetch("/notifications/read-all", { method: "PATCH" });
 }
-

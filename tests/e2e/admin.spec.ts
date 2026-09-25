@@ -59,6 +59,32 @@ for(const path of ["/stores","/users","/support"]) test(`selected tab does not h
   await button.click();await expect(page.locator('[role="status"].animate-spin')).toHaveCount(0);
 });
 
+test("dashboard shows one order and revenue card for the selected period",async({page})=>{
+  const requestedPeriods:number[]=[];
+  await page.route(`${api}/admin/stats?*`,route=>{
+    const period=Number(new URL(route.request().url()).searchParams.get("period"));
+    requestedPeriods.push(period);
+    return route.fulfill({json:{success:true,period:{days:period,from:"2026-01-01",to:"2026-01-30"},stats:{
+      stores:{active:1,pending:0,rejected:0,suspended:0,total:1},
+      users:{merchants:1,customers:2,total:3,newMerchants:period===7?1:2,newCustomers:period===7?3:5},
+      orders:{total:900,inPeriod:period},revenue:{total:"99999999.00",inPeriod:String(period*100)},reports:{open:0}
+    },topStores:[],charts:{signups:[],orders:[]}}});
+  });
+
+  await page.goto("/");
+  await expect(page.getByText("طلبات الفترة",{exact:true})).toHaveCount(1);
+  await expect(page.getByText("إيرادات الفترة",{exact:true})).toHaveCount(1);
+  const orderValue=()=>page.getByText("طلبات الفترة",{exact:true}).evaluate(el=>el.parentElement?.parentElement?.lastElementChild?.textContent||"");
+  const revenueValue=()=>page.getByText("إيرادات الفترة",{exact:true}).evaluate(el=>el.parentElement?.parentElement?.lastElementChild?.textContent||"");
+  await expect.poll(async()=>await orderValue()).toContain("30");
+  await expect.poll(async()=>(await revenueValue()).replace(/,/g,"")).toContain("3000");
+
+  await page.getByRole("button",{name:"آخر 7 أيام",exact:true}).click();
+  await expect.poll(()=>requestedPeriods.at(-1)).toBe(7);
+  await expect.poll(async()=>await orderValue()).toContain("7");
+  await expect.poll(async()=>(await revenueValue()).replace(/,/g,"")).toContain("700");
+});
+
 for(const path of ["/stores/abc","/users/0","/reports/-1","/support/abc"]) test(`invalid id renders not found ${path}`,async({page})=>{
   await page.goto(path);await expect(page.getByText("العنصر غير موجود",{exact:true})).toBeVisible();
   await expect(page.locator('[role="status"].animate-spin')).toHaveCount(0);
@@ -83,7 +109,13 @@ test("content load failure blocks publishing",async({page})=>{
 test("content save errors are visible",async({page})=>{
   await page.route(`${api}/admin/content/terms`,r=>r.fulfill(r.request().method()==="PUT"?{status:500,json:{success:false,message:"QA save failed"}}:{json:content("terms")}));
   await loadedContent(page);await page.getByRole("button",{name:"حفظ ونشر الصفحة",exact:true}).click();
-  await expect(page.getByText("QA save failed",{exact:true})).toBeVisible();
+  await expect(page.getByRole("main").getByText("QA save failed",{exact:true})).toBeVisible();
+  await expect(page.getByLabel("إشعارات العمليات").getByRole("alert")).toContainText("QA save failed");
+});
+
+test("successful content publishing uses the site-wide toast",async({page})=>{
+  await loadedContent(page);await page.getByRole("button",{name:"حفظ ونشر الصفحة",exact:true}).click();
+  await expect(page.getByLabel("إشعارات العمليات").getByRole("status")).toContainText("تم حفظ الصفحة بنجاح");
 });
 
 test("saved content never overwrites another document",async({page})=>{
@@ -142,7 +174,7 @@ test("failed notification read preserves unread count",async({page})=>{
   await page.route(`${api}/notifications?*`,r=>r.fulfill({json:{success:true,unread:1,notifications:[{id:1,title:"QA notification",body:"QA",type:"OTHER",readAt:null,createdAt:"2026-01-01"}]}}));
   await page.route(`${api}/notifications/1/read`,r=>r.fulfill({status:500,json:{success:false,message:"QA read failed"}}));
   await page.goto("/stores");await page.getByRole("button",{name:"الإشعارات",exact:true}).click();await page.getByText("QA notification",{exact:true}).click();
-  await expect(page.getByText("QA read failed",{exact:true})).toBeVisible();await expect(page.getByText("1 غير مقروء",{exact:true})).toBeVisible();
+  await expect(page.getByText("QA read failed",{exact:true}).first()).toBeVisible();await expect(page.getByLabel("إشعارات العمليات").getByRole("alert")).toContainText("QA read failed");await expect(page.getByText("1 غير مقروء",{exact:true})).toBeVisible();
 });
 
 test("ratings search and analytics cover all pages",async({page})=>{
@@ -221,7 +253,8 @@ for(const failed of [false,true]) test(`support resolution success=${!failed}`,a
  await page.route(`${api}/admin/support/tickets/7`,r=>r.fulfill({json:{success:true,ticket:supportFixture}}));
  await page.route(`${api}/admin/support/tickets/7/resolve`,r=>{body=r.request().postDataJSON();return r.fulfill(failed?{status:500,json:{success:false,message:"QA resolve failed"}}:{json:{success:true,ticket:{...supportFixture,status:"RESOLVED",adminNote:"QA note"}}});});
  await page.goto("/support/7");await page.getByRole("button",{name:"إقفال التذكرة",exact:true}).click();await page.getByRole("dialog").getByRole("textbox").fill("QA note");await page.getByRole("dialog").getByRole("button",{name:"إقفال التذكرة",exact:true}).click();
- await expect(page.getByText(failed?"QA resolve failed":"تم إقفال التذكرة",{exact:true})).toBeVisible();expect(body).toEqual({adminNote:"QA note"});
+ if(failed){await expect(page.getByRole("main").getByText("QA resolve failed",{exact:true})).toBeVisible();await expect(page.getByLabel("إشعارات العمليات").getByRole("alert")).toContainText("QA resolve failed");}
+ else await expect(page.getByLabel("إشعارات العمليات").getByRole("status")).toContainText("تم إقفال التذكرة");expect(body).toEqual({adminNote:"QA note"});
  if(failed)await expect(page.getByRole("button",{name:"إقفال التذكرة",exact:true})).toBeVisible();
  else await expect(page.getByRole("button",{name:"إقفال التذكرة",exact:true})).toHaveCount(0);
 });
@@ -237,5 +270,6 @@ for(const failed of [false,true]) test(`report resolution success=${!failed} wit
    return r.fulfill({json:{success:true,report}});
  });
  await page.goto("/reports/8");await page.getByRole("button",{name:"تعليم كمعالج",exact:true}).click();await page.getByRole("dialog").getByRole("button",{name:"تعليم كمعالج",exact:true}).click();
- await expect(page.getByText(failed?"QA report failed":"تم تعليم البلاغ كمعالج",{exact:true})).toBeVisible();expect(body).toEqual({status:"RESOLVED"});
+ if(failed){await expect(page.getByRole("main").getByText("QA report failed",{exact:true})).toBeVisible();await expect(page.getByLabel("إشعارات العمليات").getByRole("alert")).toContainText("QA report failed");}
+ else await expect(page.getByLabel("إشعارات العمليات").getByRole("status")).toContainText("تم تعليم البلاغ كمعالج");expect(body).toEqual({status:"RESOLVED"});
 });

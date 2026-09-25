@@ -30,6 +30,7 @@ import { classifyStatus } from "@/lib/apiFailure";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { isBrokenText, textOrNull } from "@/lib/brokenText";
 import { useFlash } from "@/lib/useFlash";
+import { dispatchToast } from "@/lib/toast";
 import { t } from "@/lib/strings";
 
 type Dialog =
@@ -130,6 +131,7 @@ function AdminStoreDetailPageContent() {
         setBusy(false);
         setDialog(null);
         const failure = classifyStatus(res);
+        dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
         setError(
           failure.kind === "unauthorized"
             ? t.admin.common.sessionInvalid
@@ -141,6 +143,7 @@ function AdminStoreDetailPageContent() {
       if (!res.store) {
         setBusy(false); setDialog(null);
         setError("تم تنفيذ القرار لكن لم يرجع الخادم تفاصيل المتجر المحدثة. أعد تحميل التفاصيل.");
+        dispatchToast("warning", "تم تنفيذ القرار لكن تعذر تحديث بيانات المتجر. أعيدي تحميل الصفحة.");
         return;
       }
       setStore(res.store);
@@ -163,8 +166,10 @@ function AdminStoreDetailPageContent() {
         const failure = classifyStatus(res);
         if (failure.kind === "validation" && failure.errors?.reason) {
           setReasonError(failure.errors.reason);
+          dispatchToast("warning", "راجعي سبب الرفض ثم حاولي مرة أخرى.");
           return;
         }
+        dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
         setDialog(null);
         setError(
           failure.kind === "unauthorized"
@@ -177,6 +182,7 @@ function AdminStoreDetailPageContent() {
       if (!res.store) {
         setBusy(false); setDialog(null);
         setError("تم تنفيذ القرار لكن لم يرجع الخادم تفاصيل المتجر المحدثة. أعد تحميل التفاصيل.");
+        dispatchToast("warning", "تم تنفيذ القرار لكن تعذر تحديث بيانات المتجر. أعيدي تحميل الصفحة.");
         return;
       }
       setStore(res.store);
@@ -196,6 +202,7 @@ function AdminStoreDetailPageContent() {
       setBusy(false);
       setDialog(null);
       const failure = classifyStatus(res);
+      dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
       setError(
         failure.kind === "unauthorized"
           ? t.admin.common.sessionInvalid
@@ -219,6 +226,7 @@ function AdminStoreDetailPageContent() {
       setBusy(false);
       setDialog(null);
       const failure = classifyStatus(res);
+      dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
       setError(
         failure.kind === "unauthorized"
           ? t.admin.common.sessionInvalid
@@ -241,6 +249,7 @@ function AdminStoreDetailPageContent() {
       setBusy(false);
       setDialog(null);
       const failure = classifyStatus(res);
+      dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
       setError(failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
       return;
     }
@@ -258,6 +267,7 @@ function AdminStoreDetailPageContent() {
       setBusy(false);
       setDialog(null);
       const failure = classifyStatus(res);
+      dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
       setError(failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
       return;
     }
@@ -279,9 +289,11 @@ function AdminStoreDetailPageContent() {
         setError(
           `لا يمكن حذف المتجر لوجود ${res.ordersCount} طلب/طلبات مسجلة عليه. يمكنك إيقافه أو حظره بدلاً من ذلك.`,
         );
+        dispatchToast("warning", "تعذر حذف المتجر لوجود طلبات مرتبطة به. أوقفيه أو احظريه بدلاً من ذلك.");
         return;
       }
       const failure = classifyStatus(res);
+      dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : (res.message || failure.message));
       setError(
         failure.kind === "unauthorized"
           ? t.admin.common.sessionInvalid

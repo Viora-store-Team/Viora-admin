@@ -72,6 +72,11 @@ export default function AdminUsersPage() {
     initialFilters: { role: "", isActive: "" },
   });
 
+  const newestUsers = [...list.rows].sort((a, b) => {
+    const dateDiff = Date.parse(b.createdAt) - Date.parse(a.createdAt);
+    return Number.isFinite(dateDiff) && dateDiff !== 0 ? dateDiff : b.id - a.id;
+  });
+
   const total = list.pagination?.total ?? 0;
 
   return (
@@ -151,7 +156,7 @@ export default function AdminUsersPage() {
         <div className="flex flex-col gap-4">
           <Card className="overflow-hidden border border-border shadow-xs">
             <UsersTable
-              users={list.rows}
+              users={newestUsers}
               onOpen={(id) => router.push(`/users/${id}`)}
             />
           </Card>

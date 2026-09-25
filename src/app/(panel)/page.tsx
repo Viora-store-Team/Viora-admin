@@ -6,8 +6,6 @@ import {
   BarChart3,
   Calendar,
   Clock,
-  Coins,
-  Flag,
   ShoppingBag,
   Sparkles,
   Store,
@@ -111,6 +109,8 @@ export default function AdminOverviewPage() {
   };
 
   const counters = view?.counters;
+  const currentPeriodLabel =
+    PERIOD_OPTIONS.find((p) => p.key === period)?.label ?? `آخر ${period} يوم`;
 
   const kpis: {
     title: string;
@@ -151,17 +151,6 @@ export default function AdminOverviewPage() {
           href: "/stores",
         },
         {
-          title: t.admin.dashboard.openReports,
-          value: `${formatNumber(counters.reports.open)} ${t.admin.dashboard.reportUnit}`,
-          icon: Flag,
-          colorScheme: counters.reports.open > 0 ? "rose" : "neutral",
-          badge:
-            counters.reports.open > 0
-              ? { text: "يحتاج متابعة", variant: "danger" }
-              : undefined,
-          href: "/reports",
-        },
-        {
           title: t.admin.dashboard.merchants,
           value: `${formatNumber(counters.users.merchants)} ${t.admin.dashboard.userUnit}`,
           icon: UserRound,
@@ -176,22 +165,28 @@ export default function AdminOverviewPage() {
           href: "/users",
         },
         {
-          title: t.admin.dashboard.orders,
-          value: `${formatNumber(counters.orders.total)} ${t.admin.dashboard.orderUnit}`,
-          icon: ShoppingBag,
-          colorScheme: "purple",
+          title: t.admin.dashboard.newSignups,
+          value: `${formatNumber(counters.users.newMerchants + counters.users.newCustomers)} ${t.admin.dashboard.userUnit}`,
+          icon: UserPlus,
+          colorScheme: "indigo",
+          badge: { text: currentPeriodLabel, variant: "info" },
         },
         {
-          title: t.admin.dashboard.gmv,
-          value: formatCurrency(Number(counters.revenue.total)),
+          title: t.admin.dashboard.ordersInPeriod,
+          value: `${formatNumber(counters.orders.inPeriod)} ${t.admin.dashboard.orderUnit}`,
+          icon: ShoppingBag,
+          colorScheme: "purple",
+          badge: { text: currentPeriodLabel, variant: "info" },
+        },
+        {
+          title: t.admin.dashboard.revenueInPeriod,
+          value: formatCurrency(Number(counters.revenue.inPeriod)),
           icon: TrendingUp,
           colorScheme: "teal",
+          badge: { text: currentPeriodLabel, variant: "info" },
         },
       ]
     : [];
-
-  const currentPeriodLabel =
-    PERIOD_OPTIONS.find((p) => p.key === period)?.label ?? `آخر ${period} يوم`;
 
   return (
     <div className="flex flex-col gap-6">
@@ -262,7 +257,7 @@ export default function AdminOverviewPage() {
         </Card>
       ) : (
         <>
-          {/* ── البطاقات الإحصائية الرئيسية الملونة (8 بطاقات) ───────── */}
+          {/* ── البطاقات الرئيسية: الطلبات والإيرادات مرة واحدة للفترة ─ */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {kpis.map((kpi) => (
               <StatCard
@@ -275,93 +270,6 @@ export default function AdminOverviewPage() {
                 href={kpi.href}
               />
             ))}
-          </div>
-
-          {/* ── بطاقة تسليط الضوء على نشاط الفترة المحددة ────────────── */}
-          <div className="overflow-hidden rounded-3xl border border-border/80 bg-surface shadow-xs">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 bg-field-bg/50 px-6 py-4">
-              <div className="flex items-center gap-2.5">
-                <span className="grid size-8 place-items-center rounded-xl bg-primary/10 text-primary">
-                  <TrendingUp className="size-4" aria-hidden="true" />
-                </span>
-                <div>
-                  <h2 className="text-sm font-extrabold text-heading">
-                    ملخص نشاط المنصة خلال الفترة
-                  </h2>
-                  <p className="text-xs text-text-secondary">
-                    إحصائيات محصورة بـ ({currentPeriodLabel})
-                  </p>
-                </div>
-              </div>
-              <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-extrabold text-primary">
-                {currentPeriodLabel}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-3">
-              {/* تسجيلات الفترة */}
-              <div className="flex items-center gap-4 rounded-2xl border border-indigo-500/15 bg-indigo-500/5 p-4.5 transition-all hover:bg-indigo-500/10">
-                <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-indigo-500/15 text-indigo-600">
-                  <UserPlus className="size-6" aria-hidden="true" />
-                </span>
-                <div className="min-w-0 space-y-1">
-                  <p className="text-xs font-bold text-indigo-900/80">
-                    {t.admin.dashboard.newSignups}
-                  </p>
-                  <p className="ltr-nums text-xl font-black text-heading">
-                    {formatNumber(
-                      counters.users.newMerchants + counters.users.newCustomers,
-                    )}{" "}
-                    <span className="text-xs font-bold text-text-secondary">
-                      {t.admin.dashboard.userUnit}
-                    </span>
-                  </p>
-                  <p className="text-[11px] font-medium text-text-secondary">
-                    {formatNumber(counters.users.newMerchants)} تجار •{" "}
-                    {formatNumber(counters.users.newCustomers)} عملاء
-                  </p>
-                </div>
-              </div>
-
-              {/* طلبات الفترة */}
-              <div className="flex items-center gap-4 rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4.5 transition-all hover:bg-emerald-500/10">
-                <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-emerald-500/15 text-emerald-600">
-                  <ShoppingBag className="size-6" aria-hidden="true" />
-                </span>
-                <div className="min-w-0 space-y-1">
-                  <p className="text-xs font-bold text-emerald-900/80">
-                    {t.admin.dashboard.ordersInPeriod}
-                  </p>
-                  <p className="ltr-nums text-xl font-black text-heading">
-                    {formatNumber(counters.orders.inPeriod)}{" "}
-                    <span className="text-xs font-bold text-text-secondary">
-                      {t.admin.dashboard.orderUnit}
-                    </span>
-                  </p>
-                  <p className="text-[11px] font-medium text-text-secondary">
-                    طلبات منشأة خلال {currentPeriodLabel}
-                  </p>
-                </div>
-              </div>
-
-              {/* إيرادات الفترة */}
-              <div className="flex items-center gap-4 rounded-2xl border border-teal-500/15 bg-teal-500/5 p-4.5 transition-all hover:bg-teal-500/10">
-                <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-teal-500/15 text-teal-600">
-                  <Coins className="size-6" aria-hidden="true" />
-                </span>
-                <div className="min-w-0 space-y-1">
-                  <p className="text-xs font-bold text-teal-900/80">
-                    {t.admin.dashboard.revenueInPeriod}
-                  </p>
-                  <p className="ltr-nums text-xl font-black text-heading">
-                    {formatCurrency(Number(counters.revenue.inPeriod))}
-                  </p>
-                  <p className="text-[11px] font-medium text-text-secondary">
-                    مبيعات محققة خلال {currentPeriodLabel}
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* ── الرسوم البيانية للنمو والحركة ───────────────────────── */}

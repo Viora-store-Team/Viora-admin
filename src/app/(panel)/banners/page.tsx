@@ -9,6 +9,7 @@ import { fetchBanners, updateBanner } from "@/lib/admin/api";
 import { uploadMany, UPLOAD_LIMITS } from "@/lib/api";
 import type { Banner, BannerSlot } from "@/lib/admin/types";
 import { formatDate } from "@/lib/format";
+import { dispatchToast } from "@/lib/toast";
 
 const SLOTS: BannerSlot[] = [1, 2, 3];
 
@@ -37,10 +38,12 @@ function BannerCard({ slot, banner, ready, onSaved }: {
     setNotice("");
     if (!UPLOAD_LIMITS.types.includes(selected.type as typeof UPLOAD_LIMITS.types[number])) {
       setError("اختر صورة بصيغة JPG أو PNG أو WebP.");
+      dispatchToast("warning", "صيغة الصورة غير مدعومة. استخدمي JPG أو PNG أو WebP.");
       return;
     }
     if (selected.size > UPLOAD_LIMITS.maxBytes || selected.size === 0) {
       setError("اختر صورة غير فارغة بحجم لا يتجاوز 10 ميجابايت.");
+      dispatchToast("warning", "تأكدي أن الصورة غير فارغة وحجمها أقل من 10 ميجابايت.");
       return;
     }
     setFile(selected);
@@ -74,8 +77,11 @@ function BannerCard({ slot, banner, ready, onSaved }: {
       setPreview("");
       setUploadedUrl("");
       setNotice("تم حفظ البنر بنجاح.");
+      dispatchToast("success", `تم حفظ البنر ${slot} ونشره بنجاح.`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "تعذر حفظ البنر. حاول مرة أخرى.");
+      const message = cause instanceof Error ? cause.message : "تعذر حفظ البنر. حاول مرة أخرى.";
+      setError(message);
+      dispatchToast("error", message);
     } finally {
       saving.current = false;
       setBusy(false);

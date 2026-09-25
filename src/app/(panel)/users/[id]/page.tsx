@@ -29,6 +29,7 @@ import type { ApiResponse } from "@/lib/api";
 import { textOrNull } from "@/lib/brokenText";
 import { formatCurrency, formatDate, formatNumber } from "@/lib/format";
 import { useFlash } from "@/lib/useFlash";
+import { dispatchToast } from "@/lib/toast";
 import { t } from "@/lib/strings";
 
 type Dialog = "suspend" | "activate" | "delete" | null;
@@ -80,6 +81,7 @@ function AdminUserDetailPageContent() {
           ? t.admin.common.sessionInvalid
           : failure.message,
       );
+      dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
     })();
 
     return () => {
@@ -132,6 +134,7 @@ function AdminUserDetailPageContent() {
         setError(
           `لا يمكن حذف هذا الحساب لوجود ${cnt} طلب/طلبات مسجلة عليه كزبون أو متجر. يمكنك إيقاف الحساب بدلاً من ذلك.`,
         );
+        dispatchToast("warning", "تعذر الحذف لوجود طلبات مرتبطة بهذا الحساب. أوقفي الحساب بدلاً من ذلك.");
         return;
       }
       const failure = classifyStatus(res);
@@ -140,6 +143,7 @@ function AdminUserDetailPageContent() {
           ? t.admin.common.sessionInvalid
           : (res.message || failure.message),
       );
+      dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : (res.message || failure.message));
       return;
     }
 

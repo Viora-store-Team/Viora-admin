@@ -32,6 +32,7 @@ import {
   fetchRatingsSnapshot,
   hideRating,
   unhideRating,
+  type AdminRatingApiItem,
 } from "@/lib/admin/api";
 import type {
   AdminRatingItem,
@@ -40,10 +41,20 @@ import type {
 } from "@/lib/admin/types";
 import { formatDate, formatNumber } from "@/lib/format";
 import { useFlash } from "@/lib/useFlash";
+import { dispatchToast } from "@/lib/toast";
 import { t } from "@/lib/strings";
 import type { Pagination as PaginationType } from "@/lib/api";
 
-function StarRating({ rating, size = "md" }: { rating: number; size?: "sm" | "md" | "lg" }) {
+function normalizeRating(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : NaN;
+  return Number.isFinite(parsed) && parsed >= 1 && parsed <= 5 ? parsed : null;
+}
+
+function getReviewRating(review: AdminRatingApiItem): number | null {
+  return normalizeRating(review.rating) ?? normalizeRating(review.stars);
+}
+
+function StarRating({ rating, size = "md" }: { rating: number | null; size?: "sm" | "md" | "lg" }) {
   const sizeClasses = {
     sm: "size-3.5",
     md: "size-4.5",
@@ -53,7 +64,7 @@ function StarRating({ rating, size = "md" }: { rating: number; size?: "sm" | "md
   return (
     <div className="flex items-center gap-1" dir="ltr">
       {[1, 2, 3, 4, 5].map((star) => {
-        const isFilled = star <= rating;
+        const isFilled = rating !== null && star <= rating;
         return (
           <Star
             key={star}
@@ -101,45 +112,60 @@ export default function AdminReviewsPage() {
     setLoading(false);
 
     if (ratingsRes.success) {
-      const items: AdminRatingItem[] = ratingsRes.ratings || [];
-      setReviews(items);
+      const items: AdminRatingItem[] = (ratingsRes.ratings || [])
+        .map((item) => {
+          const rating = getReviewRating(item);
+          return rating === null ? null : { ...item, rating } as AdminRatingItem;
+        })
+        .filter((item): item is AdminRatingItem => item !== null);
+      const newestFirst = items.sort((a, b) => {
+        const byDate = Date.parse(b.createdAt) - Date.parse(a.createdAt);
+        return Number.isFinite(byDate) && byDate !== 0 ? byDate : b.id - a.id;
+      });
+      setReviews(newestFirst);
 
       // Compute overview KPIs strictly from data
-      const total = items.length;
+      const total = Number.isSafeInteger(ratingsRes.pagination?.total)
+        ? Number(ratingsRes.pagination?.total)
+        : items.length;
+      const validItems = items.filter((r) => getReviewRating(r) !== null);
       const visibleItems = items.filter(r => !(r.isHidden || r.hidden));
-      const positiveCount = visibleItems.filter((r) => r.rating >= 4).length;
+      const validVisibleItems = visibleItems.filter((r) => getReviewRating(r) !== null);
+      const positiveCount = validVisibleItems.filter((r) => (getReviewRating(r) ?? 0) >= 4).length;
       const hiddenCount = items.filter((r) => r.isHidden || r.hidden).length;
       const avg =
-        visibleItems.length > 0
-          ? visibleItems.reduce((s, r) => s + r.rating, 0) / visibleItems.length
-          : 0;
+        validVisibleItems.length > 0
+          ? validVisibleItems.reduce((s, r) => s + (getReviewRating(r) ?? 0), 0) / validVisibleItems.length
+          : null;
 
       setOverview({
-        platformAverage: Number(avg.toFixed(1)),
+        platformAverage: avg === null ? 0 : Number(avg.toFixed(1)),
         totalReviews: total,
         positivePercentage:
-          visibleItems.length > 0 ? Math.round((positiveCount / visibleItems.length) * 100) : 0,
+          validVisibleItems.length > 0 ? Math.round((positiveCount / validVisibleItems.length) * 100) : 0,
         hiddenCount,
         starCounts: {
-          5: items.filter((r) => r.rating === 5).length,
-          4: items.filter((r) => r.rating === 4).length,
-          3: items.filter((r) => r.rating === 3).length,
-          2: items.filter((r) => r.rating === 2).length,
-          1: items.filter((r) => r.rating === 1).length,
+          5: validItems.filter((r) => getReviewRating(r) === 5).length,
+          4: validItems.filter((r) => getReviewRating(r) === 4).length,
+          3: validItems.filter((r) => getReviewRating(r) === 3).length,
+          2: validItems.filter((r) => getReviewRating(r) === 2).length,
+          1: validItems.filter((r) => getReviewRating(r) === 1).length,
         },
       });
 
       // Compute store ratings aggregation strictly from live ratings items
       const storesMap = new Map<number, { name: string; city: string | null; ratings: number[] }>();
       for (const r of visibleItems) {
-        const sId = r.store?.id ?? r.storeId;
-        if (!sId) continue;
-        const sName = r.store?.name ?? r.storeName ?? "متجر";
+        if (getReviewRating(r) === null) continue;
+        const sId = Number(r.store?.id ?? r.storeId);
+        if (!Number.isSafeInteger(sId) || sId <= 0) continue;
+        const sName = r.store?.name ?? r.storeName;
+        if (!sName) continue;
         const sCity = r.store?.city ?? r.storeCity ?? null;
         if (!storesMap.has(sId)) {
           storesMap.set(sId, { name: sName, city: sCity, ratings: [] });
         }
-        storesMap.get(sId)!.ratings.push(r.rating);
+        storesMap.get(sId)!.ratings.push(getReviewRating(r) ?? 0);
       }
 
       if (storesMap.size > 0) {
@@ -204,6 +230,7 @@ export default function AdminReviewsPage() {
       await loadData();
     } else {
       setError(res.message || t.admin.common.loadFailed);
+      dispatchToast("error", res.message || "تعذر إخفاء التقييم.");
     }
   };
 
@@ -227,15 +254,18 @@ export default function AdminReviewsPage() {
       await loadData();
     } else {
       setError(res.message || t.admin.common.loadFailed);
+      dispatchToast("error", res.message || "تعذر إظهار التقييم.");
     }
   };
 
   // Client-side filtering for star tabs and search query
   const filteredReviews = reviews.filter((r) => {
-    if (activeTab === "5" && r.rating !== 5) return false;
-    if (activeTab === "4" && r.rating !== 4) return false;
-    if (activeTab === "3" && r.rating !== 3) return false;
-    if (activeTab === "low" && r.rating > 2) return false;
+    const rating = getReviewRating(r);
+    if (rating === null) return false;
+    if (activeTab === "5" && rating !== 5) return false;
+    if (activeTab === "4" && rating !== 4) return false;
+    if (activeTab === "3" && rating !== 3) return false;
+    if (activeTab === "low" && rating > 2) return false;
     if (activeTab === "hidden" && !(r.isHidden || r.hidden)) return false;
 
     if (searchQuery.trim()) {
@@ -262,8 +292,8 @@ export default function AdminReviewsPage() {
 
   // Client-side sorting
   filteredReviews.sort((a, b) => {
-    if (sortOption === "highest") return b.rating - a.rating;
-    if (sortOption === "lowest") return a.rating - b.rating;
+    if (sortOption === "highest") return (getReviewRating(b) ?? 0) - (getReviewRating(a) ?? 0);
+    if (sortOption === "lowest") return (getReviewRating(a) ?? 0) - (getReviewRating(b) ?? 0);
     return (b.createdAt || "").localeCompare(a.createdAt || "");
   });
 
@@ -299,7 +329,9 @@ export default function AdminReviewsPage() {
                 </span>
                 <div className="mt-1 flex items-center gap-2">
                   <span className="ltr-nums text-2xl font-black text-heading">
-                    {overview.platformAverage.toFixed(1)}
+                    {overview.totalReviews > 0 && Number.isFinite(overview.platformAverage)
+                      ? overview.platformAverage.toFixed(1)
+                      : "—"}
                   </span>
                   <Star className="size-5 fill-amber-400 text-amber-400" />
                 </div>
@@ -490,7 +522,8 @@ export default function AdminReviewsPage() {
                 const productName = review.product?.name || review.productName || "منتج";
                 const storeName = review.store?.name || review.storeName || "متجر";
                 const sId = review.store?.id || review.storeId;
-                const orderNum = review.order?.orderNumber || (review.orderId ? `#VIO-${review.orderId}` : review.orderNumber || "طلب موثق");
+                const orderNum = review.order?.orderNumber || review.orderNumber || (review.orderId ? `#VIO-${review.orderId}` : null);
+                const isVerifiedPurchase = Boolean(review.order?.id || review.orderId);
                 const isHidden = Boolean(review.isHidden || review.hidden);
 
                 return (
@@ -514,10 +547,12 @@ export default function AdminReviewsPage() {
                               <span className="font-extrabold text-heading">
                                 {customerName}
                               </span>
-                              <span className="flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-[10px] font-extrabold text-success">
-                                <Check className="size-3" />
-                                {t.admin.reviews.verifiedBuyer}
-                              </span>
+                              {isVerifiedPurchase && (
+                                <span className="flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-[10px] font-extrabold text-success">
+                                  <Check className="size-3" />
+                                  {t.admin.reviews.verifiedBuyer}
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center gap-2 text-xs text-text-secondary">
                               {customerEmail && (
@@ -535,7 +570,10 @@ export default function AdminReviewsPage() {
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <StarRating rating={review.rating} />
+                          <StarRating rating={getReviewRating(review)} />
+                          <span className="ltr-nums text-xs font-extrabold text-text-secondary">
+                            {getReviewRating(review) ?? "—"}/5
+                          </span>
                           {isHidden ? (
                             <Badge tone="danger">{t.admin.reviews.hiddenBadge}</Badge>
                           ) : (
@@ -547,16 +585,20 @@ export default function AdminReviewsPage() {
                       {/* Middle: Linked Product and Store Pill Badges */}
                       <div className="mt-3.5 flex flex-wrap items-center gap-2">
                         {/* Product Tag */}
-                        <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-field-bg/60 px-2.5 py-1 text-xs font-bold text-heading">
-                          <Package className="size-3.5 text-primary" />
-                          <span>{productName}</span>
-                        </div>
+                        {(review.product?.name || review.productName) && (
+                          <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-field-bg/60 px-2.5 py-1 text-xs font-bold text-heading">
+                            <Package className="size-3.5 text-primary" />
+                            <span>{productName}</span>
+                          </div>
+                        )}
 
                         {/* Order Number Tag */}
-                        <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-field-bg/60 px-2.5 py-1 text-xs font-bold text-text-secondary">
-                          <ShoppingBag className="size-3.5 text-info" />
-                          <span>{orderNum}</span>
-                        </div>
+                        {orderNum && (
+                          <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-field-bg/60 px-2.5 py-1 text-xs font-bold text-text-secondary">
+                            <ShoppingBag className="size-3.5 text-info" />
+                            <span>{orderNum}</span>
+                          </div>
+                        )}
 
                         {/* Store Tag */}
                         {sId ? (
@@ -646,7 +688,7 @@ export default function AdminReviewsPage() {
             />
             <CardBody className="space-y-4 p-5">
               <p className="text-xs font-medium text-text-secondary">
-                متوسط تقييم كل متجر محسوب تراكمياً من تقييمات العملاء الفعلية لطلبات المنتجات.
+              متوسط المتجر وتوزيع تقييماته اعتماداً على تقييمات المنتجات الفعلية المرتبطة به.
               </p>
 
               {storesRatings.length === 0 ? (
@@ -674,7 +716,7 @@ export default function AdminReviewsPage() {
                             {store.storeName}
                           </p>
                           <p className="text-xs text-text-secondary">
-                            {store.city || "فلسطين"} · {store.totalReviews} تقييم
+                            {store.city || "—"} · {store.totalReviews} تقييم منتج
                           </p>
                         </div>
                       </div>
@@ -682,7 +724,7 @@ export default function AdminReviewsPage() {
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1 rounded-lg bg-amber-400/15 px-2 py-1 text-xs font-black text-amber-700">
                           <Star className="size-3.5 fill-amber-500 text-amber-500" />
-                          <span>{store.averageRating.toFixed(1)}</span>
+                          <span>{store.totalReviews > 0 && Number.isFinite(store.averageRating) ? store.averageRating.toFixed(1) : "—"}</span>
                         </div>
                         <ChevronLeft className="size-4 text-text-secondary/60 transition group-hover:-translate-x-0.5 group-hover:text-primary" />
                       </div>

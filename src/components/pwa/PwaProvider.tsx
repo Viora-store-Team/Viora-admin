@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { dispatchToast } from "@/lib/toast";
 import { Download } from "lucide-react";
 
 interface InstallPrompt extends Event {
@@ -61,7 +62,7 @@ export function InstallButton() {
     setBusy(true);
     setError("");
     try { await prompt.prompt(); await prompt.userChoice; clear(); }
-    catch { setError("تعذّر فتح التثبيت. جرّب من قائمة المتصفح."); }
+    catch { const message = "تعذّر فتح التثبيت. جرّب من قائمة المتصفح."; setError(message); dispatchToast("error", message); }
     finally { setBusy(false); }
   }
 

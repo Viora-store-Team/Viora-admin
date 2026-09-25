@@ -25,6 +25,7 @@ import type { AdminReportDetail } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
 import { formatDate, formatNumber, formatPrice } from "@/lib/format";
 import { useFlash } from "@/lib/useFlash";
+import { dispatchToast } from "@/lib/toast";
 import { t } from "@/lib/strings";
 
 type Dialog = "hide" | "unhide" | "resolve" | "dismiss" | null;
@@ -108,6 +109,7 @@ function AdminReportDetailPageContent() {
         ? t.admin.common.sessionInvalid
         : failure.message,
     );
+    dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
   };
 
   /**
@@ -151,6 +153,7 @@ function AdminReportDetailPageContent() {
         ? t.admin.common.sessionInvalid
         : failure.message,
     );
+    dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
   };
 
   if (loading && validId) return <Spinner />;

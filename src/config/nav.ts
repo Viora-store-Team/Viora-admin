@@ -9,6 +9,7 @@ import {
   Headphones,
   ShoppingBag,
   Truck,
+  Wallet,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -33,6 +34,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/banners", label: "بنرات التطبيق", icon: ImageIcon },
   { href: "/content", label: t.admin.nav.content, icon: FileText },
   { href: "/delivery", label: t.admin.nav.delivery, icon: Truck },
+  { href: "/finance", label: t.admin.nav.finance, icon: Wallet },
 ];
 
 /**
