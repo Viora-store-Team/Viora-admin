@@ -21,7 +21,7 @@ import {
   updateReport,
 } from "@/lib/admin/api";
 import { REPORT_STATUS, REPORT_TARGET, STORE_STATUS } from "@/lib/admin/status";
-import type { AdminReportDetail } from "@/lib/admin/types";
+import type { AdminReportDetail, ReportStatus, ReportTarget, StoreStatus } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
 import { formatDate, formatNumber, formatPrice } from "@/lib/format";
 import { useFlash } from "@/lib/useFlash";
@@ -29,6 +29,10 @@ import { dispatchToast } from "@/lib/toast";
 import { t } from "@/lib/strings";
 
 type Dialog = "hide" | "unhide" | "resolve" | "dismiss" | null;
+
+function unknownStatus(value: string | undefined) {
+  return { label: value?.trim() || "غير محدد", tone: "neutral" as const };
+}
 
 function AdminReportDetailPageContent() {
   const router = useRouter();
@@ -190,13 +194,13 @@ function AdminReportDetailPageContent() {
   }
 
   const { review, product, store } = report.content;
-  const isOpen = report.status === "OPEN";
+  const isOpen = report.status === "OPEN" || report.status === "PENDING";
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title={t.admin.reports.detailsTitle}
-        subtitle={report.reason}
+        subtitle={report.details || report.targetPreview || report.reason}
         action={
           <div className="flex flex-wrap items-center gap-3">
             {flash && (
@@ -226,8 +230,8 @@ function AdminReportDetailPageContent() {
       <Card>
         <CardBody className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge meta={REPORT_STATUS[report.status]} />
-            <StatusBadge meta={REPORT_TARGET[report.targetType]} />
+            <StatusBadge meta={REPORT_STATUS[report.status as ReportStatus] ?? unknownStatus(report.status)} />
+            <StatusBadge meta={REPORT_TARGET[report.targetType as ReportTarget] ?? unknownStatus(report.targetType)} />
           </div>
 
           {isOpen && (
@@ -330,7 +334,7 @@ function AdminReportDetailPageContent() {
                     { label: t.admin.stores.colCity, value: store.city },
                     {
                       label: t.admin.stores.colStatus,
-                      value: <StatusBadge meta={STORE_STATUS[store.status]} />,
+                      value: <StatusBadge meta={STORE_STATUS[store.status as StoreStatus] ?? unknownStatus(store.status)} />,
                     },
                   ]}
                 />

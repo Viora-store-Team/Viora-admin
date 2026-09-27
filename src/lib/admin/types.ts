@@ -587,7 +587,8 @@ export interface Review {
 }
 
 export type ReportTarget = "REVIEW" | "PRODUCT" | "STORE";
-export type ReportStatus = "OPEN" | "RESOLVED" | "DISMISSED";
+/** الباك إند يستخدم PENDING كحالة البلاغ المفتوح. */
+export type ReportStatus = "OPEN" | "PENDING" | "RESOLVED" | "DISMISSED";
 
 export interface AdminReportListItem {
   id: number;
@@ -624,10 +625,29 @@ export interface ReportedContent {
 
 export interface AdminReportDetail extends AdminReportListItem {
   note: string | null;
+  details?: string | null;
   content: ReportedContent;
   /** بلاغات سابقة على نفس الهدف — بتساعد المشرف يقرّر */
   relatedCount: number;
   resolvedAt: string | null;
+}
+
+/** شكل تفاصيل البلاغ كما يرجع من GET /admin/reports/:id. */
+export interface AdminReportApiDetail {
+  id: number;
+  targetType: ReportTarget;
+  targetId: number;
+  reason: string;
+  details?: string | null;
+  status: ReportStatus;
+  adminNote?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  reporter: { id: number; name: string; email?: string; phone?: string | null; avatarUrl?: string | null };
+  store?: { id: number; name: string; logoUrl?: string | null; city?: string | null; status?: StoreStatus; isActive?: boolean } | null;
+  review?: Review | null;
+  product?: { id: number; name: string; price?: string | number; image?: string | null; storeId?: number; storeName?: string; isActive?: boolean } | null;
+  target?: { id: number; name?: string; title?: string } | null;
 }
 
 /** الصف المختصر من `GET /admin/orders` — قائمة كل طلبات المنصة. */

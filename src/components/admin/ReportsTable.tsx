@@ -4,7 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { TableShell, Td, Thead } from "@/components/ui/Table";
 import StatusBadge from "./StatusBadge";
 import { REPORT_STATUS, REPORT_TARGET } from "@/lib/admin/status";
-import type { AdminReportListItem } from "@/lib/admin/types";
+import type { AdminReportListItem, ReportStatus, ReportTarget } from "@/lib/admin/types";
 import { formatDate } from "@/lib/format";
 import { t } from "@/lib/strings";
 
@@ -17,6 +17,10 @@ const COLUMNS = [
   t.admin.reports.colCreated,
   "",
 ] as const;
+
+function reportLabel(value: string | undefined) {
+  return value?.trim() || "غير محدد";
+}
 
 export default function ReportsTable({
   reports,
@@ -36,7 +40,9 @@ export default function ReportsTable({
             onClick={() => onOpen(report.id)}
           >
             <Td>
-              <StatusBadge meta={REPORT_TARGET[report.targetType]} />
+              <StatusBadge
+                meta={REPORT_TARGET[report.targetType as ReportTarget] ?? { label: reportLabel(report.targetType), tone: "neutral" }}
+              />
             </Td>
             {/* اللقطة النصية بتيجي مع القائمة عشان الجدول ما يحتاج جلب إضافي */}
             <Td className="max-w-[260px]">
@@ -47,7 +53,9 @@ export default function ReportsTable({
             <Td className="font-bold text-heading">{report.reason}</Td>
             <Td className="text-text-secondary">{report.reporter.name}</Td>
             <Td>
-              <StatusBadge meta={REPORT_STATUS[report.status]} />
+              <StatusBadge
+                meta={REPORT_STATUS[report.status as ReportStatus] ?? { label: reportLabel(report.status), tone: "neutral" }}
+              />
             </Td>
             <Td className="ltr-nums whitespace-nowrap text-text-secondary">
               {formatDate(report.createdAt)}

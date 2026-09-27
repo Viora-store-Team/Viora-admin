@@ -1,21 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { ShieldCheck, ShieldOff } from "lucide-react";
+import { useRef, useState } from "react";
+import { ArrowLeft, ChevronDown, LoaderCircle, ShieldOff } from "lucide-react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import ErrorBanner from "@/components/ui/ErrorBanner";
-import { Card, CardBody } from "@/components/ui/Card";
 import { useAuth } from "@/context/AuthContext";
 import { adminLogin, ADMIN_ROLE } from "@/lib/auth/api";
 import { dispatchToast } from "@/lib/toast";
 import { t } from "@/lib/strings";
+import styles from "../auth.module.css";
 
 /** فحص محلي بسيط — بيوفّر رحلة شبكة على حقل فاضي أو إيميل بلا @ */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function AdminLoginPage() {
   const { notice, setNotice, loginUser } = useAuth();
+  const formRef = useRef<HTMLFormElement>(null);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,6 +50,7 @@ export default function AdminLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
 
     setBanner("");
     setSuspended(false);
@@ -56,15 +58,20 @@ export default function AdminLoginPage() {
     setFieldErrors({});
 
     const trimmed = email.trim();
+    const showFieldError = (field: "email" | "password", message: string) => {
+      setFieldErrors({ [field]: message });
+      const input = formRef.current?.elements.namedItem(field);
+      if (input instanceof HTMLInputElement) input.focus();
+    };
 
     if (!trimmed) {
-      return setFieldErrors({ email: t.auth.login.emailRequired });
+      return showFieldError("email", t.auth.login.emailRequired);
     }
     if (!EMAIL_PATTERN.test(trimmed)) {
-      return setFieldErrors({ email: t.auth.login.emailInvalid });
+      return showFieldError("email", t.auth.login.emailInvalid);
     }
     if (!password) {
-      return setFieldErrors({ password: t.auth.login.passwordRequired });
+      return showFieldError("password", t.auth.login.passwordRequired);
     }
 
     setLoading(true);
@@ -117,54 +124,51 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <Card className="w-full max-w-md border border-border shadow-xs">
-      <CardBody className="space-y-6 p-6 sm:p-8">
-        <div className="space-y-2 text-center">
-          <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-primary-soft text-primary">
-            <ShieldCheck className="size-6" aria-hidden="true" />
-          </span>
-          <h1 className="text-xl font-extrabold text-heading">
+    <div className={styles.login}>
+        <div className={styles.intro}>
+          <p className={styles.eyebrow}>{t.auth.login.eyebrow}</p>
+          <h1 className={styles.title}>
             {t.auth.login.title}
           </h1>
-          <p className="text-sm text-text-secondary">{t.auth.login.subtitle}</p>
+          <p className={styles.subtitle}>{t.auth.login.subtitle}</p>
         </div>
 
         {/* لوحة الحساب الموقوف — بديل شريط الخطأ العام، مش زيادة عليه */}
         {showSuspended ? (
           <div
             role="alert"
-            className="space-y-2 rounded-2xl border border-danger/20 bg-danger-soft/70 p-4 text-center"
+            className={`${styles.feedback} ${styles.suspended}`}
           >
-            <span className="mx-auto grid size-10 place-items-center rounded-xl bg-danger/10 text-danger">
-              <ShieldOff className="size-5" aria-hidden="true" />
-            </span>
-            <p className="text-sm font-extrabold text-danger">
+            <div className={styles.suspendedTitle}>
+              <ShieldOff size={18} aria-hidden="true" />
               {t.auth.login.suspendedTitle}
-            </p>
-            <p className="text-xs leading-relaxed text-heading">
-              {suspendedBody}
-            </p>
+            </div>
+            <p>{suspendedBody}</p>
           </div>
         ) : (
-          <ErrorBanner message={shownBanner} />
+          <ErrorBanner message={shownBanner} className={styles.feedback} />
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <form ref={formRef} onSubmit={handleSubmit} className={styles.form} aria-busy={loading} noValidate>
           <Input
             label={t.auth.login.email}
             id="email"
+            name="email"
             type="email"
             value={email}
             onChange={setEmail}
             placeholder={t.auth.login.emailPlaceholder}
             error={fieldErrors.email}
             autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
             required
           />
 
           <Input
             label={t.auth.login.password}
             id="password"
+            name="password"
             type="password"
             value={password}
             onChange={setPassword}
@@ -181,15 +185,22 @@ export default function AdminLoginPage() {
             size="lg"
             fullWidth
             disabled={loading}
+            className={styles.submit}
           >
-            {loading ? t.auth.login.submitting : t.auth.login.submit}
+            <span>{loading ? t.auth.login.submitting : t.auth.login.submit}</span>
+            {loading ? (
+              <LoaderCircle size={18} className={styles.spinner} aria-hidden="true" />
+            ) : (
+              <ArrowLeft size={18} className={styles.submitArrow} aria-hidden="true" />
+            )}
           </Button>
         </form>
+        <p className="sr-only" role="status">{loading ? t.auth.login.submitting : ""}</p>
 
-        <p className="text-center text-xs leading-relaxed text-text-secondary">
-          {t.auth.login.seedHint}
-        </p>
-      </CardBody>
-    </Card>
+        <details className={styles.help}>
+          <summary>{t.auth.login.helpTitle}<ChevronDown size={13} aria-hidden="true" /></summary>
+          <p>{t.auth.login.helpBody}</p>
+        </details>
+    </div>
   );
 }

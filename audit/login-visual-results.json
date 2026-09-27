@@ -1,0 +1,58 @@
+{
+  "results": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "pageWidth": 1440,
+      "horizontalOverflow": false,
+      "formVisible": true,
+      "imageLoaded": true,
+      "cairoLoaded": true
+    },
+    {
+      "name": "laptop",
+      "width": 1024,
+      "height": 768,
+      "pageWidth": 1024,
+      "horizontalOverflow": false,
+      "formVisible": true,
+      "imageLoaded": true,
+      "cairoLoaded": true
+    },
+    {
+      "name": "tablet",
+      "width": 768,
+      "height": 1024,
+      "pageWidth": 768,
+      "horizontalOverflow": false,
+      "formVisible": true,
+      "imageLoaded": true,
+      "cairoLoaded": true
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "pageWidth": 390,
+      "horizontalOverflow": false,
+      "formVisible": true,
+      "imageLoaded": true,
+      "cairoLoaded": true
+    },
+    {
+      "name": "small-mobile",
+      "width": 320,
+      "height": 740,
+      "pageWidth": 320,
+      "horizontalOverflow": false,
+      "formVisible": true,
+      "imageLoaded": true,
+      "cairoLoaded": true
+    },
+    {
+      "reducedMotion": "none"
+    }
+  ],
+  "errors": []
+}

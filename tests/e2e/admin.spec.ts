@@ -262,6 +262,26 @@ test("unavailable reports do not show a misleading empty list",async({page})=>{
  await page.goto("/reports");await expect(page.getByText("هذه الميزة غير متاحة من الخادم حالياً. أعد المحاولة لاحقاً.",{exact:true})).toBeVisible();await expect(page.getByText("ما في بلاغات",{exact:true})).toHaveCount(0);
 });
 
+test("reports tolerate backend enum values that are not in the admin maps",async({page})=>{
+ const report={id:9,targetType:"REVIEW",targetId:5,targetPreview:"QA review",reason:"QA reason",reporter:{id:2,name:"QA reporter"},status:"PENDING",createdAt:"2026-09-01T00:00:00Z",note:null,content:{review:null,product:null,store:null},relatedCount:0,resolvedAt:null};
+ await page.route(`${api}/admin/reports*`,r=>r.fulfill({json:{success:true,reports:[report],pagination:{page:1,limit:15,total:1,totalPages:1}}}));
+ await page.goto("/reports");
+ await expect(page.getByText("مفتوح",{exact:true})).toBeVisible();
+ await page.getByText("QA review",{exact:true}).click();
+ await expect(page).toHaveURL(/\/reports\/9$/);
+});
+
+test("report detail normalizes the backend report shape",async({page})=>{
+ const report={id:1,targetType:"STORE",targetId:1,reason:"FAKE_OR_SCAM",details:"very bad store",status:"PENDING",adminNote:null,createdAt:"2026-09-26T10:15:01.977Z",reporter:{id:8,name:"QA reporter",email:"reporter@example.test",phone:null},store:{id:1,name:"QA Store",logoUrl:null,status:"APPROVED",isActive:true}};
+ await page.route(`${api}/admin/reports/1`,r=>r.fulfill({json:{success:true,report}}));
+ await page.goto("/reports/1");
+ await expect(page.getByText("FAKE_OR_SCAM",{exact:true}).first()).toBeVisible();
+ await expect(page.getByText("very bad store",{exact:true})).toBeVisible();
+ await expect(page.getByText("QA reporter",{exact:true})).toBeVisible();
+ await expect(page.getByText("QA Store",{exact:true}).first()).toBeVisible();
+ await expect(page.getByRole("button",{name:"تعليم كمعالج",exact:true})).toBeVisible();
+});
+
 for(const failed of [false,true]) test(`report resolution success=${!failed} with proposed contract`,async({page})=>{
  const report={id:8,targetType:"STORE",targetId:1,targetPreview:"QA Store",reason:"QA report reason",reporter:{id:2,name:"QA reporter"},status:"OPEN",createdAt:"2026-09-01T00:00:00Z",note:null,content:{review:null,product:null,store:null},relatedCount:0,resolvedAt:null};
  let body:unknown;

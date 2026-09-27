@@ -1,6 +1,6 @@
 import type { ApiResponse, Pagination } from "@/lib/api";
 import { adminFetch, query } from "./client";
-import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, DeliveryFailure, DeliveryHealth, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse } from "./types";
+import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminReportApiDetail, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, DeliveryFailure, DeliveryHealth, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse } from "./types";
 import { apiFetch } from "@/lib/api";
 import { ADMIN_LIMITS } from "./types";
 
@@ -526,7 +526,54 @@ export function fetchAdminSettlements(
 export function fetchReport(
   id: number,
 ): Promise<ApiResponse & { report?: AdminReportDetail }> {
-  return adminFetch(`/admin/reports/${id}`);
+  return adminFetch(`/admin/reports/${id}`).then((response) => ({
+    ...response,
+    report: response.report
+      ? normalizeReportDetail(response.report as AdminReportApiDetail & Partial<AdminReportDetail>)
+      : undefined,
+  }));
+}
+
+function normalizeReportDetail(raw: AdminReportApiDetail & Partial<AdminReportDetail>): AdminReportDetail {
+  const rawStore = raw.store ?? raw.content?.store ?? null;
+  const store = rawStore
+    ? {
+        id: rawStore.id,
+        name: rawStore.name,
+        logoUrl: rawStore.logoUrl ?? null,
+        city: rawStore.city ?? null,
+        status: rawStore.status ?? "PENDING" as StoreStatus,
+      }
+    : null;
+  const rawProduct = raw.product ?? raw.content?.product ?? null;
+  const product = rawProduct
+    ? {
+        id: rawProduct.id,
+        name: rawProduct.name,
+        price: String(rawProduct.price ?? "0"),
+        image: rawProduct.image ?? null,
+        storeId: rawProduct.storeId ?? store?.id ?? 0,
+        storeName: rawProduct.storeName ?? store?.name ?? "",
+        isActive: rawProduct.isActive ?? true,
+      }
+    : null;
+  const review = raw.review ?? raw.content?.review ?? null;
+
+  return {
+    id: raw.id,
+    targetType: raw.targetType,
+    targetId: raw.targetId,
+    targetPreview: raw.targetPreview ?? raw.target?.name ?? raw.target?.title ?? store?.name ?? product?.name ?? raw.details ?? "",
+    reason: raw.reason,
+    reporter: { id: raw.reporter.id, name: raw.reporter.name },
+    status: raw.status === "PENDING" ? "OPEN" : raw.status,
+    createdAt: raw.createdAt,
+    details: raw.details ?? null,
+    note: raw.adminNote ?? raw.note ?? null,
+    content: { review, product, store },
+    relatedCount: raw.relatedCount ?? 0,
+    resolvedAt: raw.resolvedAt ?? null,
+  };
 }
 
 export function updateReport(

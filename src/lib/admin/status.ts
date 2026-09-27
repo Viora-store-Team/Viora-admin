@@ -63,6 +63,7 @@ export const STORE_ORDER_STATUS: Record<StoreOrderStatus, StatusMeta> = {
 
 export const REPORT_STATUS: Record<ReportStatus, StatusMeta> = {
   OPEN: { label: t.admin.status.open, tone: "warning" },
+  PENDING: { label: t.admin.status.open, tone: "warning" },
   RESOLVED: { label: t.admin.status.resolved, tone: "success" },
   DISMISSED: { label: t.admin.status.dismissed, tone: "neutral" },
 };
