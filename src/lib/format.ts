@@ -62,14 +62,6 @@ export function formatDate(iso: string | null | undefined): string {
   return dateFormatter.format(date);
 }
 
-/** تاريخ اليوم بصيغة "YYYY-MM-DD" بالتوقيت المحلي — للمقارنة النصية مع تواريخ الـ dummy data */
-export function todayISO(): string {
-  const now = new Date();
-  const month = `${now.getMonth() + 1}`.padStart(2, "0");
-  const day = `${now.getDate()}`.padStart(2, "0");
-  return `${now.getFullYear()}-${month}-${day}`;
-}
-
 const dateTimeFormatter = new Intl.DateTimeFormat("ar-PS-u-nu-latn", {
   day: "2-digit",
   month: "short",

@@ -98,13 +98,14 @@ export default function Input({
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label htmlFor={id} className="text-sm font-semibold text-field-label">
-          {label}
-          {required && (
-            <span className="ms-1 text-danger" aria-hidden="true">
-              *
-            </span>
+        <label
+          htmlFor={id}
+          className={cn(
+            "text-sm font-semibold text-field-label",
+            required && "after:ms-1 after:text-danger after:content-['*']",
           )}
+        >
+          {label}
         </label>
       )}
 
