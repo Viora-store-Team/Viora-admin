@@ -105,9 +105,16 @@ function AdminReportDetailPageContent() {
     const res = await updateReport(reportId, { status, adminNote });
     setBusy(false);
 
-    if (res.success && res.report) {
+    if (res.success) {
       setDialog(null);
-      setReport(res.report);
+      // PATCH may return only the updated status; keep the loaded detail and
+      // merge the mutation instead of replacing it with a partial response.
+      setReport((current) => current ? {
+        ...current,
+        ...res.report,
+        status,
+        resolvedAt: res.report?.resolvedAt ?? current.resolvedAt ?? new Date().toISOString(),
+      } : current);
       showFlash(success);
       return;
     }

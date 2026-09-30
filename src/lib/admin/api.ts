@@ -733,11 +733,11 @@ export function fetchStoreRatings(
   );
 }
 
-/** `GET /admin/top-rated` — المتاجر الأعلى تقييماً. */
+/** `GET /admin/stores/top-rated` — المتاجر الأعلى تقييماً. */
 export function fetchTopRatedStores(signal?: AbortSignal): Promise<
   ApiResponse & { stores?: StoreRatingSummary[] }
 > {
-  return adminFetch("/admin/top-rated", { signal });
+  return adminFetch(`/admin/stores/top-rated${query({ page: 1, limit: 10 })}`, { signal });
 }
 
 export function hideProductReview(
