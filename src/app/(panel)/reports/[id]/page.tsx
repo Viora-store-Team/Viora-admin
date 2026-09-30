@@ -7,6 +7,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import NoteDialog from "@/components/ui/NoteDialog";
 import ReasonDialog from "@/components/ui/ReasonDialog";
 import EmptyState from "@/components/ui/EmptyState";
 import ErrorBanner from "@/components/ui/ErrorBanner";
@@ -21,6 +22,7 @@ import {
   updateReport,
 } from "@/lib/admin/api";
 import { REPORT_STATUS, REPORT_TARGET, STORE_STATUS, reportReasonLabel } from "@/lib/admin/status";
+import { ADMIN_LIMITS } from "@/lib/admin/types";
 import type { AdminReportDetail, ReportStatus, ReportTarget, StoreStatus } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
 import { formatDate, formatNumber, formatPrice } from "@/lib/format";
@@ -50,6 +52,7 @@ function AdminReportDetailPageContent() {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [busy, setBusy] = useState(false);
   const [reasonError, setReasonError] = useState<string>();
+  const [noteError, setNoteError] = useState<string>();
   const [flash, showFlash] = useFlash();
 
   useEffect(() => {
@@ -93,21 +96,31 @@ function AdminReportDetailPageContent() {
   const changeStatus = async (
     status: "RESOLVED" | "DISMISSED",
     success: string,
+    adminNote?: string,
   ) => {
     setBusy(true);
     setError("");
+    setNoteError(undefined);
 
-    const res = await updateReport(reportId, { status });
+    const res = await updateReport(reportId, { status, adminNote });
     setBusy(false);
-    setDialog(null);
 
     if (res.success && res.report) {
+      setDialog(null);
       setReport(res.report);
       showFlash(success);
       return;
     }
 
     const failure = classifyStatus(res);
+
+    // خطأ الملاحظة بيضل جوّا الحوار عشان ما تضيع الملاحظة المكتوبة
+    if (failure.kind === "validation" && failure.errors?.adminNote) {
+      setNoteError(failure.errors.adminNote);
+      return;
+    }
+
+    setDialog(null);
     setError(
       failure.kind === "unauthorized"
         ? t.admin.common.sessionInvalid
@@ -238,7 +251,10 @@ function AdminReportDetailPageContent() {
             <div className="flex flex-wrap gap-2">
               <Button
                 disabled={busy}
-                onClick={() => setDialog("resolve")}
+                onClick={() => {
+                  setNoteError(undefined);
+                  setDialog("resolve");
+                }}
                 icon={<Check className="size-4" aria-hidden="true" />}
               >
                 {t.admin.reports.resolve}
@@ -246,7 +262,10 @@ function AdminReportDetailPageContent() {
               <Button
                 variant="secondary"
                 disabled={busy}
-                onClick={() => setDialog("dismiss")}
+                onClick={() => {
+                  setNoteError(undefined);
+                  setDialog("dismiss");
+                }}
                 icon={<XCircle className="size-4" aria-hidden="true" />}
               >
                 {t.admin.reports.dismiss}
@@ -400,24 +419,34 @@ function AdminReportDetailPageContent() {
         </div>
       </div>
 
-      <ConfirmDialog
+      {/* ملاحظة المشرف اختيارية — داخلية، ما بتظهر للزبون ولا للتاجر */}
+      <NoteDialog
         open={dialog === "resolve"}
         tone="primary"
         title={t.admin.reports.resolveTitle}
         body={t.admin.reports.resolveBody}
         confirmLabel={t.admin.reports.resolve}
+        label={t.admin.reports.noteLabel}
+        placeholder={t.admin.reports.notePlaceholder}
+        maxLength={ADMIN_LIMITS.reportNoteMax}
+        serverError={noteError}
         loading={busy}
-        onConfirm={() => changeStatus("RESOLVED", t.admin.reports.didResolve)}
+        onConfirm={(note) => changeStatus("RESOLVED", t.admin.reports.didResolve, note)}
         onCancel={() => setDialog(null)}
       />
 
-      <ConfirmDialog
+      <NoteDialog
         open={dialog === "dismiss"}
+        tone="danger"
         title={t.admin.reports.dismissTitle}
         body={t.admin.reports.dismissBody}
         confirmLabel={t.admin.reports.dismiss}
+        label={t.admin.reports.noteLabel}
+        placeholder={t.admin.reports.notePlaceholder}
+        maxLength={ADMIN_LIMITS.reportNoteMax}
+        serverError={noteError}
         loading={busy}
-        onConfirm={() => changeStatus("DISMISSED", t.admin.reports.didDismiss)}
+        onConfirm={(note) => changeStatus("DISMISSED", t.admin.reports.didDismiss, note)}
         onCancel={() => setDialog(null)}
       />
 

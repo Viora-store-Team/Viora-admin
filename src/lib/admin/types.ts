@@ -821,6 +821,8 @@ export const ADMIN_LIMITS = {
   /** أقصر سبب مقبول — بيمنع "لا" و"." كسبب إيقاف */
   reasonMin: 10,
   reasonMax: 500,
+  /** ملاحظة المشرف على البلاغ — لازم تطابق reports.adminNote بالباك إند */
+  reportNoteMax: 1000,
   storeRejectReasonMax: 255,
   categoryNameMin: 2,
   categoryNameMax: 60,
