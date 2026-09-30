@@ -603,9 +603,18 @@ function normalizeReportDetail(raw: AdminReportApiDetail & Partial<AdminReportDe
 
 export function updateReport(
   id: number,
-  payload: { status?: ReportStatus; note?: string },
+  payload: { status?: ReportStatus; adminNote?: string },
 ): Promise<ApiResponse & { report?: AdminReportDetail }> {
-  return adminFetch(`/admin/reports/${id}`, { method: "PATCH", ...json(payload) });
+  // الرد خام (بلا content) — لازم يتطبّع زي fetchReport وإلا الصفحة
+  // بتقرأ report.content.review وبتنهار بعد المراجعة
+  return adminFetch(`/admin/reports/${id}`, { method: "PATCH", ...json(payload) }).then(
+    (response) => ({
+      ...response,
+      report: response.report
+        ? normalizeReportDetail(response.report as AdminReportApiDetail & Partial<AdminReportDetail>)
+        : undefined,
+    }),
+  );
 }
 
 // ─── ٥ · التقييمات ومراجعات الطلبات ✅ ─────────────────────────
