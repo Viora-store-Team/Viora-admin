@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: viora-admin
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /login
+    domains:
+      - admin.vioragaza.com
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NEXT_PUBLIC_API_BASE_URL
+        value: https://viora-backend-tuqg.onrender.com/api
