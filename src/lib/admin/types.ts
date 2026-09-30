@@ -214,6 +214,7 @@ export interface AdminStoreDetail extends AdminStoreListItem {
 export type StoreOrderStatus =
   | "PENDING"
   | "ACCEPTED"
+  | "DELIVERY_ACCEPTED"
   | "REJECTED"
   | "DELIVERED"
   | "CANCELLED"
@@ -229,6 +230,7 @@ export type StoreOrderStatus =
 export const STORE_ORDER_STATUS_KEYS = [
   "PENDING",
   "ACCEPTED",
+  "DELIVERY_ACCEPTED",
   "REJECTED",
   "DELIVERED",
   "CANCELLED",
@@ -733,30 +735,6 @@ export interface Banner {
   updatedBy?: AdminContentAuthor | null;
 }
 export interface BannerPayload { imageUrl: string; }
-
-// ─── ٧ · التوصيل ───────────────────────────────────────────────
-
-export type DeliveryStatus = "UP" | "DEGRADED" | "DOWN";
-
-export interface DeliveryHealth {
-  provider: string;
-  status: DeliveryStatus;
-  lastCheckAt: string;
-  /** نسبة النجاح بآخر 24 ساعة (0–100) */
-  successRate24h: number;
-  avgResponseMs: number;
-  failures24h: number;
-}
-
-export interface DeliveryFailure {
-  id: number;
-  occurredAt: string;
-  orderId: string;
-  endpoint: string;
-  httpStatus: number;
-  message: string;
-  retryable: boolean;
-}
 
 // ─── إدارة المحتوى والصفحات الثابتة 🟢 ──────────────────────
 

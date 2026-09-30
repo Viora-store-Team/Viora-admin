@@ -18,7 +18,7 @@ export async function adminFetch(endpoint: string, options: RequestInit = {}): P
     return mockFetch(endpoint, options);
   }
   const result = await apiFetch(endpoint, options);
-  if (result.status === 404 && /^\/admin\/(reports|delivery|reviews)(\/|\?|$)/.test(endpoint)) {
+  if (result.status === 404 && /^\/admin\/(reports|reviews)(\/|\?|$)/.test(endpoint)) {
     return { ...result, message: "هذه الميزة غير متاحة من الخادم حالياً. أعد المحاولة لاحقاً." };
   }
   return result;

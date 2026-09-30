@@ -18,14 +18,14 @@
 }
 
 .scene {
-  --login-ink: #362125;
-  --login-muted: #7b6962;
-  --login-burgundy: #7d1d29;
+  --login-ink: #5c3035;
+  --login-muted: #8a7770;
+  --login-burgundy: #712631;
   display: grid;
   grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
   min-height: 100svh;
   padding: 18px;
-  background: #fcfaf7;
+  background: #fbf9f8;
   color: var(--login-ink);
   font-family: "Viora Cairo", var(--font-cairo), Arial, Helvetica, sans-serif;
 }
@@ -77,11 +77,11 @@
 }
 
 .headerLabel {
-  color: #796760;
+  color: #8a7770;
   font-size: 11px;
   font-weight: 600;
   padding-inline-start: 14px;
-  border-inline-start: 1px solid #dfd4c9;
+  border-inline-start: 1px solid #ebe3df;
 }
 
 .formStage {
@@ -141,7 +141,7 @@
 }
 
 .form label {
-  color: #493731;
+  color: #5c3035;
   font-size: 13px;
   font-weight: 650;
 }
@@ -154,9 +154,9 @@
   height: 56px;
   margin-top: 3px;
   padding: 15px 17px;
-  border: 1px solid #e4dad1;
+  border: 1px solid #ebe3df;
   border-radius: 10px;
-  background: #fffefa;
+  background: #ffffff;
   font-size: 14px;
   caret-color: var(--login-burgundy);
   box-shadow: 0 2px 3px rgb(67 34 23 / 1%);
@@ -164,23 +164,23 @@
 }
 
 .form input::placeholder {
-  color: #85736b;
+  color: #8a7770;
   font-size: 13px;
 }
 
 .form input:hover {
-  border-color: #c4aaa2;
+  border-color: #8a7770;
 }
 
 .form input:focus {
-  border-color: #97505a;
+  border-color: #712631;
   background: #fff;
   box-shadow: 0 0 0 4px rgb(125 29 41 / 6%);
 }
 
 .form input[aria-invalid="true"] {
   border-color: #bd4646;
-  background: #fff8f7;
+  background: #ffffff;
 }
 
 .form input[id="password"] {
@@ -195,7 +195,7 @@
   inset-inline-start: 6px;
   width: 40px;
   justify-content: center;
-  color: #8d7770;
+  color: #8a7770;
   border-radius: 7px;
 }
 
@@ -212,11 +212,11 @@
   min-height: 56px;
   margin-top: 7px;
   padding: 15px 21px;
-  border: 1px solid #7d1d29;
+  border: 1px solid #712631;
   border-radius: 10px;
-  background: #7d1d29;
+  background: #712631;
   box-shadow: 0 5px 12px rgb(95 19 31 / 8%);
-  color: #fff9f4;
+  color: #ffffff;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -224,7 +224,7 @@
 }
 
 .form .submit:hover:not(:disabled) {
-  background: #651520;
+  background: #591d25;
   box-shadow: 0 7px 20px rgb(95 19 31 / 15%);
   transform: translateY(-1px);
 }
@@ -256,9 +256,9 @@
 
 .suspended {
   padding: 18px;
-  border: 1px solid #ecc9c7;
+  border: 1px solid #ebe3df;
   border-radius: 12px;
-  background: #fdf0ee;
+  background: #f5f0ee;
 }
 
 .suspendedTitle {
@@ -272,7 +272,7 @@
 
 .suspended p {
   margin-top: 8px;
-  color: #785251;
+  color: #8a7770;
   font-size: 12px;
   line-height: 1.9;
 }
@@ -291,7 +291,7 @@
   gap: 6px;
   margin-inline: auto;
   border-radius: 3px;
-  color: #78665e;
+  color: #8a7770;
   font-size: 13px;
   cursor: pointer;
   list-style: none;
@@ -321,7 +321,7 @@
 
 .help p {
   margin-top: 10px;
-  color: #78665e;
+  color: #8a7770;
   font-size: 13px;
   line-height: 2;
   text-wrap: pretty;
@@ -329,7 +329,7 @@
 
 .footer {
   gap: 16px;
-  color: #78665e;
+  color: #8a7770;
   font-size: 11px;
 }
 
@@ -353,20 +353,20 @@
   overflow: hidden;
   padding: 33px 40px 37px;
   isolation: isolate;
-  border: 1px solid #e7ddd3;
+  border: 1px solid #ebe3df;
   border-radius: 18px;
-  background: #f0e9e1;
+  background: #f7f3f1;
 }
 
 .artTopline {
   z-index: 2;
   gap: 20px;
-  color: #7c625c;
+  color: #8a7770;
   font-size: 12px;
 }
 
 .artTopline svg {
-  color: #7d1d29;
+  color: #712631;
 }
 
 .artwork {
@@ -406,7 +406,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #aa8174;
+  background: #8a7770;
   content: "";
 }
 
@@ -418,7 +418,7 @@
 }
 
 .artBottom h2 {
-  color: #51282d;
+  color: #712631;
   font-size: clamp(33px, 3.5vw, 52px);
   font-weight: 600;
   letter-spacing: -1.8px;
@@ -426,7 +426,7 @@
 }
 
 .artBottom h2 span {
-  color: #8c5b5b;
+  color: #8a7770;
 }
 
 .artSignature {
@@ -437,7 +437,7 @@
 }
 
 .artSignature>span:first-child {
-  color: #7d1d29;
+  color: #712631;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 55px;
   font-style: italic;

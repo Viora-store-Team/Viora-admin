@@ -9,23 +9,23 @@
   مع @custom-variant dark (&:where(.dark, .dark *)) عشان تشتغل utilities الـ dark:
 */
 @theme {
-  /* ── الهوية (Soft Burgundy & Baby Blue Accents) ──── */
-  --color-primary: #7d1d29;
-  --color-primary-hover: #651520;
-  --color-primary-soft: #fdf0f2;
+  /* ── الهوية: ألوان فيورا الجديدة ─────────────────── */
+  --color-primary: #712631;
+  --color-primary-hover: #591d25;
+  --color-primary-soft: #f5e9eb;
   --color-icon: #ffffff;
 
   /* ── النصوص ─────────────────────────────────────── */
-  --color-heading: #291518;
-  --color-text-secondary: #7d6a65;
-  --color-field-label: #52433f;
-  --color-placeholder: #a89b96;
+  --color-heading: #5c3035;
+  --color-text-secondary: #8a7770;
+  --color-field-label: #8a7770;
+  --color-placeholder: #8a7770;
 
   /* ── الأسطح (Light Airy Cream & Pure White) ──────── */
-  --color-app-bg: #faf7f2;
+  --color-app-bg: #fbf9f8;
   --color-surface: #ffffff;
-  --color-field-bg: #f4ede5;
-  --color-border: #eae1d6;
+  --color-field-bg: #f7f3f1;
+  --color-border: #ebe3df;
 
   /* ── الحالات (مع Baby Blue المميز) ───────────────── */
   --color-success: #16a34a;

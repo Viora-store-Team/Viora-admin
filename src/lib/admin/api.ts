@@ -1,6 +1,6 @@
 import type { ApiResponse, Pagination } from "@/lib/api";
 import { adminFetch, query } from "./client";
-import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminReportApiDetail, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, DeliveryFailure, DeliveryHealth, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse } from "./types";
+import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminReportApiDetail, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse } from "./types";
 import { apiFetch } from "@/lib/api";
 import { ADMIN_LIMITS } from "./types";
 
@@ -699,6 +699,13 @@ export function fetchStoreRatings(
   );
 }
 
+/** `GET /admin/top-rated` — المتاجر الأعلى تقييماً. */
+export function fetchTopRatedStores(signal?: AbortSignal): Promise<
+  ApiResponse & { stores?: StoreRatingSummary[] }
+> {
+  return adminFetch("/admin/top-rated", { signal });
+}
+
 export function hideProductReview(
   id: number,
 ): Promise<ApiResponse & { review?: ProductReview }> {
@@ -878,25 +885,6 @@ export function updateBanner(
   payload: BannerPayload,
 ): Promise<ApiResponse & { banner?: Banner; allowedSlots?: BannerSlot[] }> {
   return adminFetch(`/admin/banners/${slot}`, { method: "PUT", ...json(payload) });
-}
-
-// ─── التوصيل 🟡 ────────────────────────────────────────────────
-
-export function fetchDeliveryHealth(): Promise<
-  ApiResponse & { health?: DeliveryHealth }
-> {
-  return adminFetch("/admin/delivery/health");
-}
-
-export function fetchDeliveryFailures(
-  params: ListParams = {},
-): Promise<Paged<"failures", DeliveryFailure>> {
-  return adminFetch(
-    `/admin/delivery/failures${query({
-      page: params.page ?? 1,
-      limit: params.limit ?? ADMIN_LIMITS.pageLimit,
-    })}`,
-  );
 }
 
 // ─── الإشعارات والجرس 🔔 ─────────────────────────────────────

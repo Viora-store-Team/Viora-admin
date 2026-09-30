@@ -6,8 +6,8 @@
  * تحميل الصفحة — نفس عمر كاش lookups.ts، وهو المطلوب لبيانات تجريبية.
  */
 
-import type { AdminCategoryRoot, AdminReportDetail, AdminStoreDetail, AdminUserDetail, Banner, DeliveryFailure, DeliveryHealth, HomeContent, Review, SizeGroup, StaticPage } from "../types";
-import { daysAgo, hoursAgo } from "./seed";
+import type { AdminCategoryRoot, AdminReportDetail, AdminStoreDetail, AdminUserDetail, Banner, HomeContent, Review, SizeGroup, StaticPage } from "../types";
+import { daysAgo } from "./seed";
 
 /** اسم المشرف المنفّذ — بالحقيقة السيرفر هو اللي بيحطّه من التوكن */
 const ACTOR = "مالك المنصة";
@@ -408,37 +408,6 @@ const banners: Banner[] = [1, 2, 3].map((slot) => ({
   createdAt: null, updatedAt: null, updatedBy: null,
 }));
 
-// ─── التوصيل ───────────────────────────────────────────────────
-
-/** ⚠️ اسم المزوّد وشكل السجل تخمين — ما في أي ذكر لشركة توصيل بالمشروع */
-const deliveryHealth: DeliveryHealth = {
-  provider: "شركة وصّل للتوصيل",
-  status: "DEGRADED",
-  lastCheckAt: hoursAgo(1),
-  successRate24h: 93.4,
-  avgResponseMs: 842,
-  failures24h: 7,
-};
-
-const DELIVERY_ERRORS = [
-  { httpStatus: 504, message: "انتهت مهلة الاتصال بخادم شركة التوصيل", retryable: true },
-  { httpStatus: 422, message: "العنوان المرسل غير مكتمل — المدينة مطلوبة", retryable: false },
-  { httpStatus: 500, message: "خطأ داخلي عند مزوّد التوصيل", retryable: true },
-  { httpStatus: 401, message: "مفتاح التكامل مرفوض — تحقّق من الإعدادات", retryable: false },
-  { httpStatus: 429, message: "تجاوز حد الطلبات المسموح", retryable: true },
-];
-
-const deliveryFailures: DeliveryFailure[] = Array.from({ length: 11 }, (_, i) => {
-  const error = DELIVERY_ERRORS[i % DELIVERY_ERRORS.length];
-  return {
-    id: 400 + i,
-    occurredAt: hoursAgo(i * 3 + 1),
-    orderId: `ORD-${String(1024 + i * 7).padStart(4, "0")}`,
-    endpoint: i % 2 === 0 ? "POST /shipments" : "GET /shipments/status",
-    ...error,
-  };
-});
-
 // ─── الحالة المشتركة ───────────────────────────────────────────
 
 export const db = {
@@ -451,8 +420,6 @@ export const db = {
   banners,
   pages,
   home,
-  deliveryHealth,
-  deliveryFailures,
   actor: ACTOR,
   /** عدّادات المعرّفات — عشان الإنشاء بالجلسة ما يكرّر id */
   nextCategoryId: 900,

@@ -30,6 +30,7 @@ import Pagination from "@/components/ui/Pagination";
 import Spinner from "@/components/ui/Spinner";
 import {
   fetchRatingsSnapshot,
+  fetchTopRatedStores,
   hideRating,
   unhideRating,
   type AdminRatingApiItem,
@@ -85,6 +86,7 @@ export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<AdminRatingItem[]>([]);
   const [overview, setOverview] = useState<ReviewsOverviewStats | null>(null);
   const [storesRatings, setStoresRatings] = useState<StoreRatingSummary[]>([]);
+  const [topRatedError, setTopRatedError] = useState("");
   const loadController = useRef<AbortController | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -106,8 +108,28 @@ export default function AdminReviewsPage() {
     setLoading(true);
     setError("");
 
-    const ratingsRes = await fetchRatingsSnapshot(controller.signal);
+    const [ratingsRes, topRatedRes] = await Promise.all([
+      fetchRatingsSnapshot(controller.signal),
+      fetchTopRatedStores(controller.signal),
+    ]);
     if (controller.signal.aborted) return;
+
+    if (topRatedRes.success && Array.isArray(topRatedRes.stores)) {
+      const validStores = topRatedRes.stores.filter((store) => {
+        if (!store || typeof store !== "object") return false;
+        return Number.isSafeInteger(store.storeId) && store.storeId > 0 &&
+          typeof store.storeName === "string" && store.storeName.length > 0 &&
+          Number.isFinite(Number(store.averageRating)) &&
+          Number.isSafeInteger(store.totalReviews) && store.totalReviews >= 0;
+      });
+      setStoresRatings(validStores);
+      setTopRatedError("");
+    } else {
+      setStoresRatings([]);
+      setTopRatedError(topRatedRes.success
+        ? "رد المتاجر الأعلى تقييماً غير صالح."
+        : topRatedRes.message || t.admin.common.loadFailed);
+    }
 
     setLoading(false);
 
@@ -153,53 +175,10 @@ export default function AdminReviewsPage() {
         },
       });
 
-      // Compute store ratings aggregation strictly from live ratings items
-      const storesMap = new Map<number, { name: string; city: string | null; ratings: number[] }>();
-      for (const r of visibleItems) {
-        if (getReviewRating(r) === null) continue;
-        const sId = Number(r.store?.id ?? r.storeId);
-        if (!Number.isSafeInteger(sId) || sId <= 0) continue;
-        const sName = r.store?.name ?? r.storeName;
-        if (!sName) continue;
-        const sCity = r.store?.city ?? r.storeCity ?? null;
-        if (!storesMap.has(sId)) {
-          storesMap.set(sId, { name: sName, city: sCity, ratings: [] });
-        }
-        storesMap.get(sId)!.ratings.push(getReviewRating(r) ?? 0);
-      }
-
-      if (storesMap.size > 0) {
-        const liveSummaries: StoreRatingSummary[] = Array.from(storesMap.entries())
-          .map(([sId, val]) => {
-            const count = val.ratings.length;
-            const sAvg = count > 0 ? val.ratings.reduce((a, b) => a + b, 0) / count : 0;
-            return {
-              storeId: sId,
-              storeName: val.name,
-              storeLogoUrl: null,
-              city: val.city,
-              averageRating: Number(sAvg.toFixed(1)),
-              totalReviews: count,
-              ratingDistribution: {
-                5: val.ratings.filter((r) => r === 5).length,
-                4: val.ratings.filter((r) => r === 4).length,
-                3: val.ratings.filter((r) => r === 3).length,
-                2: val.ratings.filter((r) => r === 2).length,
-                1: val.ratings.filter((r) => r === 1).length,
-              },
-            };
-          })
-          .sort((a, b) => b.averageRating - a.averageRating);
-
-        setStoresRatings(liveSummaries);
-      } else {
-        setStoresRatings([]);
-      }
     } else {
       setError(ratingsRes.message || t.admin.common.loadFailed);
       setReviews([]);
       setOverview(null);
-      setStoresRatings([]);
     }
   }, []);
 
@@ -691,7 +670,9 @@ export default function AdminReviewsPage() {
               متوسط المتجر وتوزيع تقييماته اعتماداً على تقييمات المنتجات الفعلية المرتبطة به.
               </p>
 
-              {storesRatings.length === 0 ? (
+              {topRatedError ? (
+                <div role="alert" className="rounded-xl border border-danger/20 bg-danger-soft/50 p-4 text-xs font-semibold text-danger">{topRatedError}</div>
+              ) : storesRatings.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border/80 p-6 text-center">
                   <p className="text-xs font-bold text-text-secondary">لا توجد تقييمات للمتاجر حالياً</p>
                   <p className="mt-1 text-[11px] text-text-secondary/70">

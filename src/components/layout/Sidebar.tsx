@@ -2,17 +2,20 @@
 
 import { usePathname } from "next/navigation";
 import {
+  ChevronDown,
   LogOut,
   PanelRightClose,
   PanelRightOpen,
-  Store,
   X,
 } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
 import { getActiveNavItem, NAV_ITEMS, type NavItem } from "@/config/nav";
 import { t } from "@/lib/strings";
 import { cn } from "@/lib/cn";
 import SidebarLink from "./SidebarLink";
 import { useAuth } from "@/context/AuthContext";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -39,6 +42,8 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const userName = user?.name || userFallback;
   const userInitial = userName.charAt(0).toUpperCase();
   const userRole = roleLabel ?? user?.role ?? t.admin.ownerRole;
@@ -56,8 +61,8 @@ export default function Sidebar({
           collapsed && "flex-col gap-4 px-2",
         )}
       >
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-icon/15 text-icon">
-          <Store className="size-5" aria-hidden="true" />
+        <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/95 p-1.5">
+          <Image src="/icons/original-logo.png" width={40} height={40} alt="شعار فيورا" className="size-full object-contain" />
         </span>
         {!collapsed && (
           <div className="min-w-0 flex-1">
@@ -117,39 +122,43 @@ export default function Sidebar({
 
       {/* أسفل السايدبار */}
       <div className="mt-auto border-t border-icon/10 p-3">
-        {/* معلومات المستخدم الحقيقية */}
-        <div
-          className={cn(
-            "mb-2 flex items-center gap-3 rounded-xl px-2 py-2",
-            collapsed && "justify-center px-0",
-          )}
-        >
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-icon/15 text-sm font-bold text-icon">
-            {userInitial}
-          </span>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-icon">
-                {userName}
-              </p>
-              <p className="truncate text-xs text-icon/60">{userRole}</p>
+        <div className="relative">
+          <button
+            type="button"
+            aria-expanded={profileOpen}
+            aria-haspopup="menu"
+            onClick={() => setProfileOpen((open) => !open)}
+            title={collapsed ? userName : undefined}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-xl px-2 py-2 text-start transition-colors hover:bg-icon/10",
+              collapsed && "justify-center px-0",
+            )}
+          >
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-icon/15 text-sm font-bold text-icon">
+              {userInitial}
+            </span>
+            {!collapsed && (
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-bold text-icon">{userName}</span>
+                <span className="block truncate text-xs text-icon/60">{userRole}</span>
+              </span>
+            )}
+            {!collapsed && <ChevronDown className={cn("size-4 shrink-0 text-icon/70 transition-transform", profileOpen && "rotate-180")} aria-hidden="true" />}
+          </button>
+          {profileOpen && (
+            <div role="menu" className={cn("absolute bottom-full z-20 mb-2 min-w-48 overflow-hidden rounded-xl border border-border bg-surface p-1 shadow-xl", collapsed ? "start-full ms-2" : "inset-x-0")}>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => { setProfileOpen(false); setLogoutConfirmOpen(true); }}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-danger transition-colors hover:bg-danger/10"
+              >
+                <LogOut className="size-4" aria-hidden="true" />
+                <span>{t.nav.logout}</span>
+              </button>
             </div>
           )}
         </div>
-
-        {/* زر تسجيل الخروج الحقيقي */}
-        <button
-          type="button"
-          onClick={() => { onCloseMobile(); void logout(); }}
-          title={collapsed ? t.nav.logout : undefined}
-          className={cn(
-            "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-icon/70 transition-colors hover:bg-icon/10 hover:text-icon",
-            collapsed && "justify-center px-0",
-          )}
-        >
-          <LogOut className="size-5 shrink-0" aria-hidden="true" />
-          {!collapsed && <span>{t.nav.logout}</span>}
-        </button>
       </div>
     </>
   );
@@ -193,6 +202,15 @@ export default function Sidebar({
       >
         {renderContent(false)}
       </aside>
+
+      <ConfirmDialog
+        open={logoutConfirmOpen}
+        title="تسجيل الخروج"
+        body="هل أنت متأكد أنك تريد تسجيل الخروج؟"
+        confirmLabel={t.nav.logout}
+        onConfirm={() => { setLogoutConfirmOpen(false); onCloseMobile(); void logout(); }}
+        onCancel={() => setLogoutConfirmOpen(false)}
+      />
     </>
   );
 }

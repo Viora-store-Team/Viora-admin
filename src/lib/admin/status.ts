@@ -1,7 +1,6 @@
 import type { BadgeTone } from "@/components/ui/Badge";
 import { t } from "@/lib/strings";
 import type {
-  DeliveryStatus,
   ReportStatus,
   ReportTarget,
   ReviewTarget,
@@ -48,6 +47,7 @@ export const STORE_STATUS: Record<StoreStatus, StatusMeta> = {
 export const STORE_ORDER_STATUS: Record<StoreOrderStatus, StatusMeta> = {
   PENDING: { label: "بانتظار الموافقة", tone: "warning" },
   ACCEPTED: { label: "قيد التجهيز", tone: "info" },
+  DELIVERY_ACCEPTED: { label: "تم قبول التوصيل", tone: "info" },
   REJECTED: { label: "مرفوض", tone: "danger" },
   DELIVERED: { label: "تم التوصيل", tone: "success" },
   CANCELLED: { label: t.admin.orders.statusCancelled, tone: "danger" },
@@ -94,12 +94,6 @@ export const SUPPORT_TICKET_STATUS: Record<SupportTicketStatus, StatusMeta> = {
 export const REVIEW_TARGET: Record<ReviewTarget, string> = {
   PRODUCT: t.admin.reports.reviewOnProduct,
   STORE: t.admin.reports.reviewOnStore,
-};
-
-export const DELIVERY_STATUS: Record<DeliveryStatus, StatusMeta> = {
-  UP: { label: t.admin.delivery.up, tone: "success" },
-  DEGRADED: { label: t.admin.delivery.degraded, tone: "warning" },
-  DOWN: { label: t.admin.delivery.down, tone: "danger" },
 };
 
 /** الأدوار — نفس القيم اللي بيرجّعها /auth/me */

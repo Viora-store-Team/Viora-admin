@@ -501,6 +501,39 @@ export async function mockFetch(
   const [, resource, rawId, action] = seg;
   const id = Number(rawId);
 
+  // ─── المتاجر الأعلى تقييماً ─────────────────────────────────
+  if (resource === "top-rated" && method === "GET") {
+    const storesMap = new Map<number, { name: string; city: string | null; ratings: number[] }>();
+    for (const r of liveProductReviews) {
+      const sId = r.storeId ?? r.store?.id ?? 1;
+      const sName = r.storeName ?? r.store?.name ?? "متجر";
+      const sCity = r.storeCity ?? r.store?.city ?? null;
+      if (!storesMap.has(sId)) storesMap.set(sId, { name: sName, city: sCity, ratings: [] });
+      storesMap.get(sId)!.ratings.push(r.rating);
+    }
+    const rows: StoreRatingSummary[] = Array.from(storesMap.entries()).map(([storeId, val]) => {
+      const total = val.ratings.length;
+      const avg = total ? val.ratings.reduce((a, b) => a + b, 0) / total : 0;
+      return {
+        storeId,
+        storeName: val.name,
+        storeLogoUrl: null,
+        city: val.city,
+        averageRating: Number(avg.toFixed(1)),
+        totalReviews: total,
+        ratingDistribution: {
+          5: val.ratings.filter((r) => r === 5).length,
+          4: val.ratings.filter((r) => r === 4).length,
+          3: val.ratings.filter((r) => r === 3).length,
+          2: val.ratings.filter((r) => r === 2).length,
+          1: val.ratings.filter((r) => r === 1).length,
+        },
+      };
+    }).sort((a, b) => b.averageRating - a.averageRating || b.totalReviews - a.totalReviews);
+    const { slice, pagination } = paginate(rows, page, limit);
+    return ok({ stores: slice, pagination });
+  }
+
   // ─── نظرة عامة ──────────────────────────────────────────────
   if (resource === "stats") {
     // `period` بالأيام — نفس اسم المعامل تبع السيرفر، مش `range`
@@ -1075,17 +1108,6 @@ export async function mockFetch(
       return ok({ banner: db.banners[index] });
     }
     return fail(405, "العملية غير مدعومة");
-  }
-
-  // ─── التوصيل ────────────────────────────────────────────────
-  if (resource === "delivery") {
-    if (rawId === "health") return ok({ health: db.deliveryHealth });
-
-    if (rawId === "failures") {
-      const rows = emptyMode ? [] : db.deliveryFailures;
-      const { slice, pagination } = paginate(rows, page, limit);
-      return ok({ failures: slice, pagination });
-    }
   }
 
   // ─── الشروط والأحكام ─────────────────────────────────────────

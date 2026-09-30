@@ -109,7 +109,6 @@ export const t = {
       support: "تذاكر الدعم",
       reports: "البلاغات",
       content: "المحتوى",
-      delivery: "التوصيل",
       finance: "العمولات والدفعات",
     },
 
@@ -678,30 +677,5 @@ export const t = {
       bodyTooLong: "النص أطول من الحد المسموح",
     },
 
-    delivery: {
-      title: "تكامل التوصيل",
-      subtitle: "حالة التكامل مع شركة التوصيل وآخر حالات الفشل.",
-      provider: "المزوّد",
-      health: "حالة التكامل",
-      up: "يعمل",
-      degraded: "متقطّع",
-      down: "متوقف",
-      lastCheck: "آخر فحص",
-      successRate: "نسبة النجاح (24 ساعة)",
-      avgResponse: "متوسط زمن الاستجابة",
-      failures24h: "حالات فشل (24 ساعة)",
-      failuresTitle: "آخر حالات الفشل",
-      colTime: "الوقت",
-      colOrder: "الطلب",
-      colEndpoint: "المسار",
-      colStatus: "الكود",
-      colMessage: "الرسالة",
-      retryable: "قابل لإعادة المحاولة",
-      empty: "ما في حالات فشل مسجّلة",
-      emptyHint: "التكامل شغّال بلا أخطاء بآخر فترة.",
-      refresh: "تحديث",
-      readOnlyNote:
-        "شاشة مراقبة للقراءة فقط — إعادة إرسال الطلبات الفاشلة بتحتاج قرار وصلاحية من الباك إند.",
-    },
   },
 } as const;

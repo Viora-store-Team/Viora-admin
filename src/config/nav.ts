@@ -6,9 +6,7 @@ import {
   LayoutDashboard,
   Star,
   Store,
-  Headphones,
   ShoppingBag,
-  Truck,
   Wallet,
   Users,
   type LucideIcon,
@@ -30,10 +28,8 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/reviews", label: t.admin.nav.reviews, icon: Star },
   { href: "/reports", label: t.admin.nav.reports, icon: Flag },
   { href: "/orders", label: t.admin.nav.orders, icon: ShoppingBag },
-  { href: "/support", label: t.admin.nav.support, icon: Headphones },
   { href: "/banners", label: "بنرات التطبيق", icon: ImageIcon },
   { href: "/content", label: t.admin.nav.content, icon: FileText },
-  { href: "/delivery", label: t.admin.nav.delivery, icon: Truck },
   { href: "/finance", label: t.admin.nav.finance, icon: Wallet },
 ];
 
