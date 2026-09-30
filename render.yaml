@@ -1,0 +1,20 @@
+# Blueprint لرفع لوحة الأدمن على Render.
+# الدومين admin.vioragaza.com بينضاف من لوحة Render (Settings → Custom Domains)
+# لأن الـ Blueprint ما بيدعم الدومينات المخصصة.
+services:
+  - type: web
+    name: viora-admin
+    runtime: node
+    region: frankfurt
+    plan: free
+    branch: main
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /login
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      # NEXT_PUBLIC_* بتنحقن وقت البناء؛ الافتراضي بالكود أصلًا نفس القيمة.
+      - key: NEXT_PUBLIC_API_BASE_URL
+        value: https://api.vioragaza.com/api

@@ -4,7 +4,7 @@
 */
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ??
-  "https://viora-backend-tuqg.onrender.com/api";
+  "https://api.vioragaza.com/api";
 
 /**
  * أخطاء الحقول الراجعة مع 400.
