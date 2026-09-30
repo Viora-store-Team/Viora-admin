@@ -405,7 +405,32 @@ export function fetchReports(
       targetType: params.targetType,
       status: apiStatus,
     })}`,
-  );
+  ).then((response) => ({
+    ...response,
+    reports: (response.reports as RawReportListItem[] | undefined)?.map(normalizeReportListItem),
+  })) as Promise<Paged<"reports", AdminReportListItem>>;
+}
+
+type RawReportListItem = Omit<AdminReportListItem, "targetId" | "targetPreview"> &
+  Partial<Pick<AdminReportListItem, "targetId" | "targetPreview">> &
+  Pick<AdminReportApiDetail, "store" | "target">;
+
+/**
+ * القائمة بترجع صف البلاغ خام (store + details) بلا targetPreview،
+ * فبنشتقه هون عشان عمود المحتوى ما يطلع فاضي والوصف يوصل للجدول.
+ */
+function normalizeReportListItem(raw: RawReportListItem): AdminReportListItem {
+  return {
+    id: raw.id,
+    targetType: raw.targetType,
+    targetId: raw.targetId ?? raw.store?.id ?? 0,
+    targetPreview: raw.targetPreview ?? raw.target?.name ?? raw.target?.title ?? raw.store?.name ?? "",
+    reason: raw.reason,
+    details: raw.details ?? null,
+    reporter: raw.reporter,
+    status: raw.status,
+    createdAt: raw.createdAt,
+  };
 }
 
 // ─── العمولات والدفعات والتسويات (مسارات PDF Viora-New-Routes) ──
@@ -571,7 +596,7 @@ function normalizeReportDetail(raw: AdminReportApiDetail & Partial<AdminReportDe
     details: raw.details ?? null,
     note: raw.adminNote ?? raw.note ?? null,
     content: { review, product, store },
-    relatedCount: raw.relatedCount ?? 0,
+    relatedCount: raw.relatedCount ?? Math.max(0, (raw.targetReports?.total ?? 1) - 1),
     resolvedAt: raw.resolvedAt ?? null,
   };
 }

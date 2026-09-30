@@ -599,6 +599,8 @@ export interface AdminReportListItem {
   /** سطر مختصر بيوصف المحتوى المبلّغ عنه — عشان الجدول ما يحتاج جلب إضافي */
   targetPreview: string;
   reason: string;
+  /** وصف البلاغ اللي كتبه الزبون (حتى ٣٠٠ حرف) — اختياري */
+  details?: string | null;
   reporter: { id: number; name: string };
   status: ReportStatus;
   createdAt: string;
@@ -650,6 +652,8 @@ export interface AdminReportApiDetail {
   review?: Review | null;
   product?: { id: number; name: string; price?: string | number; image?: string | null; storeId?: number; storeName?: string; isActive?: boolean } | null;
   target?: { id: number; name?: string; title?: string } | null;
+  /** عدّاد بلاغات نفس المتجر من الباك إند: الكل + المعلّق. */
+  targetReports?: { total: number; pending: number } | null;
 }
 
 /** الصف المختصر من `GET /admin/orders` — قائمة كل طلبات المنصة. */

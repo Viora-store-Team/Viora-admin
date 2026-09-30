@@ -3,7 +3,7 @@
 import { ChevronLeft } from "lucide-react";
 import { TableShell, Td, Thead } from "@/components/ui/Table";
 import StatusBadge from "./StatusBadge";
-import { REPORT_STATUS, REPORT_TARGET } from "@/lib/admin/status";
+import { REPORT_STATUS, REPORT_TARGET, reportReasonLabel } from "@/lib/admin/status";
 import type { AdminReportListItem, ReportStatus, ReportTarget } from "@/lib/admin/types";
 import { formatDate } from "@/lib/format";
 import { t } from "@/lib/strings";
@@ -50,7 +50,16 @@ export default function ReportsTable({
                 {report.targetPreview}
               </span>
             </Td>
-            <Td className="font-bold text-heading">{report.reason}</Td>
+            <Td className="max-w-[300px]">
+              <span className="block font-bold text-heading">
+                {reportReasonLabel(report.reason)}
+              </span>
+              {report.details && (
+                <span className="mt-0.5 line-clamp-2 block text-xs text-text-secondary">
+                  {report.details}
+                </span>
+              )}
+            </Td>
             <Td className="text-text-secondary">{report.reporter.name}</Td>
             <Td>
               <StatusBadge

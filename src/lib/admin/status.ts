@@ -68,6 +68,22 @@ export const REPORT_STATUS: Record<ReportStatus, StatusMeta> = {
   DISMISSED: { label: t.admin.status.dismissed, tone: "neutral" },
 };
 
+/** أسباب بلاغ المتجر (enum ReportReason بالباك إند) — أي قيمة جديدة بترجع كما هي. */
+const REPORT_REASON: Record<string, string> = {
+  FAKE_OR_SCAM: t.admin.reports.reasonFakeOrScam,
+  COUNTERFEIT_OR_PROHIBITED: t.admin.reports.reasonCounterfeit,
+  INCORRECT_INFO: t.admin.reports.reasonIncorrectInfo,
+  POOR_CUSTOMER_TREATMENT: t.admin.reports.reasonPoorTreatment,
+  INAPPROPRIATE_CONTENT: t.admin.reports.reasonInappropriate,
+  OTHER: t.admin.reports.reasonOther,
+};
+
+export function reportReasonLabel(reason: string | undefined | null): string {
+  const value = reason?.trim();
+  if (!value) return "غير محدد";
+  return REPORT_REASON[value] ?? value;
+}
+
 export const REPORT_STATUS_KEYS = [
   "OPEN",
   "RESOLVED",

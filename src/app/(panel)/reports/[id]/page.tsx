@@ -20,7 +20,7 @@ import {
   unhideReview,
   updateReport,
 } from "@/lib/admin/api";
-import { REPORT_STATUS, REPORT_TARGET, STORE_STATUS } from "@/lib/admin/status";
+import { REPORT_STATUS, REPORT_TARGET, STORE_STATUS, reportReasonLabel } from "@/lib/admin/status";
 import type { AdminReportDetail, ReportStatus, ReportTarget, StoreStatus } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
 import { formatDate, formatNumber, formatPrice } from "@/lib/format";
@@ -200,7 +200,7 @@ function AdminReportDetailPageContent() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={t.admin.reports.detailsTitle}
-        subtitle={report.details || report.targetPreview || report.reason}
+        subtitle={report.targetPreview || reportReasonLabel(report.reason)}
         action={
           <div className="flex flex-wrap items-center gap-3">
             {flash && (
@@ -262,7 +262,7 @@ function AdminReportDetailPageContent() {
           <CardBody>
             <InfoGrid
               rows={[
-                { label: t.admin.reports.reportReason, value: report.reason },
+                { label: t.admin.reports.reportReason, value: reportReasonLabel(report.reason) },
                 { label: t.admin.reports.reporter, value: report.reporter.name },
                 {
                   label: t.admin.common.createdAt,
@@ -283,6 +283,20 @@ function AdminReportDetailPageContent() {
                 { label: t.admin.reports.note, value: report.note },
               ]}
             />
+
+            {/* وصف الزبون بنص كامل ومع فواصل الأسطر — مش عنوان فرعي مقصوص */}
+            <div className="mt-5 border-t border-border/60 pt-4">
+              <p className="text-xs font-semibold text-text-secondary">
+                {t.admin.reports.reportDetails}
+              </p>
+              <p className="mt-1 text-sm leading-7 break-words whitespace-pre-wrap text-heading">
+                {report.details || (
+                  <span className="text-text-secondary">
+                    {t.admin.reports.noDetails}
+                  </span>
+                )}
+              </p>
+            </div>
           </CardBody>
         </Card>
 
