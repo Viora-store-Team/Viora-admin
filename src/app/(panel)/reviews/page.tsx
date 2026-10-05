@@ -38,7 +38,7 @@ import {
 import type {
   AdminRatingItem,
   ReviewsOverviewStats,
-  StoreRatingSummary,
+  TopRatedStore,
 } from "@/lib/admin/types";
 import { formatDate, formatNumber } from "@/lib/format";
 import { useFlash } from "@/lib/useFlash";
@@ -85,7 +85,7 @@ function StarRating({ rating, size = "md" }: { rating: number | null; size?: "sm
 export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<AdminRatingItem[]>([]);
   const [overview, setOverview] = useState<ReviewsOverviewStats | null>(null);
-  const [storesRatings, setStoresRatings] = useState<StoreRatingSummary[]>([]);
+  const [storesRatings, setStoresRatings] = useState<TopRatedStore[]>([]);
   const [topRatedError, setTopRatedError] = useState("");
   const loadController = useRef<AbortController | null>(null);
   const [page, setPage] = useState(1);
@@ -117,10 +117,10 @@ export default function AdminReviewsPage() {
     if (topRatedRes.success && Array.isArray(topRatedRes.stores)) {
       const validStores = topRatedRes.stores.filter((store) => {
         if (!store || typeof store !== "object") return false;
-        return Number.isSafeInteger(store.storeId) && store.storeId > 0 &&
-          typeof store.storeName === "string" && store.storeName.length > 0 &&
-          Number.isFinite(Number(store.averageRating)) &&
-          Number.isSafeInteger(store.totalReviews) && store.totalReviews >= 0;
+        return Number.isSafeInteger(store.id) && store.id > 0 &&
+          typeof store.name === "string" && store.name.length > 0 &&
+          normalizeRating(store.ratingAvg) !== null &&
+          Number.isSafeInteger(store.ratingCount) && store.ratingCount > 0;
       });
       setStoresRatings(validStores);
       setTopRatedError("");
@@ -683,10 +683,10 @@ export default function AdminReviewsPage() {
                 <div className="divide-y divide-border/60">
                   {storesRatings.map((store) => (
                     <Link
-                      key={store.storeId}
-                      href={`/stores/${store.storeId}`}
+                      key={store.id}
+                      href={`/stores/${store.id}`}
                       className="group -mx-2 flex items-center justify-between rounded-xl px-2 py-3 transition hover:bg-field-bg/60"
-                      title={`الانتقال لتفاصيل ${store.storeName}`}
+                      title={`الانتقال لتفاصيل ${store.name}`}
                     >
                       <div className="flex items-center gap-3">
                         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-white">
@@ -694,10 +694,10 @@ export default function AdminReviewsPage() {
                         </span>
                         <div>
                           <p className="text-sm font-extrabold text-heading transition group-hover:text-primary">
-                            {store.storeName}
+                            {store.name}
                           </p>
                           <p className="text-xs text-text-secondary">
-                            {store.city || "—"} · {store.totalReviews} تقييم منتج
+                            {store.district || "—"} · {store.ratingCount} تقييم منتج
                           </p>
                         </div>
                       </div>
@@ -705,7 +705,7 @@ export default function AdminReviewsPage() {
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1 rounded-lg bg-amber-400/15 px-2 py-1 text-xs font-black text-amber-700">
                           <Star className="size-3.5 fill-amber-500 text-amber-500" />
-                          <span>{store.totalReviews > 0 && Number.isFinite(store.averageRating) ? store.averageRating.toFixed(1) : "—"}</span>
+                          <span>{store.ratingCount > 0 && normalizeRating(store.ratingAvg) !== null ? Number(store.ratingAvg).toFixed(1) : "—"}</span>
                         </div>
                         <ChevronLeft className="size-4 text-text-secondary/60 transition group-hover:-translate-x-0.5 group-hover:text-primary" />
                       </div>

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 
-const api = "https://viora-backend-tuqg.onrender.com/api";
+const api = "https://api.vioragaza.com/api";
 const user = {id:1, name:"QA Admin", email:"qa@example.test", role:"ADMIN", isActive:true};
 const pagination = {page:1,limit:15,total:0,totalPages:0};
 const store = {id:1,name:"QA Store",status:"PENDING",isActive:false,owner:{id:2,name:"QA Owner",email:"owner@example.test",phone:null,emailVerified:true,isActive:false,createdAt:"2026-01-01"},categories:[],productsCount:0,ordersCount:0,revenue:"0",createdAt:"2026-01-01",updatedAt:"2026-01-01",reviewedAt:null,reviewedBy:null,rejectionReason:null};
@@ -292,4 +292,25 @@ for(const failed of [false,true]) test(`report resolution success=${!failed} wit
  await page.goto("/reports/8");await page.getByRole("button",{name:"تعليم كمعالج",exact:true}).click();await page.getByRole("dialog").getByRole("button",{name:"تعليم كمعالج",exact:true}).click();
  if(failed){await expect(page.getByRole("main").getByText("QA report failed",{exact:true})).toBeVisible();await expect(page.getByLabel("إشعارات العمليات").getByRole("alert")).toContainText("QA report failed");}
  else await expect(page.getByLabel("إشعارات العمليات").getByRole("status")).toContainText("تم تعليم البلاغ كمعالج");expect(body).toEqual({status:"RESOLVED"});
+});
+
+
+test("top rated stores renders backend Decimal ratings and store links", async ({page}) => {
+  await page.route(api + "/admin/stores/top-rated?*", route => route.fulfill({json:{
+    success:true,
+    stores:[
+      {id:18,name:"QA Rated Store",logoUrl:null,district:"الرمال",ratingAvg:"4.80",ratingCount:12},
+      {id:19,name:"QA Unrated Store",logoUrl:null,district:null,ratingAvg:null,ratingCount:0},
+    ],
+    pagination:{page:1,limit:10,total:1,totalPages:1},
+  }}));
+  await page.goto("/reviews");
+  const row = page.getByRole("link", {name:/QA Rated Store/});
+  await expect(row).toBeVisible();
+  await expect(row).toHaveAttribute("href", "/stores/18");
+  await expect(row).toContainText("4.8");
+  await expect(row).toContainText("12 تقييم منتج");
+  await expect(row).toContainText("الرمال");
+  await expect(page.getByText("QA Unrated Store", {exact:true})).toHaveCount(0);
+  await expect(page.getByText("لا توجد تقييمات للمتاجر حالياً", {exact:true})).toHaveCount(0);
 });

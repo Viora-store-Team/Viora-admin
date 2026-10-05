@@ -1,6 +1,6 @@
 import type { ApiResponse, Pagination } from "@/lib/api";
 import { adminFetch, query } from "./client";
-import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminReportApiDetail, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse } from "./types";
+import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminReportApiDetail, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, TopRatedStore, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse } from "./types";
 import { apiFetch } from "@/lib/api";
 import { ADMIN_LIMITS } from "./types";
 
@@ -735,7 +735,7 @@ export function fetchStoreRatings(
 
 /** `GET /admin/stores/top-rated` — المتاجر الأعلى تقييماً. */
 export function fetchTopRatedStores(signal?: AbortSignal): Promise<
-  ApiResponse & { stores?: StoreRatingSummary[] }
+  ApiResponse & { stores?: TopRatedStore[] }
 > {
   return adminFetch(`/admin/stores/top-rated${query({ page: 1, limit: 10 })}`, { signal });
 }

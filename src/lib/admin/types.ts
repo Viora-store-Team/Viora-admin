@@ -534,6 +534,16 @@ export interface AdminRatingItem {
 
 export type ProductReview = AdminRatingItem;
 
+/** الرد الحقيقي لـ GET /admin/stores/top-rated؛ Decimal يصل كنص. */
+export interface TopRatedStore {
+  id: number;
+  name: string;
+  logoUrl: string | null;
+  district: string | null;
+  ratingAvg: string | number | null;
+  ratingCount: number;
+}
+
 export interface StoreRatingSummary {
   storeId: number;
   storeName: string;
