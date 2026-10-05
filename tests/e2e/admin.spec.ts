@@ -187,8 +187,8 @@ test("ratings search and analytics cover all pages",async({page})=>{
   await page.getByRole("searchbox").fill("unique second");await expect(page.getByText("unique second page review",{exact:true})).toBeVisible();
 });
 
-test("missing delivery service does not show mocked health",async({page})=>{
-  await page.goto("/delivery");await expect(page.getByText("هذه الميزة غير متاحة من الخادم حالياً. أعد المحاولة لاحقاً.")).toBeVisible();
+test("removed delivery page returns not found",async({page})=>{
+  await page.goto("/delivery");await expect(page.getByRole("heading",{name:"الصفحة غير موجودة",exact:true})).toBeVisible();
   await expect(page.getByText("شركة وصّل للتوصيل",{exact:true})).toHaveCount(0);
 });
 
@@ -275,7 +275,7 @@ test("report detail normalizes the backend report shape",async({page})=>{
  const report={id:1,targetType:"STORE",targetId:1,reason:"FAKE_OR_SCAM",details:"very bad store",status:"PENDING",adminNote:null,createdAt:"2026-09-26T10:15:01.977Z",reporter:{id:8,name:"QA reporter",email:"reporter@example.test",phone:null},store:{id:1,name:"QA Store",logoUrl:null,status:"APPROVED",isActive:true}};
  await page.route(`${api}/admin/reports/1`,r=>r.fulfill({json:{success:true,report}}));
  await page.goto("/reports/1");
- await expect(page.getByText("FAKE_OR_SCAM",{exact:true}).first()).toBeVisible();
+ await expect(page.getByText("متجر وهمي أو احتيالي",{exact:true}).first()).toBeVisible();
  await expect(page.getByText("very bad store",{exact:true})).toBeVisible();
  await expect(page.getByText("QA reporter",{exact:true})).toBeVisible();
  await expect(page.getByText("QA Store",{exact:true}).first()).toBeVisible();
