@@ -219,7 +219,6 @@ export const t = {
       info: "بيانات المتجر",
       ownerInfo: "بيانات المالك",
       stats: "إحصائيات",
-      description: "الوصف",
       phone: "الهاتف",
       address: "العنوان",
       city: "المدينة",

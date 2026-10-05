@@ -10,6 +10,7 @@ import {
 import { TableShell, Td, Thead } from "@/components/ui/Table";
 import StatusBadge from "./StatusBadge";
 import { STORE_STATUS } from "@/lib/admin/status";
+import { storeLocation } from "@/lib/admin/storeLocation";
 import type { AdminStoreListItem } from "@/lib/admin/types";
 import { formatDate, formatNumber } from "@/lib/format";
 import { isBrokenText, textOrNull } from "@/lib/brokenText";
@@ -102,7 +103,7 @@ export default function StoresTable({
               {textOrNull(store.owner.name) ?? t.admin.common.none}
             </Td>
             <Td className="text-text-secondary">
-              {textOrNull(store.city) ?? t.admin.common.none}
+              {storeLocation(store) ?? t.admin.common.none}
             </Td>
             <Td className="ltr-nums">{formatNumber(store.productsCount)}</Td>
             <Td className="ltr-nums">{formatNumber(store.ordersCount)}</Td>

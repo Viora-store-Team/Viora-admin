@@ -169,6 +169,8 @@ export interface StoreOwner {
 }
 
 export interface AdminStoreListItem {
+  governorate?: string | null;
+  district?: string | null;
   id: number;
   name: string;
   logoUrl: string | null;
@@ -187,7 +189,6 @@ export interface AdminStoreListItem {
 }
 
 export interface AdminStoreDetail extends AdminStoreListItem {
-  description: string | null;
   coverUrl: string | null;
   phone: string | null;
   address: string | null;

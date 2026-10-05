@@ -1,5 +1,6 @@
 "use client";
 
+import { storeLocation } from "@/lib/admin/storeLocation";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Ban, Calendar, Check, CircleCheck, DollarSign, ExternalLink, MapPin, Package, Power, PowerOff, RotateCcw, ShieldOff, ShoppingBag, Star, StarOff, Store as StoreIcon, Tag, Trash2, TriangleAlert } from "lucide-react";
@@ -341,11 +342,12 @@ function AdminStoreDetailPageContent() {
     );
   }
 
+  const location = storeLocation(store);
+
   const broken =
     isBrokenText(store.name) ||
-    isBrokenText(store.city) ||
+    isBrokenText(location) ||
     isBrokenText(store.owner?.name) ||
-    isBrokenText(store.description) ||
     isBrokenText(store.address);
 
   const displayName = isBrokenText(store.name)
@@ -439,10 +441,10 @@ function AdminStoreDetailPageContent() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
-                  {store.city && (
+                  {location && (
                     <span className="flex items-center gap-1 font-bold">
                       <MapPin className="size-3.5 text-primary" />
-                      {store.city}
+                      {location}
                     </span>
                   )}
                   {store.categories && store.categories.length > 0 && (
@@ -686,11 +688,7 @@ function AdminStoreDetailPageContent() {
             <CardBody>
               <InfoGrid
                 rows={[
-                  {
-                    label: t.admin.stores.description,
-                    value: textOrNull(store.description),
-                  },
-                  { label: t.admin.stores.city, value: textOrNull(store.city) },
+                  { label: t.admin.stores.city, value: location },
                   { label: t.admin.stores.address, value: textOrNull(store.address) },
                   {
                     label: t.admin.stores.phone,
