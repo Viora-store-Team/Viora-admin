@@ -25,11 +25,13 @@ import {
   fetchAdminCategories,
   updateCategory,
   reorderCategories,
+  setCategorySizes,
 } from "@/lib/admin/api";
 import type {
   AdminCategoryNode,
   AdminCategoryRoot,
   CategoryPayload,
+  CategorySizesPayload,
   CategoryUpdatePayload,
 } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
@@ -167,8 +169,12 @@ export default function AdminCategoriesPage() {
   const createCat = (payload: CategoryPayload) =>
     run(() => createCategory(payload), t.admin.categories.created);
 
-  const updateCat = (id: number, payload: CategoryUpdatePayload) =>
-    run(() => updateCategory(id, payload), t.admin.categories.updated);
+  const updateCat = (id: number, payload: CategoryUpdatePayload, sizes?: CategorySizesPayload) =>
+    run(async () => {
+      const res = await updateCategory(id, payload);
+      if (!res.success || !sizes) return res;
+      return setCategorySizes(id, sizes);
+    }, t.admin.categories.updated);
 
   const openCategory = async (node: AdminCategoryNode, parentName?: string) => {
     setError("");

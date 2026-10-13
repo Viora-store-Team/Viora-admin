@@ -5,35 +5,34 @@ import { useRef, useState } from "react";
 import { Trash2, Upload } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
 import Spinner from "@/components/ui/Spinner";
+import CategorySizesPicker, {
+  EMPTY_PICKER,
+  isPickerValid,
+  toSizesPayload,
+  type PickerValue,
+} from "@/components/admin/CategorySizesPicker";
 import { uploadMany } from "@/lib/api";
 import { cn } from "@/lib/cn";
 import {
   ADMIN_LIMITS,
-  SIZE_GROUPS,
   type AdminCategoryNode,
   type CategoryPayload,
+  type CategorySizesPayload,
   type CategoryUpdatePayload,
-  type SizeGroup,
 } from "@/lib/admin/types";
 import { t } from "@/lib/strings";
 
 /**
  * الوضع بيحدّد الحقول المعروضة:
- * - `root`  إنشاء تصنيف رئيسي (بلا sizeGroup — السيرفر بيرفضه على الجذر)
- * - `child` إنشاء تصنيف فرعي تحت parentId (sizeGroup **إلزامي**)
- * - `edit`  تعديل — الاسم والصورة والترتيب. بلا sizeGroup (شوف تحت).
+ * - `root`  إنشاء تصنيف رئيسي (بلا مقاسات — السيرفر بيرفضها على الجذر)
+ * - `child` إنشاء تصنيف فرعي تحت parentId (مقاسات **إلزامية**)
+ * - `edit`  تعديل — الاسم والصورة والترتيب **والمقاسات للفرعي**.
  */
 export type CategoryFormMode =
   | { kind: "root" }
   | { kind: "child"; parentId: number; parentName: string }
   | { kind: "edit"; node: AdminCategoryNode };
-
-const SIZE_GROUP_OPTIONS = SIZE_GROUPS.map((group) => ({
-  value: group,
-  label: t.admin.sizeGroups[group],
-}));
 
 const SORT_MIN = 0;
 const SORT_MAX = 9999;
@@ -44,7 +43,8 @@ interface CategoryFormDialogProps {
   /** أخطاء حقول راجعة من السيرفر (400) */
   serverErrors?: Record<string, string>;
   onCreate: (payload: CategoryPayload) => void;
-  onUpdate: (id: number, payload: CategoryUpdatePayload) => void;
+  /** sizes: undefined = ما تغيّرت (الجذر أو ما انلمست) */
+  onUpdate: (id: number, payload: CategoryUpdatePayload, sizes?: CategorySizesPayload) => void;
   onCancel: () => void;
 }
 
@@ -58,7 +58,7 @@ export default function CategoryFormDialog({
 }: CategoryFormDialogProps) {
   const [name, setName] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [sizeGroup, setSizeGroup] = useState("");
+  const [sizes, setSizes] = useState<PickerValue>(EMPTY_PICKER);
   const [sortOrder, setSortOrder] = useState("");
   const [touched, setTouched] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -80,7 +80,11 @@ export default function CategoryFormDialog({
     setName(mode?.kind === "edit" ? mode.node.name : "");
     setImageUrl(mode?.kind === "edit" ? (mode.node.imageUrl ?? "") : "");
     setSortOrder(mode?.kind === "edit" ? String(mode.node.sortOrder) : "");
-    setSizeGroup("");
+    setSizes(
+      mode?.kind === "edit"
+        ? { noSizes: Boolean(mode.node.noSizes), sizeIds: mode.node.noSizes ? [] : (mode.node.sizes ?? []).map((s) => s.id) }
+        : EMPTY_PICKER,
+    );
   }
 
   const dialogRef = useDialog(!!mode, onCancel, loading || uploading);
@@ -92,8 +96,10 @@ export default function CategoryFormDialog({
     trimmed.length < ADMIN_LIMITS.categoryNameMin ||
     trimmed.length > ADMIN_LIMITS.categoryNameMax;
 
-  const needsSizeGroup = mode.kind === "child";
-  const sizeGroupInvalid = needsSizeGroup && sizeGroup === "";
+  /* مقاسات الفرعي: عند إنشائه، وعند تعديله (الرئيسي ما إله مقاسات) */
+  const needsSizes =
+    mode.kind === "child" || (mode.kind === "edit" && mode.node.parentId !== null);
+  const sizesInvalid = needsSizes && !isPickerValid(sizes);
 
   /* الترتيب اختياري — فاضي يعني «ما تبعثه». لو انكتب لازم يكون رقم بالمدى */
   const sortTrimmed = sortOrder.trim();
@@ -104,7 +110,7 @@ export default function CategoryFormDialog({
       sortNumber < SORT_MIN ||
       sortNumber > SORT_MAX);
 
-  const invalid = nameInvalid || sizeGroupInvalid || sortInvalid;
+  const invalid = nameInvalid || sizesInvalid || sortInvalid;
   const busy = loading || uploading;
 
   /** رفع الصورة عبر مسار POST /uploads الموحد */
@@ -147,11 +153,11 @@ export default function CategoryFormDialog({
     const sortValue = sortTrimmed === "" ? undefined : sortNumber;
 
     if (mode.kind === "edit") {
-      onUpdate(mode.node.id, {
-        name: trimmed,
-        imageUrl: imageUrl.trim() || null,
-        sortOrder: sortValue,
-      });
+      onUpdate(
+        mode.node.id,
+        { name: trimmed, imageUrl: imageUrl.trim() || null, sortOrder: sortValue },
+        needsSizes ? toSizesPayload(sizes) : undefined,
+      );
       return;
     }
 
@@ -160,7 +166,7 @@ export default function CategoryFormDialog({
       imageUrl: imageUrl.trim() || null,
       sortOrder: sortValue,
       ...(mode.kind === "child"
-        ? { parentId: mode.parentId, sizeGroup: sizeGroup as SizeGroup }
+        ? { parentId: mode.parentId, ...toSizesPayload(sizes) }
         : {}),
     });
   };
@@ -341,33 +347,17 @@ export default function CategoryFormDialog({
               </p>
             </div>
 
-            {needsSizeGroup && (
-              <div>
-                <Select
-                  id="category-size-group"
-                  label={t.admin.categories.sizeGroup}
-                  placeholder={t.admin.categories.sizeGroupPlaceholder}
-                  value={sizeGroup}
-                  onChange={setSizeGroup}
-                  options={SIZE_GROUP_OPTIONS}
-                  disabled={busy}
-                  required
-                  error={
-                    (touched && sizeGroupInvalid
-                      ? t.admin.categories.sizeGroupRequired
-                      : undefined) ?? serverErrors?.sizeGroup
-                  }
-                />
-                {/*
-                  ⚠️ sizeGroup بيقود منظومة المقاسات كلها بالمنتجات — بيحدّد
-                  شو بيرجّع GET /sizes وبينبني عليه محرّر التركيبات. مستثنى من
-                  التعديل: على الجذر السيرفر بيرفضه صراحة، وعلى الفرعي تغييره
-                  بيبطّل كل variantSizeId تحت التصنيف.
-                */}
-                <p className="mt-1.5 text-xs leading-relaxed text-text-secondary">
-                  {t.admin.categories.sizeGroupHint}
-                </p>
-              </div>
+            {needsSizes && (
+              <CategorySizesPicker
+                value={sizes}
+                onChange={setSizes}
+                disabled={busy}
+                error={
+                  (touched && sizesInvalid ? t.admin.categories.sizesRequired : undefined) ??
+                  serverErrors?.sizeIds ??
+                  serverErrors?.noSizes
+                }
+              />
             )}
           </div>
 
