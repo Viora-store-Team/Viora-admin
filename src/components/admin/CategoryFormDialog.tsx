@@ -48,6 +48,18 @@ interface CategoryFormDialogProps {
   onCancel: () => void;
 }
 
+/** المقاسات تغيّرت فعلاً عن الحالية؟ (نفس الترتيب مهم) */
+function sizesChanged(node: AdminCategoryNode, value: PickerValue): boolean {
+  const currentNoSizes = Boolean(node.noSizes);
+  if (currentNoSizes !== value.noSizes) return true;
+  if (value.noSizes) return false;
+  const currentIds = (node.sizes ?? []).map((s) => s.id);
+  return (
+    currentIds.length !== value.sizeIds.length ||
+    currentIds.some((id, index) => id !== value.sizeIds[index])
+  );
+}
+
 export default function CategoryFormDialog({
   mode,
   loading = false,
@@ -156,7 +168,7 @@ export default function CategoryFormDialog({
       onUpdate(
         mode.node.id,
         { name: trimmed, imageUrl: imageUrl.trim() || null, sortOrder: sortValue },
-        needsSizes ? toSizesPayload(sizes) : undefined,
+        needsSizes && sizesChanged(mode.node, sizes) ? toSizesPayload(sizes) : undefined,
       );
       return;
     }

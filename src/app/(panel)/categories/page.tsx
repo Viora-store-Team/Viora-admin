@@ -173,7 +173,10 @@ export default function AdminCategoriesPage() {
     run(async () => {
       const res = await updateCategory(id, payload);
       if (!res.success || !sizes) return res;
-      return setCategorySizes(id, sizes);
+      const sizesRes = await setCategorySizes(id, sizes);
+      // الاسم انحفظ حتى لو القائمة انرفضت — حدّثي الشجرة قبل ما يطلع الخطأ
+      if (!sizesRes.success) await load();
+      return sizesRes;
     }, t.admin.categories.updated);
 
   const openCategory = async (node: AdminCategoryNode, parentName?: string) => {

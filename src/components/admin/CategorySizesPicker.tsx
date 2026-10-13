@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
@@ -53,6 +53,13 @@ export default function CategorySizesPicker({ value, onChange, disabled = false,
   const [newGroup, setNewGroup] = useState<string>("NUMERIC");
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState("");
+  /* آخر قيمة — addSize بيرجع بعد await فما بيعتمد على الـ closure القديم */
+  const valueRef = useRef(value);
+  useEffect(() => {
+    valueRef.current = value;
+  });
+  /* الاختيار قبل تشغيل «بدون مقاس» عشان نرجّعه لو انطفى */
+  const savedIdsRef = useRef<number[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,7 +122,8 @@ export default function CategorySizesPicker({ value, onChange, disabled = false,
       const created = res.size;
       setLibrary((prev) => [...(prev ?? []), created]);
       setNewName("");
-      onChange({ noSizes: false, sizeIds: [...value.sizeIds, created.id] });
+      const latest = valueRef.current;
+      onChange({ noSizes: false, sizeIds: [...latest.sizeIds, created.id] });
       return;
     }
     setAddError(classifyStatus(res).message);
@@ -137,7 +145,14 @@ export default function CategorySizesPicker({ value, onChange, disabled = false,
         </div>
         <Toggle
           checked={value.noSizes}
-          onChange={(checked) => onChange({ noSizes: checked, sizeIds: checked ? [] : value.sizeIds })}
+          onChange={(checked) => {
+            if (checked) {
+              savedIdsRef.current = value.sizeIds;
+              onChange({ noSizes: true, sizeIds: [] });
+            } else {
+              onChange({ noSizes: false, sizeIds: savedIdsRef.current });
+            }
+          }}
           label={t.admin.categories.noSizes}
           disabled={disabled}
         />
