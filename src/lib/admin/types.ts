@@ -21,14 +21,52 @@
   بينكتبوا. أي تعديل على الشكل لازم ينعكس بالاتنين.
 */
 
-export type SizeGroup = "CLOTHING" | "SHOES" | "KIDS" | "ONE_SIZE";
+export type SizeGroup = "CLOTHING" | "SHOES" | "KIDS" | "ONE_SIZE" | "NUMERIC";
 
 export const SIZE_GROUPS: readonly SizeGroup[] = [
   "CLOTHING",
+  "NUMERIC",
   "SHOES",
   "KIDS",
   "ONE_SIZE",
 ];
+
+/** مقاس مختصر كما يرجع داخل التصنيف */
+export interface CategorySizeRef {
+  id: number;
+  name: string;
+  slug: string;
+  sizeGroup: SizeGroup;
+}
+
+/** مقاس بمكتبة الأدمن (`GET /admin/sizes`) */
+export interface AdminSize extends CategorySizeRef {
+  sortOrder: number;
+  isActive: boolean;
+  /** عدد صفوف variantSizes عليه (حتى المؤرشف) */
+  usageCount: number;
+  /** عدد التصنيفات اللي قائمتها فيه — > 0 بيمنع الأرشفة */
+  categoriesCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** أنواع تُنشأ من اللوحة (ONE_SIZE من الـ seed بس) */
+export const CREATABLE_SIZE_GROUPS: readonly SizeGroup[] = SIZE_GROUPS.filter(
+  (group) => group !== "ONE_SIZE",
+);
+
+export interface SizePayload {
+  name: string;
+  sizeGroup: SizeGroup;
+  sortOrder?: number;
+}
+export type SizeUpdatePayload = Partial<Pick<SizePayload, "name" | "sortOrder">> & {
+  isActive?: boolean;
+};
+
+/** جسم `PUT /admin/categories/:id/sizes` */
+export type CategorySizesPayload = { sizeIds: number[] } | { noSizes: true };
 
 export interface CategoryChild {
   id: number;
@@ -430,6 +468,10 @@ export interface AdminCategoryNode {
   isActive: boolean;
   /** `null` للجذر · إلزامي للفرعي */
   sizeGroup: SizeGroup | null;
+  /** قائمة مقاسات الفرعي بترتيب الأدمن — [] للرئيسي (اختياري بنوع الـ mock فقط) */
+  sizes?: CategorySizeRef[];
+  /** القائمة هي «مقاس واحد» وحده = بدون مقاس */
+  noSizes?: boolean;
   parentId: number | null;
   createdAt: string;
   updatedAt: string;
@@ -452,7 +494,10 @@ export interface CategoryPayload {
   imageUrl?: string | null;
   /** موجود = تصنيف فرعي · غايب = تصنيف رئيسي */
   parentId?: number;
-  /** إلزامي للفرعي · **ممنوع** للجذر (بيرجّع 400) */
+  /** للفرعي: قائمة المقاسات (sizeIds) أو بدون مقاس (noSizes). ممنوع للجذر */
+  sizeIds?: number[];
+  noSizes?: boolean;
+  /** @deprecated قديم — السيرفر بيحوّله لقائمة. استعمل sizeIds */
   sizeGroup?: SizeGroup;
   sortOrder?: number;
   isActive?: boolean;
@@ -461,9 +506,8 @@ export interface CategoryPayload {
 /**
  * جسم `PATCH /admin/categories/:id` — كل الحقول اختيارية.
  *
- * ⚠️ `sizeGroup` مستثنى: على الجذر بيرجّع 400 صراحة، وعلى الفرعي ما
- * انفحص — وتغييره بيبطّل كل `variantSizeId` تحت التصنيف. التعديل من
- * اللوحة بيضل بلا مجموعة مقاسات لحد ما يتأكد السلوك.
+ * مقاسات التصنيف ما بتنحفظ هون: `PUT /admin/categories/:id/sizes`
+ * (`setCategorySizes`) — `PATCH` ما بياخد `sizeIds`.
  */
 export type CategoryUpdatePayload = Partial<
   Pick<CategoryPayload, "name" | "imageUrl" | "sortOrder" | "isActive">

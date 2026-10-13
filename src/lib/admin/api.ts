@@ -1,6 +1,6 @@
 import type { ApiResponse, Pagination } from "@/lib/api";
 import { adminFetch, query } from "./client";
-import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminReportApiDetail, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, TopRatedStore, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse } from "./types";
+import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminSize, CategorySizesPayload, SizePayload, SizeUpdatePayload, AdminReportApiDetail, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, TopRatedStore, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse } from "./types";
 import { apiFetch } from "@/lib/api";
 import { ADMIN_LIMITS } from "./types";
 
@@ -334,8 +334,8 @@ export function fetchCategory(id: number): Promise<CategoryResponse> {
  * قواعد التحقق كما رجّعها السيرفر:
  * - `name` مطلوب. **ما في حد أدنى للطول ولا فحص تكرار** — حرف واحد بيمرّ،
  *   واسم مكرّر بيمرّ. اللوحة بتفرض 2–60 من طرفها لأن السيرفر ما بيفرض.
- * - `parentId` موجود ⇒ `sizeGroup` **إلزامي**، وممنوع يكون الأب فرعي.
- * - جذر ⇒ `sizeGroup` **ممنوع**.
+ * - `parentId` موجود ⇒ `sizeIds` أو `noSizes` **إلزامي**، وممنوع يكون الأب فرعي.
+ * - جذر ⇒ المقاسات **ممنوعة**.
  * - `imageUrl` لازم رابط http/https صحيح · `sortOrder` رقم 0–9999.
  */
 export function createCategory(
@@ -374,6 +374,43 @@ export function activateCategory(id: number): Promise<CategoryResponse> {
 /** ✅ `PATCH /admin/categories/:id/deactivate` — «التصنيف صار مخفي» */
 export function deactivateCategory(id: number): Promise<CategoryResponse> {
   return adminFetch(`/admin/categories/${id}/deactivate`, { method: "PATCH" });
+}
+
+// ─── مقاسات التصنيفات ✅ ───────────────────────────────────────
+
+export type SizesResponse = ApiResponse & { sizes?: AdminSize[]; count?: number };
+export type SizeResponse = ApiResponse & { size?: AdminSize };
+
+/** ✅ `GET /admin/sizes` — كل المكتبة (مع المؤرشف) مرتبة بالنوع ثم الترتيب */
+export function fetchSizes(): Promise<SizesResponse> {
+  return adminFetch("/admin/sizes");
+}
+
+/**
+ * ✅ `POST /admin/sizes` — 201
+ * 409 `SIZE_ALREADY_EXISTS` لو الاسم مكرر بنفس النوع. ONE_SIZE ممنوع.
+ */
+export function createSize(payload: SizePayload): Promise<SizeResponse> {
+  return adminFetch("/admin/sizes", { method: "POST", ...json(payload) });
+}
+
+/**
+ * ✅ `PATCH /admin/sizes/:id` — الاسم/الترتيب/الأرشفة (`isActive:false`)
+ * 409 `SIZE_IN_CATEGORY` لو لسا بقائمة تصنيف · 409 `SIZE_PROTECTED` لـ «مقاس واحد»
+ */
+export function updateSize(id: number, payload: SizeUpdatePayload): Promise<SizeResponse> {
+  return adminFetch(`/admin/sizes/${id}`, { method: "PATCH", ...json(payload) });
+}
+
+/**
+ * ✅ `PUT /admin/categories/:id/sizes` — استبدال قائمة مقاسات التصنيف الفرعي
+ * 409 `CATEGORY_SIZE_IN_USE` (مع `sizes`) لو شلنا مقاس عليه منتجات فعّالة
+ */
+export function setCategorySizes(
+  id: number,
+  payload: CategorySizesPayload,
+): Promise<CategoryResponse> {
+  return adminFetch(`/admin/categories/${id}/sizes`, { method: "PUT", ...json(payload) });
 }
 
 /**

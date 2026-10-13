@@ -37,6 +37,7 @@ function getSizeGroupBadge(group: SizeGroup | null) {
 
   const toneMap: Record<SizeGroup, "info" | "success" | "warning" | "neutral"> = {
     CLOTHING: "info",
+    NUMERIC: "info",
     SHOES: "warning",
     KIDS: "success",
     ONE_SIZE: "neutral",

@@ -13,6 +13,9 @@ import type { ApiResponse } from "@/lib/api";
 import { ADMIN_LIMITS } from "../types";
 import type {
   AdminCategoryNode,
+  AdminSize,
+  SizeGroup,
+  SizePayload,
   AdminStatsCharts,
   BannerPayload,
   CategoryPayload,
@@ -104,6 +107,22 @@ function checkReason(reason: unknown): ApiResponse | null {
 }
 
 const today = () => daysAgo(0);
+
+const extraMockSizes: AdminSize[] = [];
+
+function mockSizeLibrary(): AdminSize[] {
+  const base = (id: number, name: string, sizeGroup: SizeGroup, sortOrder: number): AdminSize => ({
+    id, name, slug: `${sizeGroup.toLowerCase()}-${name.toLowerCase()}`, sizeGroup, sortOrder,
+    isActive: true, usageCount: 0, categoriesCount: 0, createdAt: today(), updatedAt: today(),
+  });
+  return [
+    ...["S", "M", "L", "XL"].map((n, i) => base(1 + i, n, "CLOTHING", i)),
+    ...[50, 52, 54, 56].map((n, i) => base(20 + i, String(n), "NUMERIC", i)),
+    ...[40, 41, 42].map((n, i) => base(40 + i, String(n), "SHOES", i)),
+    base(90, "مقاس واحد", "ONE_SIZE", 0),
+    ...extraMockSizes,
+  ];
+}
 
 // ─── لوحة التحكم ───────────────────────────────────────────────
 
@@ -712,6 +731,31 @@ export async function mockFetch(
     }
   }
   // ─── التصنيفات ──────────────────────────────────────────────
+  // ─── مقاسات التصنيفات (مكتبة تجريبية صغيرة) ───────────────────
+  if (resource === "sizes") {
+    const library = mockSizeLibrary();
+    if (method === "GET" && !rawId) return ok({ sizes: library, count: library.length });
+    if (method === "POST" && !rawId) {
+      const body = readBody<SizePayload>(options);
+      const name = (body.name ?? "").trim();
+      if (!name || !body.sizeGroup) return fail(400, "بيانات غير صحيحة", { name: "اسم المقاس مطلوب" });
+      const created: AdminSize = {
+        id: 1000 + library.length,
+        name,
+        slug: `${body.sizeGroup.toLowerCase()}-${name}`,
+        sizeGroup: body.sizeGroup,
+        sortOrder: library.length,
+        isActive: true,
+        usageCount: 0,
+        categoriesCount: 0,
+        createdAt: today(),
+        updatedAt: today(),
+      };
+      extraMockSizes.push(created);
+      return { ...ok({ size: created }), status: 201 };
+    }
+  }
+
   if (resource === "categories") {
     /*
       بيحاكي عقد `/admin/categories` الحقيقي:
@@ -777,14 +821,22 @@ export async function mockFetch(
             parentId: "الشجرة مستويين بس",
           });
         }
-        if (!body.sizeGroup) {
+        if (!body.sizeGroup && !body.sizeIds?.length && !body.noSizes) {
           return fail(400, "بيانات غير صحيحة", {
-            sizeGroup:
-              "مجموعة المقاسات مطلوبة للتصنيف الفرعي (CLOTHING · SHOES · KIDS · ONE_SIZE)",
+            sizeIds: "مقاسات التصنيف الفرعي مطلوبة",
           });
         }
 
-        const child = { ...base, sizeGroup: body.sizeGroup, parentId: parent.id };
+        const library = mockSizeLibrary();
+        const child = {
+          ...base,
+          sizes: body.noSizes
+            ? library.filter((s) => s.sizeGroup === "ONE_SIZE")
+            : (body.sizeIds ?? []).flatMap((sid) => library.filter((s) => s.id === sid)),
+          noSizes: Boolean(body.noSizes),
+          sizeGroup: body.sizeGroup ?? null,
+          parentId: parent.id,
+        };
         parent.children.push(child);
         parent.childrenCount = parent.children.length;
         return { ...ok({ category: child }), status: 201 };
@@ -833,6 +885,17 @@ export async function mockFetch(
 
       if (method === "PATCH" && (action === "activate" || action === "deactivate")) {
         node.isActive = action === "activate";
+        node.updatedAt = today();
+        return ok({ category: node });
+      }
+
+      if (method === "PUT" && action === "sizes") {
+        const body = readBody<{ sizeIds?: number[]; noSizes?: boolean }>(options);
+        const library = mockSizeLibrary();
+        node.noSizes = Boolean(body.noSizes);
+        node.sizes = body.noSizes
+          ? library.filter((s) => s.sizeGroup === "ONE_SIZE")
+          : (body.sizeIds ?? []).flatMap((sid) => library.filter((s) => s.id === sid));
         node.updatedAt = today();
         return ok({ category: node });
       }
