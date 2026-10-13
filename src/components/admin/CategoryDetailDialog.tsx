@@ -12,13 +12,13 @@ import {
   Pencil,
   Plus,
   Store,
-  Tag,
   Trash2,
   X,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
-import type { AdminCategoryNode, SizeGroup } from "@/lib/admin/types";
+import CategorySizesSummary from "@/components/admin/CategorySizesSummary";
+import type { AdminCategoryNode } from "@/lib/admin/types";
 import { formatNumber } from "@/lib/format";
 import { t } from "@/lib/strings";
 
@@ -30,25 +30,6 @@ interface CategoryDetailDialogProps {
   onToggleActive: (node: AdminCategoryNode) => void;
   onDelete: (node: AdminCategoryNode) => void;
   onAddChild?: (node: AdminCategoryNode) => void;
-}
-
-function getSizeGroupBadge(group: SizeGroup | null) {
-  if (!group) return null;
-
-  const toneMap: Record<SizeGroup, "info" | "success" | "warning" | "neutral"> = {
-    CLOTHING: "info",
-    NUMERIC: "info",
-    SHOES: "warning",
-    KIDS: "success",
-    ONE_SIZE: "neutral",
-  };
-
-  return (
-    <Badge tone={toneMap[group] ?? "neutral"}>
-      <Tag className="size-3" aria-hidden="true" />
-      <span>{t.admin.sizeGroups[group] ?? group}</span>
-    </Badge>
-  );
 }
 
 export default function CategoryDetailDialog({
@@ -138,12 +119,12 @@ export default function CategoryDetailDialog({
               </div>
 
               <div className="rounded-xl border border-border bg-field-bg p-3">
-                <p className="text-[11px] font-semibold text-text-secondary">مجموعة المقاسات</p>
+                <p className="text-[11px] font-semibold text-text-secondary">{t.admin.categories.sizes}</p>
                 <div className="mt-1">
-                  {node.sizeGroup ? (
-                    getSizeGroupBadge(node.sizeGroup)
-                  ) : (
+                  {isRoot ? (
                     <span className="text-xs text-text-secondary">تعتمد على الفروع</span>
+                  ) : (
+                    <CategorySizesSummary node={node} />
                   )}
                 </div>
               </div>

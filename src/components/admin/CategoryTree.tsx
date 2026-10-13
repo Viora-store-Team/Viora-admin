@@ -20,12 +20,12 @@ import {
 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import CategorySizesSummary from "@/components/admin/CategorySizesSummary";
 import { cn } from "@/lib/cn";
 import type {
   AdminCategoryChild,
   AdminCategoryNode,
   AdminCategoryRoot,
-  SizeGroup,
 } from "@/lib/admin/types";
 import { formatNumber } from "@/lib/format";
 import { t } from "@/lib/strings";
@@ -43,25 +43,6 @@ interface CategoryTreeProps {
   onMove?: (parentId: number | null, nodeId: number, direction: "up" | "down") => void;
 }
 
-/** تلوين مجموعات المقاسات بشكل بصري جذاب وواضح */
-function getSizeGroupBadge(group: SizeGroup | null) {
-  if (!group) return null;
-
-  const toneMap: Record<SizeGroup, "info" | "success" | "warning" | "neutral"> = {
-    CLOTHING: "info",
-    NUMERIC: "info",
-    SHOES: "warning",
-    KIDS: "success",
-    ONE_SIZE: "neutral",
-  };
-
-  return (
-    <Badge tone={toneMap[group] ?? "neutral"}>
-      <Tag className="size-3" aria-hidden="true" />
-      <span>{t.admin.sizeGroups[group] ?? group}</span>
-    </Badge>
-  );
-}
 
 function NodeCounters({ node }: { node: AdminCategoryNode }) {
   return (
@@ -462,7 +443,7 @@ export default function CategoryTree({
 
                           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/50">
                             <div className="flex flex-wrap items-center gap-1.5">
-                              {getSizeGroupBadge(child.sizeGroup)}
+                              <CategorySizesSummary node={child} />
                               <NodeCounters node={child} />
                             </div>
 
