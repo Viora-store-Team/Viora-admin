@@ -112,7 +112,7 @@ const extraMockSizes: AdminSize[] = [];
 
 function mockSizeLibrary(): AdminSize[] {
   const base = (id: number, name: string, sizeGroup: SizeGroup, sortOrder: number): AdminSize => ({
-    id, name, slug: `${sizeGroup.toLowerCase()}-${name.toLowerCase()}`, sizeGroup, sortOrder,
+    id, name, slug: sizeGroup === "ONE_SIZE" ? "one-size" : `${sizeGroup.toLowerCase()}-${name.toLowerCase()}`, sizeGroup, sortOrder,
     isActive: true, usageCount: 0, categoriesCount: 0, createdAt: today(), updatedAt: today(),
   });
   return [
