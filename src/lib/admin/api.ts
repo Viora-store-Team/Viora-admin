@@ -485,6 +485,8 @@ export interface AdminPayoutBalance {
   earned?: string | number | Record<string, unknown> | null;
   paid?: string | number | Record<string, unknown> | null;
   outstanding?: string | number | Record<string, unknown> | null;
+  payoutAccounts?: Record<string, unknown>[];
+  payoutUntil?: string;
   payoutAccount?: Record<string, unknown> | null;
   store?: { id?: number; name?: string } | null;
   merchant?: { id?: number; name?: string; storeName?: string } | null;
@@ -539,13 +541,23 @@ export function fetchPayoutBalances(): Promise<ApiResponse & {
   return adminFetch("/admin/payouts/balances");
 }
 
-/** الخادم يحسب المبلغ المستحق تلقائياً؛ نرسل المتجر فقط. */
-export function createPayout(storeId: number): Promise<ApiResponse & {
+/** المبلغ والطريقة من شاشة الرصيد؛ الخادم يرفض لو المبلغ تغيّر أو الطريقة مش محفوظة. */
+export function createPayout(input: {
+  storeId: number;
+  method: string;
+  expectedAmount: number | string;
+  until?: string;
+}): Promise<ApiResponse & {
   payout?: AdminPayoutRecord;
 }> {
   return adminFetch("/admin/payouts", {
     method: "POST",
-    ...json({ storeId }),
+    ...json({
+      storeId: input.storeId,
+      method: input.method,
+      expectedAmount: input.expectedAmount,
+      ...(input.until ? { until: input.until } : {}),
+    }),
   });
 }
 

@@ -89,8 +89,8 @@ function normalizeBalance(item: AdminPayoutBalance): AdminPayoutBalance {
   const raw = item as Record<string, unknown>;
   const store = asRecord(raw.store) ?? asRecord(raw.merchant) ?? {};
   const totals = asRecord(raw.totals) ?? asRecord(raw.balance) ?? {};
-  const payout = asRecord(raw.payout);
-  const rawAccount = asRecord(raw.payoutAccount) ?? asRecord(raw.payout_account) ?? asRecord(raw.account) ?? asRecord(payout?.account);
+  const unpaid = asRecord(raw.unpaid);
+  const until = unpaid?.until;
   return {
     ...item,
     storeId: Number(firstValue(raw, ["storeId", "merchantId", "id"]) ?? store.id ?? 0),
@@ -98,8 +98,30 @@ function normalizeBalance(item: AdminPayoutBalance): AdminPayoutBalance {
     earned: firstValue(raw, ["earned", "entitled", "entitlement", "totalEarned", "earnedAmount", "totalEntitled", "totalEntitlement", "merchantEarnings"]) as AdminPayoutBalance["earned"],
     paid: (firstValue(raw, ["paid", "received", "totalPaid", "paidAmount", "transferredAmount", "totalReceived"]) ?? firstValue(totals, ["paid", "received", "totalPaid", "transferredAmount", "totalReceived"])) as AdminPayoutBalance["paid"],
     outstanding: (firstValue(raw, ["unpaid", "outstanding", "pending", "balance", "due", "amountDue", "pendingAmount", "unpaidAmount", "remainingBalance", "amountOwed"]) ?? firstValue(totals, ["unpaid", "outstanding", "pending", "due", "amountDue", "unpaidAmount", "remainingBalance", "amountOwed"])) as AdminPayoutBalance["outstanding"],
-    payoutAccount: rawAccount,
+    payoutAccounts: readPayoutAccounts(raw),
+    payoutUntil: typeof until === "string" ? until : undefined,
   };
+}
+
+function readPayoutAccounts(raw: Record<string, unknown>): Record<string, unknown>[] {
+  const list = raw.payoutAccounts ?? raw.payout_accounts;
+  if (Array.isArray(list)) {
+    return list.map(asRecord).filter((account): account is Record<string, unknown> => account !== null);
+  }
+  const payout = asRecord(raw.payout);
+  const one = asRecord(raw.payoutAccount) ?? asRecord(raw.payout_account) ?? asRecord(raw.account) ?? asRecord(payout?.account);
+  return one ? [one] : [];
+}
+
+function moneyInput(item: unknown): string | number | null {
+  if (typeof item === "number") return Number.isFinite(item) && item > 0 ? item : null;
+  if (typeof item === "string") return item.trim() || null;
+  if (item && typeof item === "object") {
+    const nested = asRecord(item);
+    if (!nested) return null;
+    return moneyInput(firstValue(nested, ["amount", "value", "total", "balance", "unpaidAmount", "amountDue", "due", "available", "remaining"]));
+  }
+  return null;
 }
 
 function normalizeSettlement(item: AdminSettlement): AdminSettlement {
@@ -157,6 +179,7 @@ export default function FinancePage() {
   const [busy, setBusy] = useState("");
   const [sectionErrors, setSectionErrors] = useState<Partial<Record<FinanceSection, string>>>({});
   const [payoutTarget, setPayoutTarget] = useState<AdminPayoutBalance | null>(null);
+  const [payoutMethod, setPayoutMethod] = useState("");
   const [voidTarget, setVoidTarget] = useState<number | null>(null);
   const [voidReason, setVoidReason] = useState("");
   const [payoutDetail, setPayoutDetail] = useState<AdminPayoutRecord | null>(null);
@@ -268,12 +291,28 @@ export default function FinancePage() {
     }
   };
 
+  const openPayout = (store: AdminPayoutBalance) => {
+    const accounts = store.payoutAccounts ?? [];
+    setPayoutMethod(accounts.length === 1 ? String(accounts[0].method ?? "") : "");
+    setPayoutTarget(store);
+  };
+
   const confirmPayout = async () => {
-    if (!payoutTarget) return;
+    if (!payoutTarget || !payoutMethod) return;
     const store = payoutTarget;
+    const expectedAmount = moneyInput(store.outstanding);
+    if (expectedAmount === null) {
+      showToast("error", "ما في مبلغ مستحق واضح. حدّثي الشاشة قبل التسجيل.");
+      return;
+    }
     setBusy(`payout-${store.storeId}`);
     try {
-      const res = await createPayout(store.storeId);
+      const res = await createPayout({
+        storeId: store.storeId,
+        method: payoutMethod,
+        expectedAmount,
+        until: store.payoutUntil,
+      });
       if (!res.success) {
         showToast("error", res.message || "ما قدرنا نسجّل التحويل. راجعي سجل التحويل وحاولي مرة ثانية.");
         return;
@@ -412,8 +451,8 @@ export default function FinancePage() {
                       <tr key={store.storeId}>
                         <Td className="font-bold text-heading">{store.storeName || `متجر #${store.storeId}`}</Td>
                         <Td className="font-extrabold text-heading">{money(store.outstanding)}</Td>
-                        <Td className="text-xs text-text-secondary">{store.payoutAccount ? accountSummary(store.payoutAccount) : <span className="inline-flex items-center gap-1.5 text-warning"><CircleAlert className="size-3.5" />لم يضف المتجر وسيلة استلام</span>}</Td>
-                        <Td><Button size="sm" disabled={value(store.outstanding) === null || (value(store.outstanding) ?? 0) <= 0 || busy === `payout-${store.storeId}`} onClick={() => setPayoutTarget(store)} icon={<ArrowLeftRight className="size-4" />}>{busy === `payout-${store.storeId}` ? "جارٍ التسجيل…" : "تسجيل التحويل"}</Button></Td>
+                        <Td className="text-xs text-text-secondary">{store.payoutAccounts && store.payoutAccounts.length > 0 ? <span className="flex flex-col gap-1">{store.payoutAccounts.map((account) => <span key={String(account.method)}>{accountSummary(account)}</span>)}</span> : <span className="inline-flex items-center gap-1.5 text-warning"><CircleAlert className="size-3.5" />لم يضف المتجر وسيلة استلام</span>}</Td>
+                        <Td><Button size="sm" disabled={value(store.outstanding) === null || (value(store.outstanding) ?? 0) <= 0 || !store.payoutAccounts?.length || busy === `payout-${store.storeId}`} onClick={() => openPayout(store)} icon={<ArrowLeftRight className="size-4" />}>{busy === `payout-${store.storeId}` ? "جارٍ التسجيل…" : "تسجيل التحويل"}</Button></Td>
                       </tr>
                     ))}
                   </tbody>
@@ -479,8 +518,20 @@ export default function FinancePage() {
             <div className="mb-5 flex items-start gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-success-soft text-success"><ArrowLeftRight className="size-5" /></span><div><h2 id="record-payout-title" className="text-lg font-extrabold text-heading">تسجيل تحويل للمتجر</h2><p className="mt-1 text-sm text-text-secondary">راجعي المعلومات قبل تسجيله</p></div></div>
             <dl className="mb-4 grid grid-cols-2 gap-3 rounded-2xl bg-app-bg p-4 text-sm"><div><dt className="text-text-secondary">المتجر</dt><dd className="mt-1 font-extrabold text-heading">{payoutTarget.storeName}</dd></div><div><dt className="text-text-secondary">المبلغ المستحق</dt><dd className="mt-1 font-extrabold text-heading">{money(payoutTarget.outstanding)}</dd></div></dl>
             <div className="mb-5 flex gap-2 rounded-2xl border border-warning/20 bg-warning-soft/70 p-3 text-sm leading-6 text-warning"><Info className="mt-1 size-4 shrink-0" /><p>التسجيل لا يحوّل المال. كمّلي التحويل خارج اللوحة أولاً. عند التأكيد سيُسجّل الخادم الدفعة ويرسل إشعاراً للمتجر.</p></div>
-            {!payoutTarget.payoutAccount && <p className="mb-4 text-xs leading-5 text-text-secondary">ما في طريقة استلام محفوظة لهذا المتجر. إذا حوّلتِ له بطريقة أخرى، تقدري تسجّلي التحويل بعد التأكد.</p>}
-            <div className="flex justify-end gap-2"><Button variant="secondary" onClick={() => setPayoutTarget(null)} disabled={busy === `payout-${payoutTarget.storeId}`}>رجوع</Button><Button onClick={() => void confirmPayout()} disabled={busy === `payout-${payoutTarget.storeId}`} icon={<Check className="size-4" />}>{busy === `payout-${payoutTarget.storeId}` ? "جارٍ التسجيل…" : "تم التحويل، سجّله"}</Button></div>
+            {(payoutTarget.payoutAccounts ?? []).length === 0 ? (
+              <p className="mb-4 text-xs leading-5 text-text-secondary">التسجيل بانتظار ما يضيف المتجر طريقة استلام.</p>
+            ) : (
+              <label className="mb-5 block text-sm font-bold text-heading" htmlFor="payout-method">
+                طريقة التحويل
+                <select id="payout-method" value={payoutMethod} onChange={(event) => setPayoutMethod(event.target.value)} className="mt-2 w-full rounded-xl border border-border bg-app-bg px-3 py-2 text-sm font-bold text-heading outline-none focus:border-primary">
+                  {(payoutTarget.payoutAccounts ?? []).length > 1 && <option value="">اختاري الطريقة</option>}
+                  {(payoutTarget.payoutAccounts ?? []).map((account) => (
+                    <option key={String(account.method)} value={String(account.method ?? "")}>{accountSummary(account)}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <div className="flex justify-end gap-2"><Button variant="secondary" onClick={() => setPayoutTarget(null)} disabled={busy === `payout-${payoutTarget.storeId}`}>رجوع</Button><Button onClick={() => void confirmPayout()} disabled={!payoutMethod || busy === `payout-${payoutTarget.storeId}`} icon={<Check className="size-4" />}>{busy === `payout-${payoutTarget.storeId}` ? "جارٍ التسجيل…" : "تم التحويل، سجّله"}</Button></div>
           </section>
         </div>
       )}
@@ -511,12 +562,18 @@ export default function FinancePage() {
   );
 }
 
+const PAYOUT_METHOD_LABELS: Record<string, string> = {
+  BANK_OF_PALESTINE: "بنك فلسطين",
+  JAWWAL_PAY: "جوال باي",
+  PALPAY: "بال باي",
+};
+
 function accountSummary(account: Record<string, unknown>) {
-  const method = typeof account.method === "string" ? account.method : "حساب";
+  const method = typeof account.method === "string" ? account.method : "";
+  const label = typeof account.methodLabel === "string" ? account.methodLabel : (PAYOUT_METHOD_LABELS[method] || "حساب");
   const accountNumber = typeof account.accountNumber === "string" ? account.accountNumber : "";
-  const phone = typeof account.walletPhone === "string" ? account.walletPhone : "";
-  const detail = maskAccount(accountNumber || phone);
-  return detail ? `${method} · ${detail}` : method;
+  const detail = maskAccount(accountNumber);
+  return detail ? `${label} · ${detail}` : label;
 }
 
 function maskAccount(value: string) {
