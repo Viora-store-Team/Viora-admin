@@ -13,6 +13,7 @@ import CategorySizesPicker, {
   type PickerValue,
 } from "@/components/admin/CategorySizesPicker";
 import { uploadMany } from "@/lib/api";
+import { thumbUrl } from "@/lib/media-upload";
 import { cn } from "@/lib/cn";
 import {
   ADMIN_LIMITS,
@@ -125,7 +126,7 @@ export default function CategoryFormDialog({
   const invalid = nameInvalid || sizesInvalid || sortInvalid;
   const busy = loading || uploading;
 
-  /** رفع الصورة عبر مسار POST /uploads الموحد */
+  /** رفع الصورة مباشرة بتذكرة موقّعة (uploadMany) */
   const pickFile = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
@@ -257,7 +258,7 @@ export default function CategoryFormDialog({
                 <div className="flex items-center gap-3 rounded-xl border border-border bg-field-bg/40 p-2.5">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={imageUrl}
+                    src={thumbUrl(imageUrl, 128)}
                     alt=""
                     className="size-16 shrink-0 rounded-lg border border-border object-cover bg-surface"
                   />

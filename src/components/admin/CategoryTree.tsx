@@ -28,6 +28,7 @@ import type {
   AdminCategoryRoot,
 } from "@/lib/admin/types";
 import { formatNumber } from "@/lib/format";
+import { thumbUrl } from "@/lib/media-upload";
 import { t } from "@/lib/strings";
 
 interface CategoryTreeProps {
@@ -310,7 +311,7 @@ export default function CategoryTree({
                     {root.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={root.imageUrl}
+                        src={thumbUrl(root.imageUrl, 96)}
                         alt=""
                         className="size-full object-cover"
                       />
@@ -420,7 +421,7 @@ export default function CategoryTree({
                               {child.imageUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
-                                  src={child.imageUrl}
+                                  src={thumbUrl(child.imageUrl, 96)}
                                   alt=""
                                   className="size-full object-cover"
                                 />

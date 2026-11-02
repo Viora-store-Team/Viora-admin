@@ -1,3 +1,5 @@
+import { uploadFiles, type UploadResult } from "./media-upload";
+
 /*
   الافتراضي هو السيرفر المنشور. حطّ NEXT_PUBLIC_API_BASE_URL بملف .env.local
   لما تشتغل على باك إند محلي — بلاها كل تجربة محلية بتضرب على الإنتاج.
@@ -193,93 +195,18 @@ export async function apiFetch(
   }
 }
 
-export interface UploadResult {
-  urls: string[];
-  failed: { name: string; message: string }[];
-}
-
-/** الشروط اللي بيفرضها POST /api/uploads — منفحصها محلياً عشان ما نرفع ملف مرفوض أصلاً */
-export const UPLOAD_LIMITS = {
-  maxBytes: 10 * 1024 * 1024,
-  types: ["image/jpeg", "image/png", "image/webp"] as const,
-};
+/*
+  الرفع صار مباشر للتخزين بتذكرة موقّعة — المنطق النقي بـ media-upload.ts
+  (قابل للفحص بحقن apiFetch وfetch)، وهون بس التوصيل بالدوال الحقيقية.
+*/
+export { UPLOAD_LIMITS } from "./media-upload";
+export type { UploadResult } from "./media-upload";
 
 /**
- * بيقرأ أول مفتاح فيه نص غير فاضي من كائن مجهول الشكل.
- *
- * مسار الرفع ما استقرّ على اسم واحد للرابط (`url` · `path` · `location`)،
- * وممكن يجي بالمستوى الأعلى أو جوّا `data`. بدل سلسلة `||` طويلة بتنكسر
- * مع `unknown`، القراءة صارت مفحوصة النوع بمكان واحد.
+ * رفع عدة ملفات بالتوازي: تذكرة من POST /uploads/image-ticket ثم PUT مباشر.
  */
-function readString(source: unknown, keys: string[]): string | null {
-  if (typeof source !== "object" || source === null) return null;
-  const record = source as Record<string, unknown>;
-  for (const key of keys) {
-    const value = record[key];
-    if (typeof value === "string" && value) return value;
-  }
-  return null;
-}
-
-/** نفس رسائل السيرفر بالضبط، بس بترجع فوراً بلا رحلة شبكة */
-function localFileError(file: File): string | null {
-  if (!UPLOAD_LIMITS.types.includes(file.type as (typeof UPLOAD_LIMITS.types)[number])) {
-    return "نوع الصورة غير مدعوم (JPG أو PNG أو WebP بس)";
-  }
-  if (file.size > UPLOAD_LIMITS.maxBytes) {
-    return "حجم الصورة كبير (الحد 10 ميجا)";
-  }
-  return null;
-}
-
-/**
- * رفع عدة ملفات بالتوازي إلى مسار الباك إند POST /api/uploads
- */
-export async function uploadMany(files: File[]): Promise<UploadResult> {
-  const results = await Promise.allSettled(
-    files.map(async (file) => {
-      const local = localFileError(file);
-      if (local) throw new Error(local);
-
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await apiFetch("/uploads", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.success) {
-        const keys = ["url", "path", "location"];
-        const url = readString(res, keys) ?? readString(res.data, keys);
-        if (url) return url;
-        throw new Error("السيرفر رجّع نجاح بلا رابط صورة.");
-      }
-
-      /*
-        السيرفر بيرجّع السبب الحقيقي جوّا errors.file ("حجم الصورة كبير"، "نوع الصورة غير مدعوم")
-        و message بيكون عام ("بيانات غير صحيحة") — فبناخد الأدق أول.
-      */
-      throw new Error(res.errors?.file || res.message || "فشل رفع الصورة");
-    })
-  );
-
-  const urls: string[] = [];
-  const failed: { name: string; message: string }[] = [];
-
-  results.forEach((result, index) => {
-    if (result.status === "fulfilled") {
-      urls.push(result.value);
-    } else {
-      failed.push({
-        name: files[index].name,
-        message:
-          result.reason instanceof Error ? result.reason.message : String(result.reason),
-      });
-    }
-  });
-
-  return { urls, failed };
+export function uploadMany(files: File[]): Promise<UploadResult> {
+  return uploadFiles(files, { apiFetch, fetch: (input, init) => fetch(input, init) });
 }
 
 /** ترقيم الصفحات — نفس الشكل بكل المسارات اللي بترجّع قوائم */

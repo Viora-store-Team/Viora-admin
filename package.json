@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
+    "test:unit": "node --experimental-strip-types --no-warnings --test \"tests/unit/*.test.mjs\"",
     "audit": "node scripts/audit.mjs"
   },
   "dependencies": {

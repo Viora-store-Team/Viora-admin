@@ -20,6 +20,7 @@ import Badge from "@/components/ui/Badge";
 import CategorySizesSummary from "@/components/admin/CategorySizesSummary";
 import type { AdminCategoryNode } from "@/lib/admin/types";
 import { formatNumber } from "@/lib/format";
+import { thumbUrl } from "@/lib/media-upload";
 import { t } from "@/lib/strings";
 
 interface CategoryDetailDialogProps {
@@ -74,7 +75,7 @@ export default function CategoryDetailDialog({
                 {node.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={node.imageUrl}
+                    src={thumbUrl(node.imageUrl, 96)}
                     alt={node.name}
                     className="size-full rounded-2xl object-cover"
                   />
