@@ -738,12 +738,14 @@ export async function mockFetch(
     if (method === "POST" && !rawId) {
       const body = readBody<SizePayload>(options);
       const name = (body.name ?? "").trim();
-      if (!name || !body.sizeGroup) return fail(400, "بيانات غير صحيحة", { name: "اسم المقاس مطلوب" });
+      if (!name) return fail(400, "بيانات غير صحيحة", { name: "اسم المقاس مطلوب" });
+      const sizeGroup: SizeGroup =
+        body.sizeGroup ?? (/^[0-9٠-٩]+([.,][0-9٠-٩]+)?$/.test(name) ? "NUMERIC" : "CLOTHING");
       const created: AdminSize = {
         id: 1000 + library.length,
         name,
-        slug: `${body.sizeGroup.toLowerCase()}-${name}`,
-        sizeGroup: body.sizeGroup,
+        slug: `${sizeGroup.toLowerCase()}-${name}`,
+        sizeGroup,
         sortOrder: library.length,
         isActive: true,
         usageCount: 0,

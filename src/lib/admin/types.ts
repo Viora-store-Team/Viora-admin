@@ -57,8 +57,10 @@ export const CREATABLE_SIZE_GROUPS: readonly SizeGroup[] = SIZE_GROUPS.filter(
 );
 
 export interface SizePayload {
+  /** أي نص — أرقام أو حروف أو "فري سايز" */
   name: string;
-  sizeGroup: SizeGroup;
+  /** اختياري: بلاه السيرفر بيستنتج النوع (أرقام ⇒ NUMERIC، غير هيك ⇒ CLOTHING) */
+  sizeGroup?: SizeGroup;
   sortOrder?: number;
 }
 export type SizeUpdatePayload = Partial<Pick<SizePayload, "name" | "sortOrder">> & {

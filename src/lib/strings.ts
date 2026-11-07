@@ -444,7 +444,7 @@ export const t = {
       removeSize: "إزالة",
       addSize: "إضافة مقاس جديد",
       newSizeName: "اسم المقاس",
-      newSizeGroup: "النوع",
+      newSizeHint: "اكتب أي مقاس: أرقام (42)، حروف (XL)، أو نص (فري سايز). لو موجود بنختاره.",
       newSizeAdd: "إضافة",
       sizesSaved: "تم حفظ المقاسات",
       sizesSummaryNone: "بدون مقاس",

@@ -4,12 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
 import Spinner from "@/components/ui/Spinner";
 import Toggle from "@/components/ui/Toggle";
 import { createSize, fetchSizes } from "@/lib/admin/api";
 import {
-  CREATABLE_SIZE_GROUPS,
   type AdminSize,
   type CategorySizesPayload,
   type SizeGroup,
@@ -41,16 +39,10 @@ interface Props {
   error?: string;
 }
 
-const GROUP_OPTIONS = CREATABLE_SIZE_GROUPS.map((group) => ({
-  value: group,
-  label: t.admin.sizeGroups[group],
-}));
-
 export default function CategorySizesPicker({ value, onChange, disabled = false, error }: Props) {
   const [library, setLibrary] = useState<AdminSize[] | null>(null);
   const [loadError, setLoadError] = useState("");
   const [newName, setNewName] = useState("");
-  const [newGroup, setNewGroup] = useState<string>("NUMERIC");
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState("");
   /* آخر قيمة — addSize بيرجع بعد await فما بيعتمد على الـ closure القديم */
@@ -111,19 +103,41 @@ export default function CategorySizesPicker({ value, onChange, disabled = false,
     onChange({ noSizes: false, sizeIds: next });
   };
 
+  /* يضيف المقاس للاختيار (لو مش مختار أصلًا) */
+  const select = (id: number) => {
+    const latest = valueRef.current;
+    if (latest.sizeIds.includes(id)) return;
+    onChange({ noSizes: false, sizeIds: [...latest.sizeIds, id] });
+  };
+
+  /* الاسم حر (أرقام/حروف/أي نص) — لو موجود بالمكتبة بنختاره بدل ما ننشئ نسخة */
   const addSize = async () => {
     const name = newName.trim();
     if (!name) return;
-    setAdding(true);
     setAddError("");
-    const res = await createSize({ name, sizeGroup: newGroup as SizeGroup });
+    const existing = (library ?? []).find(
+      (size) => size.isActive && size.slug !== "one-size" && size.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (existing) {
+      select(existing.id);
+      setNewName("");
+      return;
+    }
+    setAdding(true);
+    const res = await createSize({ name });
     setAdding(false);
     if (res.success && res.size) {
       const created = res.size;
       setLibrary((prev) => [...(prev ?? []), created]);
       setNewName("");
-      const latest = valueRef.current;
-      onChange({ noSizes: false, sizeIds: [...latest.sizeIds, created.id] });
+      select(created.id);
+      return;
+    }
+    /* موجود بس مؤرشف أو مش محمّل عنّا: السيرفر بيرجّعه بالـ 409 */
+    const taken = res.size;
+    if (res.status === 409 && taken?.isActive) {
+      setNewName("");
+      select(taken.id);
       return;
     }
     setAddError(classifyStatus(res).message);
@@ -230,7 +244,16 @@ export default function CategorySizesPicker({ value, onChange, disabled = false,
 
           <div className="rounded-xl border border-dashed border-border p-3">
             <p className="mb-2 text-xs font-bold text-heading">{t.admin.categories.addSize}</p>
-            <div className="grid grid-cols-[1fr_auto] gap-2 sm:grid-cols-[1fr_9rem_auto]">
+            <p className="mb-2 text-[11px] text-text-secondary">{t.admin.categories.newSizeHint}</p>
+            <div
+              className="grid grid-cols-[1fr_auto] gap-2"
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && newName.trim() && !adding) {
+                  event.preventDefault();
+                  void addSize();
+                }
+              }}
+            >
               <Input
                 id="new-size-name"
                 value={newName}
@@ -238,13 +261,6 @@ export default function CategorySizesPicker({ value, onChange, disabled = false,
                 placeholder={t.admin.categories.newSizeName}
                 disabled={disabled || adding}
                 maxLength={50}
-              />
-              <Select
-                id="new-size-group"
-                value={newGroup}
-                onChange={setNewGroup}
-                options={GROUP_OPTIONS}
-                disabled={disabled || adding}
               />
               <Button
                 variant="secondary"
