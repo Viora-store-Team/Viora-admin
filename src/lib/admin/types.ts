@@ -357,6 +357,52 @@ export interface AdminOrderGroup {
   groupNumber?: string;
   totalAmount: string;
   orders: AdminOrderGroupSibling[];
+  /** نسخة الكود المجمّدة على الطلبية — `null` بلا كود. */
+  promo?: {
+    code: string;
+    owner: PromoOwner;
+    type: PromoType;
+    percent: number | null;
+    store: { id: number; name: string } | null;
+  } | null;
+  /** مجموع خصم المنتجات على كل متاجر الطلبية. */
+  discountTotal?: string | null;
+}
+
+// ─── أكواد الخصم ───────────────────────────────────────────────
+
+export type PromoOwner = "PLATFORM" | "STORE";
+export type PromoType = "PERCENT" | "FREE_DELIVERY";
+export type PromoStatus = "ACTIVE" | "ENDED";
+export type PromoDuration = "12H" | "1D" | "3D" | "7D" | "CUSTOM";
+
+/** عنصر `GET /admin/promo-codes` (MOBILE-PROMO.md §6). المبالغ نصوص. */
+export interface AdminPromoCode {
+  id: number;
+  code: string;
+  owner: PromoOwner;
+  store: { id: number; name: string } | null;
+  type: PromoType;
+  percent: number | null;
+  maxDiscount: string | null;
+  minOrder: string | null;
+  startsAt: string;
+  endsAt: string;
+  stoppedAt: string | null;
+  status: PromoStatus;
+  usesCount: number;
+  discountTotal: string;
+}
+
+/** جسم `POST /admin/promo-codes` — الاختياري الفاضي ما بينبعت. */
+export interface PromoCreateBody {
+  code: string;
+  type: PromoType;
+  percent?: number;
+  maxDiscount?: number;
+  minOrder?: number;
+  duration: PromoDuration;
+  endsAt?: string;
 }
 
 export interface AdminOrderDetail {
@@ -385,6 +431,24 @@ export interface AdminOrderDetail {
     payableTotal?: string | null;
     finalProductsTotal?: string | null;
     finalTotal?: string | null;
+    /** خصم الكود على هالطلب — `null` بلا كود. */
+    discount?: string | null;
+    /** حصة التوصيل المعفاة للزبون. */
+    deliveryWaived?: string | null;
+    promo?: {
+      code: string | null;
+      fundedBy: PromoOwner;
+      type: PromoType | null;
+      percent: number | null;
+      freeDelivery: boolean;
+    } | null;
+  } | null;
+  /** التسوية المجمّدة بعد إغلاق الطلب. */
+  settlement?: {
+    discountAmount?: string | null;
+    deliveryWaived?: string | null;
+    promoFundedBy?: PromoOwner | null;
+    [key: string]: unknown;
   } | null;
   /** عنوان التوصيل كما يرجع من `GET /admin/orders/:id`. */
   delivery?: {

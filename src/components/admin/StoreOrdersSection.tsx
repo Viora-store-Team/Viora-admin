@@ -10,6 +10,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Pagination from "@/components/ui/Pagination";
 import Spinner from "@/components/ui/Spinner";
+import OrderPromoLines from "@/components/admin/OrderPromoLines";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { TableShell, Td, Thead } from "@/components/ui/Table";
 import { fetchStoreOrders, fetchAdminOrderDetail } from "@/lib/admin/api";
@@ -421,6 +422,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                     </div>
                   </div>
                 </section>
+                {orderDetail && <OrderPromoLines detail={orderDetail} />}
 
                 {/* 🌟 Multi-store Parent Group (Admin Perspective) */}
                 {orderDetail?.group && (

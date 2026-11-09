@@ -1,6 +1,6 @@
 import type { ApiResponse, Pagination } from "@/lib/api";
 import { adminFetch, query } from "./client";
-import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminSize, CategorySizesPayload, SizePayload, SizeUpdatePayload, AdminReportApiDetail, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, TopRatedStore, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse } from "./types";
+import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminSize, CategorySizesPayload, SizePayload, SizeUpdatePayload, AdminReportApiDetail, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, TopRatedStore, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse, AdminPromoCode, PromoCreateBody, PromoOwner } from "./types";
 import { apiFetch } from "@/lib/api";
 import { ADMIN_LIMITS } from "./types";
 
@@ -514,7 +514,61 @@ export interface AdminSettlement {
   createdAt: string;
   store?: { id?: number; name?: string } | null;
   order?: { id?: number; orderNumber?: string; createdAt?: string } | null;
+  /** مستحق المتجر — السيرفر بيبعته بدل `amount`. */
+  storeDue?: string | null;
+  collectedAmount?: string | null;
+  /** خصم الكود وحصة التوصيل المعفاة، ومين موّلهم. */
+  discountAmount?: string | null;
+  deliveryWaived?: string | null;
+  promoFundedBy?: PromoOwner | null;
   [key: string]: unknown;
+}
+
+/** `GET /admin/settlements/summary` — الملخص جوّا `summary`. */
+export interface AdminSettlementSummary {
+  collected?: string;
+  platformCommission?: string;
+  storeDue?: string;
+  deliveryDue?: string;
+  /** مجموع خصومات وتوصيل مجاني موّلتها Viora. */
+  platformPromoCost?: string;
+  ordersCount?: number;
+  [key: string]: unknown;
+}
+
+export function fetchSettlementSummary(): Promise<ApiResponse & { summary?: AdminSettlementSummary }> {
+  return adminFetch("/admin/settlements/summary");
+}
+
+// ─── أكواد الخصم ──────────────────────────────────────────────
+
+export function fetchPromoCodes(
+  params: ListParams & {
+    owner?: "platform" | "store" | "";
+    status?: "active" | "ended";
+    storeId?: number;
+  } = {},
+): Promise<Paged<"promoCodes", AdminPromoCode>> {
+  return adminFetch(`/admin/promo-codes${query({
+    page: params.page ?? 1,
+    limit: params.limit ?? ADMIN_LIMITS.pageLimit,
+    q: params.q,
+    owner: params.owner,
+    status: params.status,
+    storeId: params.storeId,
+  })}`);
+}
+
+/** كود Viora جديد (الخصم على حساب المنصة). */
+export function createPromoCode(
+  body: PromoCreateBody,
+): Promise<ApiResponse & { promoCode?: AdminPromoCode }> {
+  return adminFetch("/admin/promo-codes", { method: "POST", ...json(body) });
+}
+
+/** إيقاف أي كود (Viora أو متجر) — Idempotent. */
+export function stopPromoCode(id: number): Promise<ApiResponse & { promoCode?: AdminPromoCode }> {
+  return adminFetch(`/admin/promo-codes/${id}/stop`, { method: "PATCH" });
 }
 
 export function fetchCommissionSettings(): Promise<ApiResponse & {

@@ -12,6 +12,7 @@ import {
   Receipt,
   RotateCw,
   Store,
+  TicketPercent,
   Wallet,
   X,
   type LucideIcon,
@@ -29,6 +30,7 @@ import {
   fetchPayoutBalances,
   fetchPayout,
   fetchPayouts,
+  fetchSettlementSummary,
   updateCommissionSettings,
   voidPayout,
   type AdminPayoutBalance,
@@ -164,6 +166,8 @@ export default function FinancePage() {
   const [customStoresCount, setCustomStoresCount] = useState<number | null>(null);
   const [balanceStoresCount, setBalanceStoresCount] = useState<number | null>(null);
   const [balanceTotalUnpaid, setBalanceTotalUnpaid] = useState<number | null>(null);
+  /** خصومات وتوصيل مجاني موّلتها Viora — `null` لو الملخص ما وصل. */
+  const [platformPromoCost, setPlatformPromoCost] = useState<number | null>(null);
   const [commissionInput, setCommissionInput] = useState("");
   const [balances, setBalances] = useState<AdminPayoutBalance[]>([]);
   const [payouts, setPayouts] = useState<AdminPayoutRecord[]>([]);
@@ -191,6 +195,11 @@ export default function FinancePage() {
   const load = useCallback(async () => {
     setLoading(true);
     setSectionErrors({});
+    // الملخص ثانوي: فشله ما بيعطّل باقي الصفحة، بس الكرت بيظهر «—»
+    fetchSettlementSummary().then((res) => {
+      const cost = res.success ? Number(res.summary?.platformPromoCost) : NaN;
+      setPlatformPromoCost(Number.isFinite(cost) ? cost : null);
+    });
     const [commissionRes, balancesRes, payoutsRes, settlementsRes] = await Promise.all([
       fetchCommissionSettings(),
       fetchPayoutBalances(),
@@ -386,10 +395,11 @@ export default function FinancePage() {
 
       {loading ? <Spinner /> : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard icon={Percent} label="عمولة الطلبات الجديدة" value={commission === null ? "—" : `${commission}%`} tone="primary" />
             <MetricCard icon={Store} label="متاجر في كشف المستحقات" value={storesOwedUnknown ? "—" : formatNumber(storesOwed)} tone="info" />
             <MetricCard icon={Banknote} label="إجمالي بانتظار التحويل" value={balanceTotalUnpaid === null ? "—" : formatCurrency(balanceTotalUnpaid)} tone="success" />
+            <MetricCard icon={TicketPercent} label="تكلفة أكواد Viora" value={platformPromoCost === null ? "—" : formatCurrency(platformPromoCost)} tone="primary" />
           </div>
 
           <nav aria-label="أقسام المالية" className="grid grid-cols-1 gap-2 rounded-2xl border border-border bg-surface p-2 shadow-sm sm:grid-cols-3">
@@ -491,14 +501,16 @@ export default function FinancePage() {
             <CardBody>
               {sectionErrors.settlements && <ErrorBanner message={`تعذر تحميل التسويات: ${sectionErrors.settlements}`} onRetry={() => setRefreshKey((key) => key + 1)} />}
               {settlements.length === 0 && !sectionErrors.settlements ? <p className="py-6 text-center text-sm text-text-secondary">لا توجد تسويات مطابقة.</p> : settlements.length > 0 ? (
-                <TableShell minWidth="min-w-[680px]">
-                  <Thead columns={["الطلب", "المتجر", "المستحق", "تاريخ الإغلاق", "التحويل"]} />
+                <TableShell minWidth="min-w-[920px]">
+                  <Thead columns={["الطلب", "المتجر", "المستحق", "الخصم", "توصيل مجاني", "تاريخ الإغلاق", "التحويل"]} />
                   <tbody className="divide-y divide-border/70">
                     {settlements.map((settlement) => (
                       <tr key={settlement.id}>
                         <Td className="font-bold text-heading">#{settlement.orderId}</Td>
                         <Td>{settlement.storeName || `متجر #${settlement.storeId}`}</Td>
                         <Td className="font-bold text-heading">{money(settlement.amount)}</Td>
+                        <Td><PromoAmount value={settlement.discountAmount} fundedBy={settlement.promoFundedBy} /></Td>
+                        <Td><PromoAmount value={settlement.deliveryWaived} fundedBy={settlement.promoFundedBy} /></Td>
                         <Td>{formatDateTime(settlement.createdAt)}</Td>
                         <Td><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-extrabold ${settlement.paid ? "bg-success-soft text-success" : "bg-warning-soft text-warning"}`}>{settlement.paid ? "تم التحويل" : "بانتظار التحويل"}</span></Td>
                       </tr>
@@ -579,6 +591,20 @@ function accountSummary(account: Record<string, unknown>) {
 function maskAccount(value: string) {
   const visible = value.slice(-4);
   return value.length > 4 ? `•••• ${visible}` : value;
+}
+
+/** مبلغ عرض (خصم/توصيل معفى) مع مين موّله — «—» لو صفر أو بلا كود. */
+function PromoAmount({ value, fundedBy }: { value?: string | null; fundedBy?: string | null }) {
+  const amount = Number(value ?? 0);
+  if (!(amount > 0)) return <span className="text-text-secondary">—</span>;
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="ltr-nums font-bold text-heading">− {formatCurrency(amount)}</span>
+      <span className="rounded-full bg-field-bg px-2 py-0.5 text-[11px] font-extrabold text-text-secondary">
+        {fundedBy === "PLATFORM" ? "Viora" : "المتجر"}
+      </span>
+    </span>
+  );
 }
 
 function MetricCard({

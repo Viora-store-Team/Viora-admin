@@ -14,6 +14,7 @@ import Pagination from "@/components/ui/Pagination";
 import Spinner from "@/components/ui/Spinner";
 import { TableShell, Td, Thead } from "@/components/ui/Table";
 import InfoGrid from "@/components/admin/InfoGrid";
+import OrderPromoLines from "@/components/admin/OrderPromoLines";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { fetchAdminOrderDetail, fetchAdminOrders } from "@/lib/admin/api";
 import { STORE_ORDER_STATUS } from "@/lib/admin/status";
@@ -167,6 +168,7 @@ function AdminOrdersPageContent() {
               <div><p className="text-xs font-bold text-icon/70">حالة الطلب</p><div className="mt-2"><StatusBadge meta={STORE_ORDER_STATUS[detail.status]} /></div></div>
               <div className="grid grid-cols-2 gap-5 text-start sm:text-end"><div><p className="text-xs font-bold text-icon/70">إجمالي المنتجات</p><p className="mt-1 ltr-nums text-lg font-black">{formatCurrency(Number(productsTotal))}</p></div><div><p className="text-xs font-bold text-icon/70">الإجمالي المطلوب</p><p className="mt-1 ltr-nums text-lg font-black">{formatCurrency(Number(detail.total))}</p></div></div>
             </section>
+            <OrderPromoLines detail={detail} />
 
             <div className="grid gap-5 md:grid-cols-2">
               <Card className="border border-border shadow-xs"><CardHeader title={t.admin.orders.customerInfo} /><CardBody><InfoGrid rows={[
