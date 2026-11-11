@@ -373,6 +373,9 @@ export const t = {
       /* حقول وصلت مع عقد المستخدمين */
       addresses: "العناوين المحفوظة",
       addressUnit: "عنوان",
+      defaultAddress: "العنوان الافتراضي",
+      noAddresses: "ما في عناوين محفوظة",
+      addressesUnavailable: "تفاصيل العناوين غير متاحة حاليًا",
       signInMethod: "طريقة الدخول",
       hasPassword: "كلمة مرور",
       linkedGoogle: "غوغل",

@@ -345,54 +345,92 @@ function AdminUserDetailPageContent() {
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader
-            title={t.admin.users.store}
-            action={
-              user.store ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push(`/stores/${user.store!.id}`)}
-                >
-                  {t.admin.users.viewStore}
-                </Button>
-              ) : undefined
-            }
-          />
-          <CardBody>
-            {user.store ? (
-              <InfoGrid
-                rows={[
-                  {
-                    label: t.admin.stores.colStore,
-                    value: textOrNull(user.store.name),
-                  },
-                  {
-                    /* حالة **مراجعة** المتجر — مستقلة عن حالة الحساب */
-                    label: t.admin.stores.colStatus,
-                    value: <StatusBadge meta={STORE_STATUS[user.store.status]} />,
-                  },
-                  {
-                    label: t.admin.users.storeRunning,
-                    value: user.store.isActive ? (
-                      t.common.active
-                    ) : (
-                      <span className="flex items-center gap-1.5 text-danger">
-                        <PowerOff className="size-4" aria-hidden="true" />
-                        {t.common.inactive}
-                      </span>
-                    ),
-                  },
-                ]}
-              />
-            ) : (
-              <p className="text-sm text-text-secondary">
-                {t.admin.users.noStore}
-              </p>
-            )}
-          </CardBody>
-        </Card>
+        {user.role === "CUSTOMER" ? (
+          <Card>
+            <CardHeader title={t.admin.users.addresses} />
+            <CardBody>
+              {user.addresses?.length ? (
+                <ul className="divide-y divide-border">
+                  {user.addresses.map((address) => (
+                    <li key={address.id} className="space-y-1 break-words py-3 first:pt-0 last:pb-0">
+                      <div className="flex flex-wrap items-baseline gap-x-2">
+                        <span className="font-semibold text-heading">{address.label}</span>
+                        {address.isDefault && (
+                          <span className="text-xs font-semibold text-text-secondary">
+                            {t.admin.users.defaultAddress}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-heading">
+                        {[address.city, address.area, address.street, address.details]
+                          .filter(Boolean)
+                          .join("، ")}
+                      </p>
+                      <p className="text-sm text-text-secondary">
+                        {address.fullName} <bdi dir="ltr">{address.phone}</bdi>
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-text-secondary">
+                  {user.addressesCount > 0 && !user.addresses
+                    ? t.admin.users.addressesUnavailable
+                    : t.admin.users.noAddresses}
+                </p>
+              )}
+            </CardBody>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader
+              title={t.admin.users.store}
+              action={
+                user.store ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => router.push(`/stores/${user.store!.id}`)}
+                  >
+                    {t.admin.users.viewStore}
+                  </Button>
+                ) : undefined
+              }
+            />
+            <CardBody>
+              {user.store ? (
+                <InfoGrid
+                  rows={[
+                    {
+                      label: t.admin.stores.colStore,
+                      value: textOrNull(user.store.name),
+                    },
+                    {
+                      /* حالة **مراجعة** المتجر — مستقلة عن حالة الحساب */
+                      label: t.admin.stores.colStatus,
+                      value: <StatusBadge meta={STORE_STATUS[user.store.status]} />,
+                    },
+                    {
+                      label: t.admin.users.storeRunning,
+                      value: user.store.isActive ? (
+                        t.common.active
+                      ) : (
+                        <span className="flex items-center gap-1.5 text-danger">
+                          <PowerOff className="size-4" aria-hidden="true" />
+                          {t.common.inactive}
+                        </span>
+                      ),
+                    },
+                  ]}
+                />
+              ) : (
+                <p className="text-sm text-text-secondary">
+                  {t.admin.users.noStore}
+                </p>
+              )}
+            </CardBody>
+          </Card>
+        )}
       </div>
 
       {/*

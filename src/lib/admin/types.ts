@@ -502,6 +502,17 @@ export interface AdminUserListItem {
 export interface AdminUserDetail extends AdminUserListItem {
   updatedAt: string;
   addressesCount: number;
+  addresses?: {
+    id: number;
+    label: string;
+    fullName: string;
+    phone: string;
+    city: string;
+    area: string | null;
+    street: string;
+    details: string | null;
+    isDefault: boolean;
+  }[];
   /** `false` = حساب غوغل بلا كلمة مرور */
   hasPassword: boolean;
   linkedGoogle: boolean;
