@@ -224,6 +224,16 @@ test("documented order filters reach the server and reset pagination",async({pag
   expect(requests.at(-1)?.searchParams.has("status")).toBe(false);
 });
 
+test("orders list renders every backend status, including ones the panel does not know yet",async({page})=>{
+  const order=(id:number,status:string)=>({id,orderNumber:`ORD-${id}`,status,total:"10.00",itemsCount:1,createdAt:"2026-11-01T10:00:00.000Z",store:{id:1,name:"QA Store"},recipientName:"QA Customer",city:"Gaza",customer:{id:3,name:"QA Customer",email:"c@example.test"}});
+  await page.route(`${api}/admin/orders?*`,r=>r.fulfill({json:{success:true,orders:[order(1,"PICKED_UP"),order(2,"SOME_FUTURE_STATUS")],pagination:{page:1,limit:20,total:2,totalPages:1}}}));
+  await page.goto("/orders");
+  await expect(page.getByText("ORD-1",{exact:true})).toBeVisible();
+  await expect(page.getByRole("table").getByText("استلمه المندوب",{exact:true})).toBeVisible();
+  await expect(page.getByText("SOME_FUTURE_STATUS",{exact:true})).toBeVisible();
+  await expect(page.getByText("صار خطأ غير متوقع")).toHaveCount(0);
+});
+
 test("hidden ratings remain reviewable but do not lower public averages",async({page})=>{
   await page.route(`${api}/admin/ratings?*`,r=>r.fulfill({json:{success:true,ratings:[
     {id:1,rating:5,comment:"QA visible",storeId:1,storeName:"QA Store"},

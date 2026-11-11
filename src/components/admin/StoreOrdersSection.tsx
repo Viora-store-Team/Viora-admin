@@ -14,7 +14,7 @@ import OrderPromoLines from "@/components/admin/OrderPromoLines";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { TableShell, Td, Thead } from "@/components/ui/Table";
 import { fetchStoreOrders, fetchAdminOrderDetail } from "@/lib/admin/api";
-import { STORE_ORDER_STATUS } from "@/lib/admin/status";
+import { orderStatusMeta } from "@/lib/admin/status";
 import type {
   AdminOrderDetail,
   StoreOrder,
@@ -329,7 +329,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                       </Badge>
                     </Td>
                     <Td>
-                      <StatusBadge meta={STORE_ORDER_STATUS[order.status]} />
+                      <StatusBadge meta={orderStatusMeta(order.status)} />
                     </Td>
                     <Td>
                       <Button
@@ -404,7 +404,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                   <div>
                     <p className="text-xs font-bold text-icon/70">حالة الطلب</p>
                     <div className="mt-2">
-                      <StatusBadge meta={STORE_ORDER_STATUS[orderDetail?.status || selectedOrder.status]} />
+                      <StatusBadge meta={orderStatusMeta(orderDetail?.status || selectedOrder.status)} />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-5 text-start sm:text-end">
@@ -482,7 +482,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                                   <span className="ltr-nums font-bold">
                                     {formatCurrency(Number(sib.total))}
                                   </span>
-                                  <StatusBadge meta={STORE_ORDER_STATUS[sib.status]} />
+                                  <StatusBadge meta={orderStatusMeta(sib.status)} />
                                 </div>
                               </div>
                             );

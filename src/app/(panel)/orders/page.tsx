@@ -17,7 +17,7 @@ import InfoGrid from "@/components/admin/InfoGrid";
 import OrderPromoLines from "@/components/admin/OrderPromoLines";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { fetchAdminOrderDetail, fetchAdminOrders } from "@/lib/admin/api";
-import { STORE_ORDER_STATUS } from "@/lib/admin/status";
+import { orderStatusMeta, STORE_ORDER_STATUS } from "@/lib/admin/status";
 import type { AdminOrderDetail, AdminOrderListItem, StoreOrderStatus } from "@/lib/admin/types";
 import type { Pagination as PaginationType } from "@/lib/api";
 import { classifyStatus } from "@/lib/apiFailure";
@@ -147,7 +147,7 @@ function AdminOrdersPageContent() {
                 <Td className="ltr-nums">{formatNumber(order.itemsCount)}</Td>
                 <Td className="ltr-nums whitespace-nowrap text-text-secondary">{formatDate(order.createdAt)}</Td>
                 <Td className="ltr-nums font-bold">{formatCurrency(Number(order.total))}</Td>
-                <Td><StatusBadge meta={STORE_ORDER_STATUS[order.status]} /></Td>
+                <Td><StatusBadge meta={orderStatusMeta(order.status)} /></Td>
                 <Td><Button size="sm" variant="secondary" onClick={() => openDetail(order.id)} icon={<Eye className="size-3.5" aria-hidden="true" />}>{t.admin.orders.reviewOrder}</Button></Td>
               </tr>)}
             </tbody></TableShell>
@@ -165,7 +165,7 @@ function AdminOrdersPageContent() {
           </div>
           {detailLoading ? <div className="p-12"><Spinner /></div> : detail && <div className="space-y-5 p-5 sm:p-8">
             <section className="flex flex-col gap-4 rounded-2xl bg-primary p-5 text-icon sm:flex-row sm:items-center sm:justify-between">
-              <div><p className="text-xs font-bold text-icon/70">حالة الطلب</p><div className="mt-2"><StatusBadge meta={STORE_ORDER_STATUS[detail.status]} /></div></div>
+              <div><p className="text-xs font-bold text-icon/70">حالة الطلب</p><div className="mt-2"><StatusBadge meta={orderStatusMeta(detail.status)} /></div></div>
               <div className="grid grid-cols-2 gap-5 text-start sm:text-end"><div><p className="text-xs font-bold text-icon/70">إجمالي المنتجات</p><p className="mt-1 ltr-nums text-lg font-black">{formatCurrency(Number(productsTotal))}</p></div><div><p className="text-xs font-bold text-icon/70">الإجمالي المطلوب</p><p className="mt-1 ltr-nums text-lg font-black">{formatCurrency(Number(detail.total))}</p></div></div>
             </section>
             <OrderPromoLines detail={detail} />

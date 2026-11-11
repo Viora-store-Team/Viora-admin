@@ -256,6 +256,7 @@ export type StoreOrderStatus =
   | "PENDING"
   | "ACCEPTED"
   | "DELIVERY_ACCEPTED"
+  | "PICKED_UP"
   | "REJECTED"
   | "DELIVERED"
   | "CANCELLED"
@@ -272,6 +273,7 @@ export const STORE_ORDER_STATUS_KEYS = [
   "PENDING",
   "ACCEPTED",
   "DELIVERY_ACCEPTED",
+  "PICKED_UP",
   "REJECTED",
   "DELIVERED",
   "CANCELLED",

@@ -48,6 +48,7 @@ export const STORE_ORDER_STATUS: Record<StoreOrderStatus, StatusMeta> = {
   PENDING: { label: "بانتظار الموافقة", tone: "warning" },
   ACCEPTED: { label: "قيد التجهيز", tone: "info" },
   DELIVERY_ACCEPTED: { label: "تم قبول التوصيل", tone: "info" },
+  PICKED_UP: { label: "استلمه المندوب", tone: "info" },
   REJECTED: { label: "مرفوض", tone: "danger" },
   DELIVERED: { label: "تم التوصيل", tone: "success" },
   CANCELLED: { label: t.admin.orders.statusCancelled, tone: "danger" },
@@ -60,6 +61,16 @@ export const STORE_ORDER_STATUS: Record<StoreOrderStatus, StatusMeta> = {
   PARTIALLY_DELIVERED: { label: "تم توصيل جزء من الطلب", tone: "warning" },
   RETURNED: { label: "مرتجع", tone: "danger" },
 };
+
+/**
+ * قراءة آمنة لحالة طلب. لما الباك إند يضيف حالة جديدة قبل ما تنضاف للخريطة
+ * (زي PICKED_UP)، القراءة المباشرة بترجع undefined وبتوقّع الصفحة كلها
+ * على شاشة «صار خطأ غير متوقع» — هون بنعرض اسم الحالة الخام بدلها.
+ */
+export function orderStatusMeta(status: string | null | undefined): StatusMeta {
+  return (status && STORE_ORDER_STATUS[status as StoreOrderStatus])
+    || { label: status || t.admin.common.none, tone: "neutral" };
+}
 
 export const REPORT_STATUS: Record<ReportStatus, StatusMeta> = {
   OPEN: { label: t.admin.status.open, tone: "warning" },
