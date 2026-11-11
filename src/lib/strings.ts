@@ -160,6 +160,8 @@ export const t = {
       range30: "آخر 30 يوم",
       range90: "آخر 90 يوم",
       rangeLabel: "المدى الزمني",
+      guestInstallsToday: "تثبيتات فتحت التطبيق كضيف اليوم",
+      gazaTime: "بتوقيت غزة",
       activeStores: "المتاجر المقبولة",
       pendingStores: "بانتظار المراجعة",
       rejectedStores: "متاجر مرفوضة",

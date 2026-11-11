@@ -23,7 +23,8 @@ import Spinner from "@/components/ui/Spinner";
 import StatusBadge from "@/components/admin/StatusBadge";
 import TrendChart from "@/components/ui/TrendChart";
 import StatCard, { type StatColorScheme } from "@/components/dashboard/StatCard";
-import { fetchStats } from "@/lib/admin/api";
+import OperationsStats from "@/components/dashboard/OperationsStats";
+import { fetchStats, type StatsResponse } from "@/lib/admin/api";
 import { STORE_STATUS } from "@/lib/admin/status";
 import type {
   AdminStatsCharts,
@@ -49,7 +50,7 @@ const TOP_STORE_COLUMNS = [
   t.admin.dashboard.colRevenue,
 ] as const;
 
-interface StatsView {
+interface StatsView extends Pick<StatsResponse, "orderPerformance" | "topProducts" | "inventoryAlerts"> {
   counters: StatsCounters;
   charts: AdminStatsCharts;
   topStores: TopStoreRow[];
@@ -78,6 +79,9 @@ export default function AdminOverviewPage() {
           counters: res.stats,
           charts: res.charts ?? { signups: [], orders: [] },
           topStores: res.topStores ?? [],
+          orderPerformance: res.orderPerformance,
+          topProducts: res.topProducts,
+          inventoryAlerts: res.inventoryAlerts,
         });
         setError("");
         return;
@@ -241,6 +245,16 @@ export default function AdminOverviewPage() {
 
       <ErrorBanner message={error} onRetry={retry} />
 
+      {!loading && typeof counters?.guestInstallsToday === "number" && (
+        <StatCard
+          title={t.admin.dashboard.guestInstallsToday}
+          value={formatNumber(counters.guestInstallsToday)}
+          icon={Users}
+          colorScheme="blue"
+          badge={{ text: t.admin.dashboard.gazaTime, variant: "info" }}
+        />
+      )}
+
       {loading ? (
         <div className="grid min-h-[300px] place-items-center">
           <Spinner />
@@ -313,6 +327,13 @@ export default function AdminOverviewPage() {
               </CardBody>
             </Card>
           </div>
+
+          <OperationsStats
+            performance={view.orderPerformance}
+            products={view.topProducts}
+            alerts={view.inventoryAlerts}
+            period={period}
+          />
 
           {/* ── جدول أعلى المتاجر أداءً ─────────────────────────────── */}
           <Card className="overflow-hidden border border-border/80 shadow-xs">

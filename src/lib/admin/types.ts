@@ -128,7 +128,41 @@ export interface StatsPeriodInfo {
   to: string;
 }
 
+export interface OrderPerformance {
+  byStatus: Record<string, number>;
+  stages: Record<"storeAcceptance" | "pickup" | "delivery", {
+    averageMinutes: number | null;
+    samples: number;
+  }>;
+}
+
+export interface TopProductRow {
+  productId: number | null;
+  productName: string;
+  storeId: number;
+  storeName: string;
+  units: number;
+}
+
+export interface StockAlertRow {
+  variantSizeId: number;
+  productId: number;
+  productName: string;
+  storeId: number;
+  storeName: string;
+  color: string;
+  size: string;
+  stock: number;
+}
+
+export interface InventoryAlerts {
+  lowStockThreshold: number;
+  outOfStock: { total: number; items: StockAlertRow[] };
+  lowStock: { total: number; items: StockAlertRow[] };
+}
+
 export interface StatsCounters {
+  guestInstallsToday?: number;
   stores: {
     active: number;
     pending: number;

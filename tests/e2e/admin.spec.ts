@@ -85,6 +85,68 @@ test("dashboard shows one order and revenue card for the selected period",async(
   await expect.poll(async()=>(await revenueValue()).replace(/,/g,"")).toContain("700");
 });
 
+
+test("dashboard shows order performance and stock alerts, and filters bestsellers", async ({ page }) => {
+  const filters: string[][] = [];
+  const products = [
+    { productId: 11, productName: "QA Bestseller", storeId: 1, storeName: "QA Store", units: 7 },
+    { productId: 12, productName: "QA Second Product", storeId: 2, storeName: "Other Store", units: 4 },
+  ];
+  await page.route(`${api}/admin/stores?*`, (route) => route.fulfill({
+    json: { success: true, stores: [store], pagination },
+  }));
+  await page.route(`${api}/admin/categories?*`, (route) => route.fulfill({
+    json: { success: true, categories: [{ id: 4, name: "QA Category" }] },
+  }));
+  await page.route(`${api}/admin/stats?*`, (route) => {
+    const query = new URL(route.request().url()).searchParams;
+    const storeId = query.get("storeId") ?? "";
+    const categoryId = query.get("categoryId") ?? "";
+    filters.push([storeId, categoryId]);
+    return route.fulfill({ json: {
+      success: true,
+      stats: {
+        stores: { active: 1, pending: 0, rejected: 0, suspended: 0, total: 1 },
+        users: { merchants: 1, customers: 1, total: 2, newMerchants: 0, newCustomers: 0 },
+        orders: { total: 2, inPeriod: 2 },
+        revenue: { total: "100.00", inPeriod: "100.00" },
+        reports: { open: 0 },
+      },
+      orderPerformance: {
+        byStatus: { DELIVERED: 1, RETURNED: 1 },
+        stages: {
+          storeAcceptance: { averageMinutes: 10, samples: 1 },
+          pickup: { averageMinutes: 20, samples: 1 },
+          delivery: { averageMinutes: null, samples: 0 },
+        },
+      },
+      topProducts: storeId ? products.slice(0, 1) : products,
+      inventoryAlerts: {
+        lowStockThreshold: 3,
+        lowStock: { total: 0, items: [] },
+        outOfStock: { total: 1, items: [{
+          variantSizeId: 21, productId: 11, productName: "QA Out of Stock",
+          storeId: 1, storeName: "QA Store", color: "Black", size: "M", stock: 0,
+        }] },
+      },
+    } });
+  });
+
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "أداء طلبات المتاجر" })).toBeVisible();
+  await expect(page.getByText("10 دقيقة", { exact: true })).toBeVisible();
+  await expect(page.getByText("بيانات غير متاحة", { exact: true })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "QA Out of Stock" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "QA Second Product" })).toBeVisible();
+  await page.getByRole("button", { name: "تصفية المنتجات" }).click();
+  await page.getByRole("combobox", { name: "المتجر" }).selectOption("1");
+  await expect(page.getByRole("cell", { name: "QA Bestseller" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "QA Second Product" })).toHaveCount(0);
+  await page.getByRole("combobox", { name: "التصنيف" }).selectOption("4");
+  await expect.poll(() => filters.at(-1)).toEqual(["1", "4"]);
+  await expect(page.getByRole("cell", { name: "QA Bestseller" })).toBeVisible();
+});
+
 for(const path of ["/stores/abc","/users/0","/reports/-1","/support/abc"]) test(`invalid id renders not found ${path}`,async({page})=>{
   await page.goto(path);await expect(page.getByText("العنصر غير موجود",{exact:true})).toBeVisible();
   await expect(page.locator('[role="status"].animate-spin')).toHaveCount(0);

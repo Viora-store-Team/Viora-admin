@@ -1,5 +1,6 @@
 import type { ApiResponse, Pagination } from "@/lib/api";
 import { adminFetch, query } from "./client";
+import type { InventoryAlerts, OrderPerformance, TopProductRow } from "./types";
 import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminSize, CategorySizesPayload, SizePayload, SizeUpdatePayload, AdminReportApiDetail, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, TopRatedStore, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse, AdminPromoCode, PromoCreateBody, PromoOwner } from "./types";
 import { apiFetch } from "@/lib/api";
 import { ADMIN_LIMITS } from "./types";
@@ -46,13 +47,17 @@ export type StatsResponse = ApiResponse & {
   stats?: StatsCounters;
   topStores?: TopStoreRow[];
   charts?: AdminStatsCharts;
+  orderPerformance?: OrderPerformance;
+  topProducts?: TopProductRow[];
+  inventoryAlerts?: InventoryAlerts;
 };
 
 export function fetchStats(
   period: StatsPeriod,
   limit?: number,
+  productFilters?: { storeId?: number; categoryId?: number },
 ): Promise<StatsResponse> {
-  return adminFetch(`/admin/stats${query({ period, limit })}`);
+  return adminFetch(`/admin/stats${query({ period, limit, ...productFilters })}`);
 }
 
 // ─── المتاجر ✅ ────────────────────────────────────────────────
