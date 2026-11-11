@@ -9,7 +9,7 @@ export default defineConfig({
   reporter: [["list"], ["html", {open: "never"}]],
   use: {
     baseURL: "http://localhost:3100",
-    channel: process.env.CI ? undefined : "chrome",
+    channel: "chrome",
     serviceWorkers: "block",
     trace: "retain-on-failure",
   },
