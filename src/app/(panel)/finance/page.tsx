@@ -584,13 +584,7 @@ function accountSummary(account: Record<string, unknown>) {
   const method = typeof account.method === "string" ? account.method : "";
   const label = typeof account.methodLabel === "string" ? account.methodLabel : (PAYOUT_METHOD_LABELS[method] || "حساب");
   const accountNumber = typeof account.accountNumber === "string" ? account.accountNumber : "";
-  const detail = maskAccount(accountNumber);
-  return detail ? `${label} · ${detail}` : label;
-}
-
-function maskAccount(value: string) {
-  const visible = value.slice(-4);
-  return value.length > 4 ? `•••• ${visible}` : value;
+  return accountNumber ? `${label} · ${accountNumber}` : label;
 }
 
 /** مبلغ عرض (خصم/توصيل معفى) مع مين موّله — «—» لو صفر أو بلا كود. */
