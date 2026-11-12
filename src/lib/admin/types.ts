@@ -602,6 +602,8 @@ export interface AdminCategoryNode {
   sizes?: CategorySizeRef[];
   /** القائمة هي «مقاس واحد» وحده = بدون مقاس */
   noSizes?: boolean;
+  /** منتجات التصنيف بلون واحد بلا اختيار لون (الفرعي بس — الجذر دايمًا false) */
+  noColors?: boolean;
   parentId: number | null;
   createdAt: string;
   updatedAt: string;
@@ -627,6 +629,8 @@ export interface CategoryPayload {
   /** للفرعي: قائمة المقاسات (sizeIds) أو بدون مقاس (noSizes). ممنوع للجذر */
   sizeIds?: number[];
   noSizes?: boolean;
+  /** للفرعي فقط — على الجذر السيرفر بيرفضه (INVALID) */
+  noColors?: boolean;
   /** @deprecated قديم — السيرفر بيحوّله لقائمة. استعمل sizeIds */
   sizeGroup?: SizeGroup;
   sortOrder?: number;
@@ -640,7 +644,7 @@ export interface CategoryPayload {
  * (`setCategorySizes`) — `PATCH` ما بياخد `sizeIds`.
  */
 export type CategoryUpdatePayload = Partial<
-  Pick<CategoryPayload, "name" | "imageUrl" | "sortOrder" | "isActive">
+  Pick<CategoryPayload, "name" | "imageUrl" | "sortOrder" | "isActive" | "noColors">
 >;
 
 /** جسم `PATCH /admin/categories/reorder` */

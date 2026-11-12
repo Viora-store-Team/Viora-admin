@@ -836,6 +836,7 @@ export async function mockFetch(
             ? library.filter((s) => s.sizeGroup === "ONE_SIZE")
             : (body.sizeIds ?? []).flatMap((sid) => library.filter((s) => s.id === sid)),
           noSizes: Boolean(body.noSizes),
+          noColors: Boolean(body.noColors),
           sizeGroup: body.sizeGroup ?? null,
           parentId: parent.id,
         };
@@ -880,6 +881,7 @@ export async function mockFetch(
           node.sortOrder = body.sortOrder;
         }
         if (body.isActive !== undefined) node.isActive = body.isActive;
+        if (body.noColors !== undefined) node.noColors = body.noColors;
 
         node.updatedAt = today();
         return ok({ category: node });

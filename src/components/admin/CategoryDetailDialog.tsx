@@ -18,6 +18,7 @@ import {
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import CategorySizesSummary from "@/components/admin/CategorySizesSummary";
+import CategoryColorsBadge from "@/components/admin/CategoryColorsBadge";
 import type { AdminCategoryNode } from "@/lib/admin/types";
 import { formatNumber } from "@/lib/format";
 import { thumbUrl } from "@/lib/media-upload";
@@ -129,6 +130,15 @@ export default function CategoryDetailDialog({
                   )}
                 </div>
               </div>
+
+              {!isRoot && (
+                <div className="rounded-xl border border-border bg-field-bg p-3">
+                  <p className="text-[11px] font-semibold text-text-secondary">{t.admin.categories.colors}</p>
+                  <div className="mt-1">
+                    <CategoryColorsBadge node={node} showWhenHasColors />
+                  </div>
+                </div>
+              )}
 
               <div className="rounded-xl border border-border bg-field-bg p-3">
                 <p className="text-[11px] font-semibold text-text-secondary">ترتيب العرض</p>

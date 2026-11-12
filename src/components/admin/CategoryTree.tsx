@@ -21,6 +21,7 @@ import {
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import CategorySizesSummary from "@/components/admin/CategorySizesSummary";
+import CategoryColorsBadge from "@/components/admin/CategoryColorsBadge";
 import { cn } from "@/lib/cn";
 import type {
   AdminCategoryChild,
@@ -445,6 +446,7 @@ export default function CategoryTree({
                           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/50">
                             <div className="flex flex-wrap items-center gap-1.5">
                               <CategorySizesSummary node={child} />
+                              <CategoryColorsBadge node={child} />
                               <NodeCounters node={child} />
                             </div>
 

@@ -22,6 +22,7 @@ import {
   type CategorySizesPayload,
   type CategoryUpdatePayload,
 } from "@/lib/admin/types";
+import Toggle from "@/components/ui/Toggle";
 import { t } from "@/lib/strings";
 
 /**
@@ -72,6 +73,7 @@ export default function CategoryFormDialog({
   const [name, setName] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [sizes, setSizes] = useState<PickerValue>(EMPTY_PICKER);
+  const [noColors, setNoColors] = useState(false);
   const [sortOrder, setSortOrder] = useState("");
   const [touched, setTouched] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -93,6 +95,7 @@ export default function CategoryFormDialog({
     setName(mode?.kind === "edit" ? mode.node.name : "");
     setImageUrl(mode?.kind === "edit" ? (mode.node.imageUrl ?? "") : "");
     setSortOrder(mode?.kind === "edit" ? String(mode.node.sortOrder) : "");
+    setNoColors(mode?.kind === "edit" ? Boolean(mode.node.noColors) : false);
     setSizes(
       mode?.kind === "edit"
         ? { noSizes: Boolean(mode.node.noSizes), sizeIds: mode.node.noSizes ? [] : (mode.node.sizes ?? []).map((s) => s.id) }
@@ -168,7 +171,12 @@ export default function CategoryFormDialog({
     if (mode.kind === "edit") {
       onUpdate(
         mode.node.id,
-        { name: trimmed, imageUrl: imageUrl.trim() || null, sortOrder: sortValue },
+        {
+          name: trimmed,
+          imageUrl: imageUrl.trim() || null,
+          sortOrder: sortValue,
+          ...(needsSizes && noColors !== Boolean(mode.node.noColors) ? { noColors } : {}),
+        },
         needsSizes && sizesChanged(mode.node, sizes) ? toSizesPayload(sizes) : undefined,
       );
       return;
@@ -179,7 +187,7 @@ export default function CategoryFormDialog({
       imageUrl: imageUrl.trim() || null,
       sortOrder: sortValue,
       ...(mode.kind === "child"
-        ? { parentId: mode.parentId, ...toSizesPayload(sizes) }
+        ? { parentId: mode.parentId, ...toSizesPayload(sizes), noColors }
         : {}),
     });
   };
@@ -359,6 +367,28 @@ export default function CategoryFormDialog({
                 {t.admin.categories.sortOrderHint}
               </p>
             </div>
+
+            {needsSizes && (
+              <div>
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-field-bg/40 px-3 py-2.5">
+                  <div>
+                    <p className="text-xs font-bold text-heading">{t.admin.categories.noColors}</p>
+                    <p className="text-[11px] text-text-secondary">{t.admin.categories.noColorsHint}</p>
+                  </div>
+                  <Toggle
+                    checked={noColors}
+                    onChange={setNoColors}
+                    label={t.admin.categories.noColors}
+                    disabled={busy}
+                  />
+                </div>
+                {serverErrors?.noColors && (
+                  <p role="alert" className="mt-1.5 text-xs leading-relaxed text-danger">
+                    {serverErrors.noColors}
+                  </p>
+                )}
+              </div>
+            )}
 
             {needsSizes && (
               <CategorySizesPicker

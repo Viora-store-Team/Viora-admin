@@ -35,6 +35,7 @@ import type {
   CategoryUpdatePayload,
 } from "@/lib/admin/types";
 import { classifyStatus } from "@/lib/apiFailure";
+import { colorsInUseMessage } from "@/lib/admin/categoryColors";
 import type { ApiResponse } from "@/lib/api";
 import { formatNumber } from "@/lib/format";
 import { useFlash } from "@/lib/useFlash";
@@ -144,6 +145,14 @@ export default function AdminCategoriesPage() {
 
       setSaving(false);
       const failure = classifyStatus(res);
+
+      /* 409 CATEGORY_COLORS_IN_USE: بنبقي الحوار مفتوح والرسالة تحت المفتاح */
+      const inUse = colorsInUseMessage(res);
+      if (inUse) {
+        setFieldErrors({ noColors: inUse });
+        dispatchToast("error", inUse);
+        return;
+      }
 
       if (failure.kind === "validation" && failure.errors) {
         setFieldErrors(failure.errors);
