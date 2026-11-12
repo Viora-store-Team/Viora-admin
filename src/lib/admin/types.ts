@@ -998,3 +998,38 @@ export const ADMIN_LIMITS = {
   pageTitleMax: 120,
   pageBodyMax: 20000,
 } as const;
+
+// ─── إشعارات الزبائن (Broadcast) ──────────────────────────────
+
+export type BroadcastAudience = "ALL" | "ANDROID" | "IOS" | "EMAILS";
+
+/** سجل إرسال: `GET /admin/broadcasts` و`POST /admin/broadcasts`. */
+export interface Broadcast {
+  id: number;
+  title: string;
+  body: string;
+  link: string | null;
+  audience: BroadcastAudience;
+  emails: string[];
+  recipients: number;
+  devices: number;
+  delivered: number;
+  createdAt: string;
+}
+
+/** `POST /admin/broadcasts/preview` → `preview`. */
+export interface BroadcastPreview {
+  recipients: number;
+  devices: number;
+  notFoundEmails: string[];
+  target: { type: "product" | "store"; id: number; name: string } | null;
+}
+
+/** جسم المعاينة والإرسال — `emails` للجمهور EMAILS فقط، و`link` اختياري. */
+export interface BroadcastBody {
+  title: string;
+  body: string;
+  audience: BroadcastAudience;
+  emails?: string[];
+  link?: string;
+}

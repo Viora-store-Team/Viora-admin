@@ -1,7 +1,7 @@
 import type { ApiResponse, Pagination } from "@/lib/api";
 import { adminFetch, query } from "./client";
 import type { InventoryAlerts, OrderPerformance, TopProductRow } from "./types";
-import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminSize, CategorySizesPayload, SizePayload, SizeUpdatePayload, AdminReportApiDetail, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, TopRatedStore, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse, AdminPromoCode, PromoCreateBody, PromoOwner } from "./types";
+import type { AdminOrderListItem, AdminCategoryNode, AdminCategoryRoot, AdminSize, CategorySizesPayload, SizePayload, SizeUpdatePayload, AdminReportApiDetail, AdminReportDetail, AdminReportListItem, AdminSupportTicket, AdminStatsCharts, AdminStoreDetail, AdminStoreListItem, AdminUserDetail, AdminUserListItem, Banner, BannerPayload, BannerSlot, CategoryPayload, CategoryReorderPayload, CategoryUpdatePayload, AdminRole, HomeContent, ProductReview, AdminRatingItem, ReportStatus, ReportTarget, Review, ReviewsOverviewStats, StaticPage, StaticPageKey, StatsCounters, StatsPeriod, StatsPeriodInfo, StoreOrder, StoreOrderStatus, StoreRatingSummary, TopRatedStore, StoreStatus, SupportTicketStatus, TopStoreRow, AdminContentPageDetail, AdminContentPageListItem, AdminContentPagePayload, AdminOrderDetail, NotificationsListResponse, AdminPromoCode, PromoCreateBody, PromoOwner, Broadcast, BroadcastBody, BroadcastPreview } from "./types";
 import { apiFetch } from "@/lib/api";
 import { ADMIN_LIMITS } from "./types";
 
@@ -1070,4 +1070,23 @@ export function markAllNotificationsAsRead(): Promise<
   ApiResponse & { marked?: number; unread?: number }
 > {
   return adminFetch("/notifications/read-all", { method: "PATCH" });
+}
+
+// ─── إشعارات الزبائن ──────────────────────────────────────────
+
+export function fetchBroadcasts(page = 1): Promise<Paged<"broadcasts", Broadcast>> {
+  return adminFetch(`/admin/broadcasts${query({ page, limit: ADMIN_LIMITS.pageLimit })}`);
+}
+
+/** معاينة: كم زبون وجهاز، والإيميلات غير الموجودة، وهدف الرابط. */
+export function previewBroadcast(
+  body: BroadcastBody,
+): Promise<ApiResponse & { preview?: BroadcastPreview }> {
+  return adminFetch("/admin/broadcasts/preview", { method: "POST", ...json(body) });
+}
+
+export function sendBroadcast(
+  body: BroadcastBody,
+): Promise<ApiResponse & { broadcast?: Broadcast }> {
+  return adminFetch("/admin/broadcasts", { method: "POST", ...json(body) });
 }
