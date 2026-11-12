@@ -15,6 +15,7 @@ import Spinner from "@/components/ui/Spinner";
 import InfoGrid from "@/components/admin/InfoGrid";
 import StatusBadge from "@/components/admin/StatusBadge";
 import StoreOrdersSection from "@/components/admin/StoreOrdersSection";
+import StoreProductsSection from "@/components/admin/StoreProductsSection";
 import {
   activateStore,
   approveStore,
@@ -45,7 +46,7 @@ type Dialog =
   | "delete"
   | null;
 
-type ActiveSection = "info" | "orders";
+type ActiveSection = "info" | "orders" | "products";
 
 function AdminStoreDetailPageContent() {
   const router = useRouter();
@@ -641,8 +642,7 @@ function AdminStoreDetailPageContent() {
         </Card>
       </div>
 
-      {/* 🧭 Section Tabs (بيانات المتجر والمالك | طلبات المتجر) */}
-      <div className="flex items-center gap-2 border-b border-border pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
         <button
           type="button"
           onClick={() => setActiveSection("info")}
@@ -676,6 +676,19 @@ function AdminStoreDetailPageContent() {
           >
             {store.ordersCount}
           </span>
+        </button>
+        <button
+          type="button"
+          aria-pressed={activeSection === "products"}
+          onClick={() => setActiveSection("products")}
+          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-extrabold transition ${
+            activeSection === "products"
+              ? "bg-primary text-white shadow-xs"
+              : "bg-surface text-text-secondary hover:text-heading"
+          }`}
+        >
+          <Package className="size-4" aria-hidden="true" />
+          <span>المنتجات</span>
         </button>
       </div>
 
@@ -812,6 +825,8 @@ function AdminStoreDetailPageContent() {
       {activeSection === "orders" && (
         <StoreOrdersSection storeId={store.id} />
       )}
+
+      {activeSection === "products" && <StoreProductsSection key={store.id} storeId={store.id} />}
 
       {/* Dialogs */}
       <ConfirmDialog

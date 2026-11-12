@@ -242,6 +242,23 @@ export interface StoreOwner {
   createdAt: string;
 }
 
+export interface AdminCatalogProduct {
+  id: number;
+  name: string;
+  price: string;
+  compareAtPrice: string | null;
+  isActive: boolean;
+  archivedAt: string | null;
+  category: { id: number; name: string };
+  variants: {
+    id: number;
+    colorName: string | null;
+    colorHex: string;
+    images: { url: string }[];
+    sizes: { id: number; stock: number; size: { name: string } }[];
+  }[];
+}
+
 export interface AdminStoreListItem {
   governorate?: string | null;
   district?: string | null;

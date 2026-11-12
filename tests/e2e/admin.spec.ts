@@ -386,3 +386,49 @@ test("top rated stores renders backend Decimal ratings and store links", async (
   await expect(page.getByText("QA Unrated Store", {exact:true})).toHaveCount(0);
   await expect(page.getByText("لا توجد تقييمات للمتاجر حالياً", {exact:true})).toHaveCount(0);
 });
+
+test("store product tab shows images, stock, pagination and archived products", async ({ page }) => {
+  const requests: string[] = [];
+  await page.route(`${api}/admin/stores/1/products?*`, (route) => {
+    const query = new URL(route.request().url()).searchParams;
+    const archived = query.get("archived") === "true";
+    const currentPage = Number(query.get("page"));
+    requests.push(`${archived}:${currentPage}`);
+    return route.fulfill({ json: {
+      success: true,
+      products: [{
+        id: currentPage,
+        name: archived ? "Archived coat" : currentPage === 2 ? "Second coat" : "Navy coat",
+        price: "20",
+        compareAtPrice: "30",
+        isActive: false,
+        archivedAt: archived ? "2026-01-01" : null,
+        category: { id: 1, name: "Coats" },
+        variants: [{
+          id: 1,
+          colorName: "Navy",
+          colorHex: "#112233",
+          images: [{ url: "/icons/icon-192.png" }],
+          sizes: [{ id: 1, stock: 0, size: { name: "M" } }],
+        }],
+      }],
+      pagination: { page: currentPage, limit: 12, total: archived ? 1 : 13, totalPages: archived ? 1 : 2 },
+    } });
+  });
+
+  await page.goto("/stores/1");
+  const tab = page.getByRole("button", { name: "المنتجات", exact: true });
+  await expect(tab).toBeVisible();
+  expect(requests).toEqual([]);
+  await tab.click();
+  await expect(page.getByRole("heading", { name: "Navy coat" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Navy coat", exact: true })).toBeVisible();
+  await page.getByText("الصور والألوان والمقاسات", { exact: true }).click();
+  await expect(page.getByRole("img", { name: "Navy coat، Navy، صورة 1" })).toBeVisible();
+  await expect(page.getByText("M · 0 قطعة", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "التالي", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Second coat" })).toBeVisible();
+  await page.getByRole("checkbox", { name: "عرض المؤرشفة" }).check();
+  await expect(page.getByRole("heading", { name: "Archived coat" })).toBeVisible();
+  expect(requests).toEqual(["false:1", "false:2", "true:1"]);
+});
