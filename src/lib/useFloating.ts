@@ -31,7 +31,10 @@ export function useFloating(
           insetInlineStart: window.innerWidth - rect.right,
           top: placement === "bottom" ? rect.bottom + offset : undefined,
           bottom: placement === "top" ? window.innerHeight - rect.top + offset : undefined,
-          width: rect.width,
+          // القائمة بتكبر لتناسب النص (لحد 320px) بدل ما تقصّ الخيارات الطويلة
+          minWidth: rect.width,
+          maxWidth: Math.max(rect.width, 320),
+          width: "max-content",
           maxHeight: Math.min(maxHeight, available),
         },
       });

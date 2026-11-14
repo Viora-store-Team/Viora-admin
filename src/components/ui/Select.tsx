@@ -104,7 +104,7 @@ export default function Select({ label, ariaLabel, id, value, onChange, options,
       aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined} aria-required={required || undefined} disabled={disabled}
       onClick={() => open ? hide() : show()} onKeyDown={onKeyDown}
       className={cn("flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-xl border bg-surface px-4 text-start text-sm outline-none transition-colors duration-150 hover:border-border-strong focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50", error ? "border-danger bg-danger-soft/40 focus:border-danger focus:ring-danger/25" : "border-border", className)}>
-      <span data-select-label aria-hidden="true" className="min-w-0 flex-1 truncate text-text-tertiary">{selected?.label ?? placeholder ?? ""}</span>
+      <span data-select-label aria-hidden="true" className={cn("min-w-0 flex-1 truncate", value === "" ? "text-text-tertiary" : "text-heading")}>{selected?.label ?? placeholder ?? ""}</span>
       <ChevronDown className={cn("size-4 shrink-0 text-text-tertiary transition-transform duration-150", open && "rotate-180")} strokeWidth={1.75} aria-hidden="true" />
     </button>
     {error && <p id={`${id}-error`} className="text-xs font-medium text-danger">{error}</p>}

@@ -6,6 +6,13 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
+    },
+    {
+      "name": "viora-admin-mock",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "3200"],
+      "env": { "NEXT_PUBLIC_ADMIN_MOCK": "true" },
+      "port": 3200
     }
   ]
 }
