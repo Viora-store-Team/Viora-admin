@@ -7,10 +7,10 @@ import { TOAST_EVENT, type ToastKind } from "@/lib/toast";
 type ToastItem = { id: number; kind: ToastKind; message: string };
 
 const toastStyles: Record<ToastKind, { title: string; classes: string; icon: typeof Check; duration: number }> = {
-  success: { title: "تم بنجاح", classes: "border-success/25 bg-success-soft text-success", icon: Check, duration: 4200 },
-  error: { title: "تعذر إتمام العملية", classes: "border-danger/25 bg-danger-soft text-danger", icon: XCircle, duration: 7000 },
-  warning: { title: "تنبيه", classes: "border-warning/25 bg-warning-soft text-warning", icon: AlertTriangle, duration: 6000 },
-  info: { title: "معلومة", classes: "border-info/25 bg-info-soft text-info", icon: Info, duration: 5000 },
+  success: { title: "تم بنجاح", classes: "text-success", icon: Check, duration: 4200 },
+  error: { title: "تعذر إتمام العملية", classes: "text-danger", icon: XCircle, duration: 7000 },
+  warning: { title: "تنبيه", classes: "text-warning", icon: AlertTriangle, duration: 6000 },
+  info: { title: "معلومة", classes: "text-info", icon: Info, duration: 5000 },
 };
 
 export default function ToastViewport() {
@@ -50,22 +50,22 @@ export default function ToastViewport() {
             key={toast.id}
             role={toast.kind === "error" ? "alert" : "status"}
             aria-live={toast.kind === "error" ? "assertive" : "polite"}
-            className={`pointer-events-auto flex w-full items-start gap-3 rounded-2xl border px-4 py-3 shadow-lg backdrop-blur-sm animate-[viora-toast-in_180ms_ease-out] ${style.classes}`}
+            className={`pointer-events-auto flex w-full items-start gap-3 rounded-2xl border border-border bg-surface px-4 py-3 shadow-pop animate-[viora-toast-in_180ms_ease-out] ${style.classes}`}
           >
-            <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl bg-white/70" aria-hidden="true">
-              <Icon className="size-[18px]" />
+            <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-xl bg-surface-muted" aria-hidden="true">
+              <Icon className="size-[18px]" strokeWidth={1.75} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-extrabold leading-5">{style.title}</p>
-              <p className="mt-0.5 break-words text-sm leading-6">{toast.message}</p>
+              <p className="text-sm font-bold leading-5">{style.title}</p>
+              <p className="mt-0.5 break-words text-sm leading-6 text-heading">{toast.message}</p>
             </div>
             <button
               type="button"
               aria-label="إغلاق الإشعار"
               onClick={() => setToasts((current) => current.filter((item) => item.id !== toast.id))}
-              className="grid size-8 shrink-0 place-items-center rounded-lg transition hover:bg-black/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+              className="grid size-8 shrink-0 place-items-center rounded-xl transition-colors duration-150 hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              <X className="size-4" />
+              <X className="size-4" strokeWidth={1.75} aria-hidden="true" />
             </button>
           </div>
         );

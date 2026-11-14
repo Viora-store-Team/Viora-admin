@@ -1,7 +1,8 @@
 import React from "react";
 import { cn } from "@/lib/cn";
+import Spinner from "./Spinner";
 
-type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "danger-soft";
 type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -9,48 +10,29 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;
   fullWidth?: boolean;
   icon?: React.ReactNode;
+  loading?: boolean;
 }
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-primary text-on-primary shadow-sm hover:bg-primary-hover",
-  secondary:
-    "bg-field-bg text-field-label hover:bg-primary-soft hover:text-primary",
-  danger: "bg-danger-soft text-danger hover:bg-danger hover:text-on-primary",
+  primary: "bg-primary text-on-primary hover:bg-primary-hover",
+  secondary: "border border-border bg-surface text-heading hover:bg-surface-muted",
   ghost: "bg-transparent text-primary hover:bg-primary-soft",
+  danger: "bg-danger text-on-primary hover:bg-danger/90",
+  "danger-soft": "bg-danger-soft text-danger hover:bg-danger-soft/70",
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "rounded-lg px-3 py-1.5 text-xs",
-  md: "rounded-xl px-5 py-2.5 text-sm",
-  lg: "rounded-xl px-6 py-3 text-base",
+  sm: "h-9 px-3 text-xs",
+  md: "h-12 px-5 text-sm",
+  lg: "h-13 px-6 text-base",
 };
 
-export default function Button({
-  children,
-  variant = "primary",
-  size = "md",
-  fullWidth = false,
-  icon,
-  className,
-  // الافتراضي بالـ HTML هو submit — بنخليه button عشان ما يعمل إرسال غير مقصود جوّا أي <form>
-  type = "button",
-  ...props
-}: ButtonProps) {
+export default function Button({ children, variant = "primary", size = "md", fullWidth = false, icon, loading = false, className, type = "button", disabled, ...props }: ButtonProps) {
   return (
-    <button
-      type={type}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 font-bold transition-all duration-200",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
-        "active:scale-95 disabled:pointer-events-none disabled:opacity-50",
-        variants[variant],
-        sizes[size],
-        fullWidth && "w-full",
-        className,
-      )}
-      {...props}
-    >
-      {icon && <span className="shrink-0">{icon}</span>}
+    <button type={type} disabled={disabled || loading} aria-busy={loading || undefined}
+      className={cn("inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors duration-150 active:scale-[.98] disabled:opacity-50", variants[variant], sizes[size], fullWidth && "w-full", className)}
+      {...props}>
+      {loading ? <Spinner variant="inline" /> : icon && <span className="shrink-0">{icon}</span>}
       {children}
     </button>
   );

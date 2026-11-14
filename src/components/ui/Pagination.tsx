@@ -38,12 +38,12 @@ export default function Pagination({
         size="sm"
         disabled={disabled || page <= 1}
         onClick={() => onChange(page - 1)}
-        icon={<ChevronRight className="size-4" aria-hidden="true" />}
+        icon={<ChevronRight className="size-4" strokeWidth={1.75} aria-hidden="true" />}
       >
         {t.common.prev}
       </Button>
 
-      <span className="ltr-nums text-xs font-bold text-text-secondary">
+      <span className="ltr-nums text-xs font-medium text-text-secondary">
         {formatNumber(page)} / {formatNumber(totalPages)}
       </span>
 
@@ -52,7 +52,7 @@ export default function Pagination({
         size="sm"
         disabled={disabled || page >= totalPages}
         onClick={() => onChange(page + 1)}
-        icon={<ChevronLeft className="size-4" aria-hidden="true" />}
+        icon={<ChevronLeft className="size-4" strokeWidth={1.75} aria-hidden="true" />}
       >
         {t.common.next}
       </Button>

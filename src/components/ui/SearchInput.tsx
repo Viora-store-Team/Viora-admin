@@ -63,7 +63,7 @@ export default function SearchInput({
 
   return (
     <div className={cn("relative w-full sm:max-w-sm", className)}>
-      <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-placeholder">
+      <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-text-tertiary">
         <Search className="size-4" aria-hidden="true" />
       </span>
 
@@ -76,9 +76,9 @@ export default function SearchInput({
         aria-label={t.admin.common.search}
         onChange={(e) => setText(e.target.value)}
         className={cn(
-          "w-full rounded-xl border border-border bg-field-bg py-3 ps-10 pe-10 text-sm text-heading",
-          "placeholder:text-placeholder outline-none transition",
-          "focus:border-primary focus:ring-2 focus:ring-primary/20",
+          "h-12 w-full rounded-xl border border-border bg-surface ps-10 pe-10 text-sm text-heading",
+          "placeholder:text-text-tertiary outline-none transition-colors duration-150 hover:border-border-strong",
+          "focus:border-primary focus:ring-2 focus:ring-primary/15",
           "disabled:cursor-not-allowed disabled:opacity-50",
           // متصفحات WebKit بتحط زر مسح خاص فيها — منخفيه لأن عنا واحد
           "[&::-webkit-search-cancel-button]:appearance-none",
@@ -91,7 +91,7 @@ export default function SearchInput({
           onClick={clear}
           disabled={disabled}
           aria-label={t.admin.common.clearSearch}
-          className="absolute inset-y-0 end-3 flex items-center text-placeholder transition hover:text-heading"
+          className="absolute inset-y-0 end-3 flex items-center text-text-tertiary transition-colors duration-150 hover:text-heading"
         >
           <X className="size-4" aria-hidden="true" />
         </button>

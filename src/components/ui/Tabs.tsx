@@ -46,20 +46,20 @@ export default function Tabs({
             disabled={disabled}
             onClick={() => onChange(item.key)}
             className={cn(
-              "inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition",
+              "inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-medium transition-colors duration-150",
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
               "disabled:pointer-events-none disabled:opacity-50",
               isActive
-                ? "bg-primary text-on-primary shadow-sm"
-                : "bg-field-bg text-field-label hover:bg-primary-soft hover:text-primary",
+                ? "bg-primary text-on-primary"
+                : "bg-chip text-chip-text hover:bg-primary-subtle",
             )}
           >
             {item.label}
             {item.count !== undefined && (
               <span
                 className={cn(
-                  "ltr-nums rounded-full px-1.5 py-0.5 text-[11px] font-extrabold",
-                  isActive ? "bg-on-primary/20 text-on-primary" : "bg-black/5 text-text-secondary",
+                  "ltr-nums rounded-full px-1.5 py-0.5 text-[11px] font-medium",
+                  isActive ? "bg-on-primary/20 text-on-primary" : "bg-surface-muted text-chip-text",
                 )}
               >
                 {formatNumber(item.count)}

@@ -22,7 +22,7 @@ export default function EmptyState({
           <Icon className="size-8" aria-hidden="true" />
         </span>
       </div>
-      <p className="mt-2 text-base font-extrabold text-heading">{title}</p>
+      <p className="mt-2 text-base font-bold text-heading">{title}</p>
       {hint && <p className="max-w-md text-xs leading-relaxed text-text-secondary">{hint}</p>}
       {action && <div className="mt-3">{action}</div>}
     </div>

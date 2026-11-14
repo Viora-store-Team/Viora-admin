@@ -30,7 +30,7 @@ export default function ErrorBanner({
     <div
       role="alert"
       className={cn(
-        "flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm font-bold shadow-xs",
+        "flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm font-medium",
         tone === "danger"
           ? "border-danger/20 bg-danger-soft/80 text-danger"
           : "border-warning/20 bg-warning-soft/80 text-warning",
@@ -43,7 +43,7 @@ export default function ErrorBanner({
           variant="secondary"
           size="sm"
           onClick={onRetry}
-          icon={<RotateCcw className="size-4" aria-hidden="true" />}
+          icon={<RotateCcw className="size-4" strokeWidth={1.75} aria-hidden="true" />}
         >
           {t.common.retry}
         </Button>

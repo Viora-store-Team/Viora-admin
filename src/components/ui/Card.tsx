@@ -17,8 +17,8 @@ export function Card({
       className={cn(
         "rounded-2xl",
         variant === "surface"
-          ? "border border-border bg-surface shadow-sm"
-          : "bg-field-bg",
+          ? "border border-border bg-surface shadow-card"
+          : "border border-border bg-surface-muted",
         className,
       )}
     >
@@ -36,7 +36,7 @@ export function CardHeader({
 }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-4">
-      <h2 className="text-base font-extrabold text-heading">{title}</h2>
+      <h2 className="text-base font-bold text-heading">{title}</h2>
       {action}
     </div>
   );

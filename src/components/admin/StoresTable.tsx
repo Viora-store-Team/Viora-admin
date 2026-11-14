@@ -7,7 +7,7 @@ import {
   Store as StoreIcon,
   TriangleAlert,
 } from "lucide-react";
-import { TableShell, Td, Thead } from "@/components/ui/Table";
+import { TableShell, Td, Thead, Tr } from "@/components/ui/Table";
 import StatusBadge from "./StatusBadge";
 import { STORE_STATUS } from "@/lib/admin/status";
 import { storeLocation } from "@/lib/admin/storeLocation";
@@ -37,16 +37,15 @@ export default function StoresTable({
   return (
     <TableShell minWidth="min-w-[900px]">
       <Thead columns={COLUMNS} />
-      <tbody className="divide-y divide-border/60">
+      <tbody className="divide-y divide-border">
         {stores.map((store) => (
-          <tr
+          <Tr
             key={store.id}
-            className="cursor-pointer bg-surface transition hover:bg-primary-soft/40"
             onClick={() => onOpen(store.id)}
           >
             <Td>
               <div className="flex items-center gap-3">
-                <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-field-bg text-text-secondary">
+                <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-surface-muted text-text-secondary">
                   {store.logoUrl ? (
                     /* <img> عادي زي باقي المشروع — الروابط بتيجي من رفع
                        المستخدمين، وnext/image بده remotePatterns لكل نطاق */
@@ -57,7 +56,7 @@ export default function StoresTable({
                       className="size-9 object-cover"
                     />
                   ) : (
-                    <StoreIcon className="size-4" aria-hidden="true" />
+                    <StoreIcon className="size-4" strokeWidth={1.75} aria-hidden="true" />
                   )}
                 </span>
                 <span className="flex min-w-0 items-center gap-1.5">
@@ -67,6 +66,7 @@ export default function StoresTable({
                     <span className="flex items-center gap-1 truncate font-bold text-text-secondary">
                       <TriangleAlert
                         className="size-4 shrink-0 text-warning"
+                        strokeWidth={1.75}
                         aria-label={t.admin.stores.brokenTitle}
                       />
                       <span className="ltr-nums">
@@ -84,7 +84,7 @@ export default function StoresTable({
                       className="inline-flex items-center gap-1 rounded-md bg-warning/10 px-1.5 py-0.5 text-xs font-bold text-warning"
                       title={t.admin.stores.featured}
                     >
-                      <Star className="size-3 fill-warning text-warning" aria-hidden="true" />
+                      <Star className="size-3 fill-warning text-warning" strokeWidth={1.75} aria-hidden="true" />
                       <span>{t.admin.stores.featuredBadge}</span>
                     </span>
                   )}
@@ -93,6 +93,7 @@ export default function StoresTable({
                   {!store.isActive && (
                     <PowerOff
                       className="size-4 shrink-0 text-danger"
+                      strokeWidth={1.75}
                       aria-label={t.admin.stores.inactive}
                     />
                   )}
@@ -117,10 +118,11 @@ export default function StoresTable({
               {/* السهم لليسار بالـ RTL بيعني "للأمام" — الصف كله قابل للنقر */}
               <ChevronLeft
                 className="size-4 text-text-secondary"
+                strokeWidth={1.75}
                 aria-hidden="true"
               />
             </Td>
-          </tr>
+          </Tr>
         ))}
       </tbody>
     </TableShell>

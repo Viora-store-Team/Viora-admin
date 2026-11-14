@@ -21,6 +21,10 @@ export interface TrendSeries {
   color: string;
 }
 
+const chartColors = ["var(--color-chart-1)", "var(--color-chart-2)", "var(--color-chart-3)", "var(--color-chart-4)"];
+const sourceColors = ["var(--color-primary)", "var(--color-info)", "var(--color-success)", "var(--color-warning)"];
+const chartColor = (series: TrendSeries, index: number) => chartColors[sourceColors.indexOf(series.color)] ?? chartColors[index % chartColors.length];
+
 interface TrendChartProps {
   /**
    * كل عنصر لازم يحمل حقل التاريخ + كل مفاتيح السلاسل.
@@ -69,7 +73,7 @@ export default function TrendChart({
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
           <defs>
-            {series.map((s) => (
+            {series.map((s, index) => (
               <linearGradient
                 key={s.key}
                 id={`fill-${s.key}`}
@@ -78,8 +82,8 @@ export default function TrendChart({
                 x2="0"
                 y2="1"
               >
-                <stop offset="0%" stopColor={s.color} stopOpacity={0.28} />
-                <stop offset="100%" stopColor={s.color} stopOpacity={0.02} />
+                <stop offset="0%" stopColor={chartColor(s, index)} stopOpacity={0.28} />
+                <stop offset="100%" stopColor={chartColor(s, index)} stopOpacity={0.02} />
               </linearGradient>
             ))}
           </defs>
@@ -95,14 +99,14 @@ export default function TrendChart({
             dataKey={xKey}
             reversed
             tickFormatter={shortDate}
-            tick={{ fontSize: 11, fill: "var(--color-text-secondary)" }}
+            tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }}
             tickLine={false}
             axisLine={{ stroke: "var(--color-border)" }}
             minTickGap={24}
           />
           <YAxis
             orientation="right"
-            tick={{ fontSize: 11, fill: "var(--color-text-secondary)" }}
+            tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }}
             tickLine={false}
             axisLine={false}
             width={44}
@@ -114,12 +118,12 @@ export default function TrendChart({
             formatter={(value, name) => [formatNumber(Number(value)), String(name)]}
             contentStyle={{
               direction: "rtl",
-              borderRadius: 12,
+              borderRadius: 16,
               border: "1px solid var(--color-border)",
               background: "var(--color-surface)",
               fontSize: 12,
               fontWeight: 700,
-              boxShadow: "0 8px 24px rgb(0 0 0 / 0.08)",
+              boxShadow: "var(--shadow-pop)",
             }}
           />
           <Legend
@@ -136,13 +140,13 @@ export default function TrendChart({
             )}
           />
 
-          {series.map((s) => (
+          {series.map((s, index) => (
             <Area
               key={s.key}
               type="monotone"
               dataKey={s.key}
               name={s.label}
-              stroke={s.color}
+              stroke={chartColor(s, index)}
               strokeWidth={2}
               fill={`url(#fill-${s.key})`}
               dot={false}

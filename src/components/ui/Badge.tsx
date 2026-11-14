@@ -14,7 +14,7 @@ const tones: Record<BadgeTone, string> = {
   warning: "bg-warning-soft text-warning",
   info: "bg-info-soft text-info",
   danger: "bg-danger-soft text-danger",
-  neutral: "bg-field-bg text-text-secondary",
+  neutral: "bg-chip text-chip-text",
 };
 
 interface BadgeProps {
@@ -31,7 +31,7 @@ export default function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold",
+        "inline-flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium",
         tones[tone],
         className,
       )}

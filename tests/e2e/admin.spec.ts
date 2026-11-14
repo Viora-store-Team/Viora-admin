@@ -6,6 +6,31 @@ const pagination = {page:1,limit:15,total:0,totalPages:0};
 const store = {id:1,name:"QA Store",status:"PENDING",isActive:false,owner:{id:2,name:"QA Owner",email:"owner@example.test",phone:null,emailVerified:true,isActive:false,createdAt:"2026-01-01"},categories:[],productsCount:0,ordersCount:0,revenue:"0",createdAt:"2026-01-01",updatedAt:"2026-01-01",reviewedAt:null,reviewedBy:null,rejectionReason:null};
 const content = (key: string, html = `<p>QA ${key} content</p>`) => ({success:true,page:{key,title:`QA ${key}`,html,isPublished:false,updatedAt:null}});
 
+test("store rows open by click and keyboard but not via inner controls", async ({page}) => {
+  await page.route(`${api}/admin/stores?*`, route => route.fulfill({json:{success:true,stores:[store],pagination:{...pagination,total:1,totalPages:1}}}));
+  await page.goto("/stores");
+  const row = page.locator("tbody tr").first();
+  await expect(row).toHaveAttribute("tabindex", "0");
+  await expect(row).toHaveCSS("cursor", "pointer");
+  await row.focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/stores\/1$/);
+  await page.goBack();
+  const innerRow = page.locator("tbody tr").first();
+  await innerRow.locator("td").last().evaluate(cell => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "QA inner control";
+    cell.append(button);
+  });
+  await page.getByRole("button", {name:"QA inner control"}).click();
+  await expect(page).toHaveURL(/\/stores$/);
+  await page.getByRole("button", {name:"QA inner control"}).press("Enter");
+  await expect(page).toHaveURL(/\/stores$/);
+  await page.locator("tbody tr").first().click();
+  await expect(page).toHaveURL(/\/stores\/1$/);
+});
+
 test.beforeEach(async ({page}) => {
   await page.addInitScript(() => localStorage.setItem("token","qa-fixture"));
   await page.route(`${api}/**`, async route => {

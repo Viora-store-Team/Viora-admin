@@ -74,13 +74,14 @@ export default function Input({
   const resolvedDir = dir ?? (isLtr ? "ltr" : undefined);
 
   const fieldClass = cn(
-    "w-full rounded-xl border px-4 py-3 text-sm text-heading",
-    "placeholder:text-placeholder outline-none transition",
+    "w-full rounded-xl border bg-surface px-4 py-3 text-sm text-heading",
+    "placeholder:text-text-tertiary outline-none transition-colors duration-150 hover:border-border-strong read-only:bg-field-readonly",
     "disabled:cursor-not-allowed disabled:opacity-50",
     error
-      ? "border-danger bg-danger-soft/40 focus:border-danger focus:ring-2 focus:ring-danger/25"
-      : "border-border bg-field-bg focus:border-primary focus:ring-2 focus:ring-primary/20",
+      ? "border-danger focus:border-danger focus:ring-2 focus:ring-danger/25"
+      : "border-border focus:border-primary focus:ring-2 focus:ring-primary/15",
     isLtr && "text-start",
+    !multiline && "h-12",
     className,
   );
 
@@ -96,12 +97,12 @@ export default function Input({
   };
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       {label && (
         <label
           htmlFor={id}
           className={cn(
-            "text-sm font-semibold text-field-label",
+            "text-sm font-medium text-heading",
             required && "after:ms-1 after:text-danger after:content-['*']",
           )}
         >
@@ -126,13 +127,13 @@ export default function Input({
             type={resolvedType}
             dir="ltr"
             onChange={(e) => onChange(e.target.value)}
-            className={cn(fieldClass, "ps-11")}
+          className={cn(fieldClass, "ps-11")}
           />
           <button
             type="button"
             aria-label={visible ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
             onClick={() => setVisible((v) => !v)}
-            className="absolute inset-y-0 start-3 flex items-center text-placeholder transition hover:text-heading"
+            className="absolute inset-y-0 start-3 flex items-center text-text-tertiary transition-colors duration-150 hover:text-heading"
           >
             {visible ? (
               <EyeOff className="size-4" aria-hidden="true" />
@@ -153,7 +154,7 @@ export default function Input({
       )}
 
       {error && (
-        <p id={errorId} className="text-xs font-semibold text-danger">
+        <p id={errorId} className="text-xs font-medium text-danger">
           {error}
         </p>
       )}

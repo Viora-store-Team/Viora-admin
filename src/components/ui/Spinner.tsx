@@ -17,7 +17,7 @@ export default function Spinner({ variant = "page", className }: SpinnerProps) {
       role="status"
       aria-label={t.common.loading}
       className={cn(
-        "animate-spin rounded-full border-primary-soft border-t-primary",
+        "animate-spin rounded-full border-primary-soft border-t-primary motion-reduce:animate-none",
         variant === "page" ? "size-10 border-3" : "size-4 border-2",
         className,
       )}
