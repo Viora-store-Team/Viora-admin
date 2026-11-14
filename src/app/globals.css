@@ -9,41 +9,78 @@
   مع @custom-variant dark (&:where(.dark, .dark *)) عشان تشتغل utilities الـ dark:
 */
 @theme {
-  /* ── الهوية: ألوان فيورا الجديدة ─────────────────── */
-  --color-primary: #712631;
-  --color-primary-hover: #591d25;
-  --color-primary-soft: #f5e9eb;
-  --color-icon: #ffffff;
-
-  /* ── النصوص ─────────────────────────────────────── */
-  --color-heading: #5c3035;
-  --color-text-secondary: #8a7770;
-  --color-field-label: #8a7770;
-  --color-placeholder: #8a7770;
-
-  /* ── الأسطح (Light Airy Cream & Pure White) ──────── */
-  --color-app-bg: #fbf9f8;
-  --color-surface: #ffffff;
-  --color-field-bg: #f7f3f1;
-  --color-border: #ebe3df;
-
-  /* ── الحالات (مع Baby Blue المميز) ───────────────── */
-  --color-success: #16a34a;
-  --color-success-soft: #eaf7ee;
-  --color-warning: #b45309;
-  --color-warning-soft: #fef3c7;
-  --color-info: #0284c7;
-  --color-info-soft: #e0f2fe;
-  --color-danger: #dc2626;
-  --color-danger-soft: #fee2e2;
-
-  /* ── الخط ───────────────────────────────────────── */
-  --font-sans: var(--font-cairo), Arial, Helvetica, sans-serif;
+  --color-primary: #511016;
+  --color-primary-hover: #744045;
+  --color-primary-soft: #F5EBEB;
+  --color-primary-subtle: #DCCFD0;
+  --color-heading: #200609;
+  --color-text-secondary: #666666;
+  --color-text-tertiary: #999999;
+  --color-icon: #310A0D;
+  --color-on-primary: #FFFFFF;
+  --color-app-bg: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-muted: #FAF7F5;
+  --color-field-readonly: #F6F7F7;
+  --color-chip: #E8E4E2;
+  --color-chip-text: #534743;
+  --color-border: #E6E6E6;
+  --color-border-strong: #CCCCCC;
+  --color-track: #E0DBD9;
+  --color-success: #0E9A34;
+  --color-success-soft: #E3F4E8;
+  --color-warning: #E07A5F;
+  --color-warning-soft: #FDF2E9;
+  --color-info: #2B6CB0;
+  --color-info-soft: #EBF8FF;
+  --color-danger: #CC0000;
+  --color-danger-soft: #FFE5E5;
+  --color-star: #F59E0B;
+  --color-chart-1: var(--color-primary);
+  --color-chart-2: var(--color-info);
+  --color-chart-3: var(--color-success);
+  --color-chart-4: var(--color-warning);
+  /* legacy — removed in Task 6 */
+  --color-field-bg: #FAF7F5;
+  --color-field-label: #666666;
+  --color-placeholder: #999999;
+  --shadow-card: 0 1px 2px rgba(27, 41, 102, .06);
+  --shadow-pop: 0 8px 24px rgba(27, 41, 102, .10);
+  --font-sans: var(--font-thmanyah), system-ui, sans-serif;
 }
 
 body {
   background: var(--color-app-bg);
   color: var(--color-heading);
+}
+
+button:not(:disabled), [role=button], a[href], select, summary, label[for],
+[role=option], [role=tab], [role=menuitem] { cursor: pointer; }
+:disabled, [aria-disabled="true"] { cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes viora-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes viora-pop-in {
+  from { opacity: 0; transform: scale(.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes viora-drop-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes viora-toast-in {

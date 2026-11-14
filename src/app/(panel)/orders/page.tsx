@@ -164,9 +164,9 @@ function AdminOrdersPageContent() {
             <Button variant="ghost" size="sm" onClick={closeDetail} icon={<X className="size-4" aria-hidden="true" />}>{t.common.close}</Button>
           </div>
           {detailLoading ? <div className="p-12"><Spinner /></div> : detail && <div className="space-y-5 p-5 sm:p-8">
-            <section className="flex flex-col gap-4 rounded-2xl bg-primary p-5 text-icon sm:flex-row sm:items-center sm:justify-between">
-              <div><p className="text-xs font-bold text-icon/70">حالة الطلب</p><div className="mt-2"><StatusBadge meta={orderStatusMeta(detail.status)} /></div></div>
-              <div className="grid grid-cols-2 gap-5 text-start sm:text-end"><div><p className="text-xs font-bold text-icon/70">إجمالي المنتجات</p><p className="mt-1 ltr-nums text-lg font-black">{formatCurrency(Number(productsTotal))}</p></div><div><p className="text-xs font-bold text-icon/70">الإجمالي المطلوب</p><p className="mt-1 ltr-nums text-lg font-black">{formatCurrency(Number(detail.total))}</p></div></div>
+            <section className="flex flex-col gap-4 rounded-2xl bg-primary p-5 text-on-primary sm:flex-row sm:items-center sm:justify-between">
+              <div><p className="text-xs font-bold text-on-primary/70">حالة الطلب</p><div className="mt-2"><StatusBadge meta={orderStatusMeta(detail.status)} /></div></div>
+              <div className="grid grid-cols-2 gap-5 text-start sm:text-end"><div><p className="text-xs font-bold text-on-primary/70">إجمالي المنتجات</p><p className="mt-1 ltr-nums text-lg font-black">{formatCurrency(Number(productsTotal))}</p></div><div><p className="text-xs font-bold text-on-primary/70">الإجمالي المطلوب</p><p className="mt-1 ltr-nums text-lg font-black">{formatCurrency(Number(detail.total))}</p></div></div>
             </section>
             <OrderPromoLines detail={detail} />
 

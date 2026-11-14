@@ -404,7 +404,7 @@ export default function FinancePage() {
 
           <nav aria-label="أقسام المالية" className="grid grid-cols-1 gap-2 rounded-2xl border border-border bg-surface p-2 shadow-sm sm:grid-cols-3">
             {([ ["overview", "مستحقات المتاجر", Wallet], ["payouts", "سجل التحويلات", ArrowLeftRight], ["settlements", "مستحقات الطلبات", Receipt] ] as const).map(([view, label, Icon]) => (
-              <button key={view} type="button" aria-pressed={activeView === view} onClick={() => setActiveView(view)} className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-extrabold transition ${activeView === view ? "bg-primary text-icon shadow-sm" : "text-text-secondary hover:bg-field-bg hover:text-heading"}`}><Icon className="size-4" />{label}</button>
+              <button key={view} type="button" aria-pressed={activeView === view} onClick={() => setActiveView(view)} className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-extrabold transition ${activeView === view ? "bg-primary text-on-primary shadow-sm" : "text-text-secondary hover:bg-field-bg hover:text-heading"}`}><Icon className="size-4" />{label}</button>
             ))}
           </nav>
 

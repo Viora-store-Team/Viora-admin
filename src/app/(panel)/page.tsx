@@ -228,7 +228,7 @@ export default function AdminOverviewPage() {
                   className={cn(
                     "rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-200",
                     active
-                      ? "bg-primary text-icon shadow-sm scale-100"
+                      ? "bg-primary text-on-primary shadow-sm scale-100"
                       : "text-field-label hover:bg-surface hover:text-heading",
                   )}
                 >

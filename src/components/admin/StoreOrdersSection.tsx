@@ -400,22 +400,22 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
               </div>
             ) : (
               <div className="mt-6 flex flex-col gap-5 px-5 pb-5 sm:px-8 sm:pb-8">
-                <section className="flex flex-col gap-4 rounded-2xl bg-primary p-5 text-icon sm:flex-row sm:items-center sm:justify-between">
+                <section className="flex flex-col gap-4 rounded-2xl bg-primary p-5 text-on-primary sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-xs font-bold text-icon/70">حالة الطلب</p>
+                    <p className="text-xs font-bold text-on-primary/70">حالة الطلب</p>
                     <div className="mt-2">
                       <StatusBadge meta={orderStatusMeta(orderDetail?.status || selectedOrder.status)} />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-5 text-start sm:text-end">
                     <div>
-                      <p className="text-xs font-bold text-icon/70">إجمالي المنتجات</p>
+                      <p className="text-xs font-bold text-on-primary/70">إجمالي المنتجات</p>
                       <p className="mt-1 ltr-nums text-lg font-black">
                         {formatCurrency(Number(orderDetail?.money?.productsTotal ?? orderDetail?.subtotal ?? selectedOrder.total))}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-icon/70">الإجمالي المطلوب</p>
+                      <p className="text-xs font-bold text-on-primary/70">الإجمالي المطلوب</p>
                       <p className="mt-1 ltr-nums text-lg font-black">
                         {formatCurrency(Number(orderDetail?.total ?? selectedOrder.total))}
                       </p>

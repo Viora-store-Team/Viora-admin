@@ -66,10 +66,10 @@ export default function Sidebar({
         </span>
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <p className="truncate text-base font-extrabold text-icon">
+            <p className="truncate text-base font-extrabold text-on-primary">
               {t.app.name}
             </p>
-            <p className="truncate text-xs text-icon/60">{tagline}</p>
+            <p className="truncate text-xs text-on-primary/60">{tagline}</p>
           </div>
         )}
 
@@ -84,7 +84,7 @@ export default function Sidebar({
           aria-label={collapsed ? t.nav.expand : t.nav.collapse}
           aria-expanded={!collapsed}
           title={collapsed ? t.nav.expand : t.nav.collapse}
-          className="hidden size-9 shrink-0 place-items-center rounded-xl text-icon/70 transition hover:bg-icon/10 hover:text-icon lg:grid"
+          className="hidden size-9 shrink-0 place-items-center rounded-xl text-on-primary/70 transition hover:bg-on-primary/10 hover:text-on-primary lg:grid"
         >
           {collapsed ? (
             <PanelRightOpen className="size-5" aria-hidden="true" />
@@ -98,7 +98,7 @@ export default function Sidebar({
           type="button"
           onClick={onCloseMobile}
           aria-label={t.nav.closeMenu}
-          className="grid size-9 shrink-0 place-items-center rounded-xl text-icon/70 transition hover:bg-icon/10 hover:text-icon lg:hidden"
+          className="grid size-9 shrink-0 place-items-center rounded-xl text-on-primary/70 transition hover:bg-on-primary/10 hover:text-on-primary lg:hidden"
         >
           <X className="size-5" aria-hidden="true" />
         </button>
@@ -121,7 +121,7 @@ export default function Sidebar({
       </nav>
 
       {/* أسفل السايدبار */}
-      <div className="mt-auto border-t border-icon/10 p-3">
+      <div className="mt-auto border-t border-on-primary/10 p-3">
         <div className="relative">
           <button
             type="button"
@@ -130,20 +130,20 @@ export default function Sidebar({
             onClick={() => setProfileOpen((open) => !open)}
             title={collapsed ? userName : undefined}
             className={cn(
-              "flex w-full items-center gap-3 rounded-xl px-2 py-2 text-start transition-colors hover:bg-icon/10",
+              "flex w-full items-center gap-3 rounded-xl px-2 py-2 text-start transition-colors hover:bg-on-primary/10",
               collapsed && "justify-center px-0",
             )}
           >
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-icon/15 text-sm font-bold text-icon">
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-on-primary/15 text-sm font-bold text-on-primary">
               {userInitial}
             </span>
             {!collapsed && (
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold text-icon">{userName}</span>
-                <span className="block truncate text-xs text-icon/60">{userRole}</span>
+                <span className="block truncate text-sm font-bold text-on-primary">{userName}</span>
+                <span className="block truncate text-xs text-on-primary/60">{userRole}</span>
               </span>
             )}
-            {!collapsed && <ChevronDown className={cn("size-4 shrink-0 text-icon/70 transition-transform", profileOpen && "rotate-180")} aria-hidden="true" />}
+            {!collapsed && <ChevronDown className={cn("size-4 shrink-0 text-on-primary/70 transition-transform", profileOpen && "rotate-180")} aria-hidden="true" />}
           </button>
           {profileOpen && (
             <div role="menu" className={cn("absolute bottom-full z-20 mb-2 min-w-48 overflow-hidden rounded-xl border border-border bg-surface p-1 shadow-xl", collapsed ? "start-full ms-2" : "inset-x-0")}>

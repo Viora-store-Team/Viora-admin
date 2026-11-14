@@ -50,7 +50,7 @@ export default function Tabs({
               "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
               "disabled:pointer-events-none disabled:opacity-50",
               isActive
-                ? "bg-primary text-icon shadow-sm"
+                ? "bg-primary text-on-primary shadow-sm"
                 : "bg-field-bg text-field-label hover:bg-primary-soft hover:text-primary",
             )}
           >
@@ -59,7 +59,7 @@ export default function Tabs({
               <span
                 className={cn(
                   "ltr-nums rounded-full px-1.5 py-0.5 text-[11px] font-extrabold",
-                  isActive ? "bg-icon/20 text-icon" : "bg-black/5 text-text-secondary",
+                  isActive ? "bg-on-primary/20 text-on-primary" : "bg-black/5 text-text-secondary",
                 )}
               >
                 {formatNumber(item.count)}

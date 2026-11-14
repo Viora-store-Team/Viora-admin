@@ -12,7 +12,7 @@ export default function NotFound() {
         <p className="text-sm text-text-secondary">{t.errors.notFoundBody}</p>
         <Link
           href="/dashboard"
-          className="mt-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-icon transition hover:bg-primary-hover"
+          className="mt-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-on-primary transition hover:bg-primary-hover"
         >
           {t.errors.backHome}
         </Link>
