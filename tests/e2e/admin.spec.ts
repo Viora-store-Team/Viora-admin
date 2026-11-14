@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { pickOption } from "./helpers/select";
 
 const api = "https://api.vioragaza.com/api";
 const user = {id:1, name:"QA Admin", email:"qa@example.test", role:"ADMIN", isActive:true};
@@ -164,10 +165,10 @@ test("dashboard shows order performance and stock alerts, and filters bestseller
   await expect(page.getByRole("cell", { name: "QA Out of Stock" })).toBeVisible();
   await expect(page.getByRole("cell", { name: "QA Second Product" })).toBeVisible();
   await page.getByRole("button", { name: "تصفية المنتجات" }).click();
-  await page.getByRole("combobox", { name: "المتجر" }).selectOption("1");
+  await pickOption(page, page.getByRole("combobox", { name: "المتجر" }), "1");
   await expect(page.getByRole("cell", { name: "QA Bestseller" })).toBeVisible();
   await expect(page.getByRole("cell", { name: "QA Second Product" })).toHaveCount(0);
-  await page.getByRole("combobox", { name: "التصنيف" }).selectOption("4");
+  await pickOption(page, page.getByRole("combobox", { name: "التصنيف" }), "4");
   await expect.poll(() => filters.at(-1)).toEqual(["1", "4"]);
   await expect(page.getByRole("cell", { name: "QA Bestseller" })).toBeVisible();
 });
@@ -299,7 +300,7 @@ test("documented order filters reach the server and reset pagination",async({pag
   const requests: URL[]=[];
   await page.route(`${api}/admin/orders?*`,r=>{requests.push(new URL(r.request().url()));return r.fulfill({json:{success:true,orders:[],pagination}});});
   await page.goto("/orders");
-  await page.getByLabel("حالة الطلب",{exact:true}).selectOption("DELIVERED");
+  await pickOption(page, page.getByLabel("حالة الطلب",{exact:true}), "DELIVERED");
   await expect.poll(()=>requests.at(-1)?.searchParams.get("status")).toBe("DELIVERED");
   await page.getByLabel("معرّف المتجر",{exact:true}).fill("12");
   await page.getByRole("button",{name:"تطبيق فلتر المتجر",exact:true}).click();

@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useDialog } from "@/lib/useDialog";
 import { t } from "@/lib/strings";
 import { ADMIN_LIMITS } from "@/lib/admin/types";
 import Button from "./Button";
 import Input from "./Input";
+import Modal from "./Modal";
 
 interface ReasonDialogProps {
   open: boolean;
@@ -60,10 +60,6 @@ export default function ReasonDialog({
     }
   }
 
-  const dialogRef = useDialog(open, onCancel, loading);
-
-  if (!open) return null;
-
   const trimmed = reason.trim();
   const tooShort = trimmed.length < ADMIN_LIMITS.reasonMin;
   const tooLong = trimmed.length > ADMIN_LIMITS.reasonMax;
@@ -86,8 +82,6 @@ export default function ReasonDialog({
           ? t.admin.common.reasonTooLong
           : undefined;
 
-  const titleId = "reason-dialog-title";
-
   const confirm = () => {
     setTouched(true);
     if (invalid) return;
@@ -95,30 +89,14 @@ export default function ReasonDialog({
   };
 
   return (
-    <>
-      <button
-        type="button"
-        aria-label={t.common.close}
-        onClick={onCancel}
-        disabled={loading}
-        className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[1px]"
-      />
-
-      <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center p-4">
-        <div
-          ref={dialogRef}
-          tabIndex={-1}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          className="pointer-events-auto w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl"
-        >
-          <h2 id={titleId} className="text-base font-extrabold text-heading">
-            {title}
-          </h2>
-
-          <div className="mt-2 text-sm text-text-secondary">{body}</div>
-
+    <Modal open={open} onClose={() => { if (!loading) onCancel(); }} title={title} labelledById="reason-dialog-title" closeOnBackdrop={!loading}
+      footer={<>
+        <Button variant="secondary" onClick={onCancel} disabled={loading}>{cancelLabel}</Button>
+        <Button variant={tone} onClick={confirm} disabled={loading || invalid}>
+          {loading ? t.common.saving : confirmLabel}
+        </Button>
+      </>}>
+          <div className="text-sm text-text-secondary">{body}</div>
           <div className="mt-5">
             <Input
               id="reason-dialog-input"
@@ -137,21 +115,6 @@ export default function ReasonDialog({
             </p>
           </div>
 
-          <div className="mt-6 flex flex-wrap justify-end gap-2">
-            <Button variant="secondary" onClick={onCancel} disabled={loading}>
-              {cancelLabel}
-            </Button>
-            <Button
-              variant={tone}
-              onClick={confirm}
-              // الإلزام بنيوي: بلا سبب صالح ما في طريقة توصل للسيرفر
-              disabled={loading || invalid}
-            >
-              {loading ? t.common.saving : confirmLabel}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </>
+    </Modal>
   );
 }

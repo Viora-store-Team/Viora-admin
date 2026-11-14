@@ -12,6 +12,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Pagination from "@/components/ui/Pagination";
 import Spinner from "@/components/ui/Spinner";
+import Select from "@/components/ui/Select";
 import { TableShell, Td, Thead } from "@/components/ui/Table";
 import InfoGrid from "@/components/admin/InfoGrid";
 import OrderPromoLines from "@/components/admin/OrderPromoLines";
@@ -116,14 +117,9 @@ function AdminOrdersPageContent() {
         if (nextStore !== undefined && (!Number.isSafeInteger(nextStore) || nextStore <= 0)) return;
         if (nextStore !== storeId) { setStoreId(nextStore); setPage(1); setLoading(true); }
       }}>
-        <label className="flex flex-col gap-1 text-sm font-bold">حالة الطلب
-          <select aria-label="حالة الطلب" className="rounded-xl border border-border bg-surface p-2" value={status} onChange={event => {
-            setStatus(event.target.value as StoreOrderStatus | ""); setPage(1); setLoading(true);
-          }}>
-            <option value="">كل الحالات</option>
-            {Object.entries(STORE_ORDER_STATUS).map(([key, meta]) => <option key={key} value={key}>{meta.label}</option>)}
-          </select>
-        </label>
+        <Select id="order-status" label="حالة الطلب" value={status} placeholder="كل الحالات"
+          options={Object.entries(STORE_ORDER_STATUS).map(([key, meta]) => ({ value: key, label: meta.label }))}
+          onChange={value => { setStatus(value as StoreOrderStatus | ""); setPage(1); setLoading(true); }} />
         <label className="flex flex-col gap-1 text-sm font-bold">معرّف المتجر
           <input aria-label="معرّف المتجر" type="number" min="1" step="1" value={storeInput} onChange={event => setStoreInput(event.target.value)} placeholder="كل المتاجر" className="rounded-xl border border-border bg-surface p-2" />
         </label>
