@@ -150,7 +150,7 @@ function AdminOrdersPageContent() {
         </div>
       )}
 
-      <Modal open={detailLoading || detail !== null} onClose={closeDetail} title={t.admin.orders.detailsTitle} size="lg"
+      <Modal open={detailLoading || detail !== null} onClose={closeDetail} title={t.admin.orders.detailsTitle} size="xl"
         description={detail && <p className="mt-1 ltr-nums text-sm font-medium text-text-secondary">{detail.orderNumber}</p>}>
           {detailLoading ? <div className="p-12"><Spinner /></div> : detail && <div className="space-y-5">
             <section className="flex flex-col gap-4 rounded-2xl bg-primary p-5 text-on-primary sm:flex-row sm:items-center sm:justify-between">

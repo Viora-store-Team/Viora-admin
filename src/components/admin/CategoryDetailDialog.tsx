@@ -1,5 +1,4 @@
 "use client";
-import { useDialog } from "@/lib/useDialog";
 
 import {
   Calendar,
@@ -13,10 +12,9 @@ import {
   Plus,
   Store,
   Trash2,
-  X,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
-import IconButton from "@/components/ui/IconButton";
+import Modal from "@/components/ui/Modal";
 import Badge from "@/components/ui/Badge";
 import CategorySizesSummary from "@/components/admin/CategorySizesSummary";
 import CategoryColorsBadge from "@/components/admin/CategoryColorsBadge";
@@ -44,32 +42,12 @@ export default function CategoryDetailDialog({
   onDelete,
   onAddChild,
 }: CategoryDetailDialogProps) {
-  const dialogRef = useDialog(!!node, onClose, false);
-
   if (!node) return null;
 
   const isRoot = node.parentId === null;
 
   return (
-    <>
-      <div
-        className="fixed inset-0 z-40 bg-heading/40 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      <div
-        ref={dialogRef}
-        tabIndex={-1}
-        aria-label="التصنيف"
-        role="dialog"
-        aria-modal="true"
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
-      >
-        <div
-          className="w-full max-w-lg rounded-2xl border border-border bg-surface p-6 shadow-xl my-8"
-          onClick={(e) => e.stopPropagation()}
-        >
+    <Modal open onClose={onClose} title={node.name} ariaLabel="التصنيف" size="md">
           {/* رأس النافذة */}
           <div className="flex items-start justify-between border-b border-border pb-4">
             <div className="flex items-center gap-3.5">
@@ -89,7 +67,6 @@ export default function CategoryDetailDialog({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-bold text-heading">{node.name}</h2>
                   <Badge tone={node.isActive ? "success" : "warning"}>
                     {node.isActive ? "نشط" : "مخفي"}
                   </Badge>
@@ -100,8 +77,6 @@ export default function CategoryDetailDialog({
               </div>
             </div>
 
-            <IconButton label="إغلاق" icon={<X className="size-4" aria-hidden="true" />}
-              variant="ghost" size="sm" onClick={onClose} />
           </div>
 
           {/* محتوى التفاصيل */}
@@ -253,8 +228,6 @@ export default function CategoryDetailDialog({
               </Button>
             </div>
           </div>
-        </div>
-      </div>
-    </>
+    </Modal>
   );
 }

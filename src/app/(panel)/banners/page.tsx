@@ -112,7 +112,7 @@ function BannerCard({ slot, banner, ready, onSaved }: {
           )}
         </div>
         {file && <p className="break-all text-xs text-text-secondary">صورة جديدة: {file.name} — لم تُحفظ بعد</p>}
-        <input ref={input} type="file" accept={UPLOAD_LIMITS.types.join(",")} className="hidden"
+        <input ref={input} type="file" accept={UPLOAD_LIMITS.types.join(",")} className="hidden text-sm text-text-secondary file:me-3 file:h-10 file:cursor-pointer file:rounded-xl file:border-0 file:bg-primary-soft file:px-4 file:text-sm file:font-medium file:text-primary hover:file:bg-primary-subtle"
           aria-label={`اختيار صورة البنر ${slot}`} disabled={!ready || busy}
           onChange={(event) => { chooseFile(event.target.files?.[0]); event.target.value = ""; }} />
         <div className="flex flex-wrap gap-2">

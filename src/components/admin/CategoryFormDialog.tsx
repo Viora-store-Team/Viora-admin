@@ -242,7 +242,7 @@ export default function CategoryFormDialog({
                 accept="image/jpeg,image/png,image/webp"
                 disabled={busy}
                 onChange={(e) => pickFile(e.target.files)}
-                className="hidden"
+                className="hidden text-sm text-text-secondary file:me-3 file:h-10 file:cursor-pointer file:rounded-xl file:border-0 file:bg-primary-soft file:px-4 file:text-sm file:font-medium file:text-primary hover:file:bg-primary-subtle"
               />
 
               {imageUrl ? (

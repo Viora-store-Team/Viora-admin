@@ -463,7 +463,7 @@ export default function FinancePage() {
           </Card>
 
           <Card className={activeView === "payouts" ? "overflow-hidden" : "hidden"}>
-            <CardHeader title="سجل التحويلات" action={<select aria-label="فلتر حالة التحويل" value={payoutStatus} onChange={(event) => { setPayoutPage(1); setPayoutStatus(event.target.value as typeof payoutStatus); }} className="rounded-xl border border-border bg-app-bg px-3 py-2 text-sm font-bold text-heading outline-none focus:border-primary"><option value="all">كل التحويلات</option><option value="current">سارية</option><option value="voided">ملغاة</option></select>} />
+            <CardHeader title="سجل التحويلات" action={<Select id="payout-status-filter" ariaLabel="فلتر حالة التحويل" value={payoutStatus} onChange={(value) => { setPayoutPage(1); setPayoutStatus(value as typeof payoutStatus); }} options={[{ value: "all", label: "كل التحويلات" }, { value: "current", label: "سارية" }, { value: "voided", label: "ملغاة" }]} />} />
             <CardBody>
               {sectionErrors.payouts && <ErrorBanner message={`تعذر تحميل سجل الدفعات: ${sectionErrors.payouts}`} onRetry={() => setRefreshKey((key) => key + 1)} />}
               {payouts.length === 0 && !sectionErrors.payouts ? <p className="py-6 text-center text-sm text-text-secondary">لا توجد دفعات مطابقة.</p> : payouts.length > 0 ? (
@@ -488,7 +488,7 @@ export default function FinancePage() {
           </Card>
 
           <Card className={activeView === "settlements" ? "overflow-hidden" : "hidden"}>
-            <CardHeader title="مستحقات كل طلب" action={<select aria-label="فلتر حالة تحويل الطلب" value={paidFilter} onChange={(event) => { setSettlementPage(1); setPaidFilter(event.target.value as PaidFilter); }} className="rounded-xl border border-border bg-app-bg px-3 py-2 text-sm font-bold text-heading outline-none focus:border-primary"><option value="all">كل الطلبات</option><option value="paid">تم تحويلها</option><option value="unpaid">بانتظار التحويل</option></select>} />
+            <CardHeader title="مستحقات كل طلب" action={<Select id="settlement-paid-filter" ariaLabel="فلتر حالة تحويل الطلب" value={paidFilter} onChange={(value) => { setSettlementPage(1); setPaidFilter(value as PaidFilter); }} options={[{ value: "all", label: "كل الطلبات" }, { value: "paid", label: "تم تحويلها" }, { value: "unpaid", label: "بانتظار التحويل" }]} />} />
             <CardBody>
               {sectionErrors.settlements && <ErrorBanner message={`تعذر تحميل التسويات: ${sectionErrors.settlements}`} onRetry={() => setRefreshKey((key) => key + 1)} />}
               {settlements.length === 0 && !sectionErrors.settlements ? <p className="py-6 text-center text-sm text-text-secondary">لا توجد تسويات مطابقة.</p> : settlements.length > 0 ? (

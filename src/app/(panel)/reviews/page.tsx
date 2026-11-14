@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertCircle,
-  ArrowUpDown,
   Check,
   ChevronLeft,
   Eye,
@@ -23,6 +22,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import Select from "@/components/ui/Select";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
 import ErrorBanner from "@/components/ui/ErrorBanner";
@@ -417,22 +417,13 @@ export default function AdminReviewsPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="relative">
-                <select
-                  aria-label="ترتيب التقييمات"
-                  value={sortOption}
-                  onChange={(e) => {
-                    setSortOption(e.target.value as "newest" | "highest" | "lowest");
-                    setPage(1);
-                  }}
-                  className="h-12 appearance-none rounded-xl border border-border bg-surface ps-4 pe-8 text-xs font-bold text-heading transition-colors duration-150 hover:border-border-strong focus:border-primary focus:outline-hidden"
-                >
-                  <option value="newest">{t.admin.orders.sortNewest}</option>
-                  <option value="highest">الأعلى تقييماً</option>
-                  <option value="lowest">الأقل تقييماً</option>
-                </select>
-                <ArrowUpDown className="pointer-events-none absolute end-3 top-1/2 size-3.5 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
-              </div>
+              <Select id="reviews-sort" ariaLabel="ترتيب التقييمات" value={sortOption}
+                onChange={(value) => { setSortOption(value as "newest" | "highest" | "lowest"); setPage(1); }}
+                options={[
+                  { value: "newest", label: t.admin.orders.sortNewest },
+                  { value: "highest", label: "الأعلى تقييماً" },
+                  { value: "lowest", label: "الأقل تقييماً" },
+                ]} />
             </div>
           </div>
 

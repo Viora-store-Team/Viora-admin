@@ -9,6 +9,7 @@ import { useFloating } from "@/lib/useFloating";
 export interface SelectOption { value: string; label: string }
 interface SelectProps {
   label?: string;
+  ariaLabel?: string;
   id: string;
   value: string;
   onChange: (value: string) => void;
@@ -20,7 +21,7 @@ interface SelectProps {
   className?: string;
 }
 
-export default function Select({ label, id, value, onChange, options, placeholder, error, required = false, disabled = false, className }: SelectProps) {
+export default function Select({ label, ariaLabel, id, value, onChange, options, placeholder, error, required = false, disabled = false, className }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -99,7 +100,7 @@ export default function Select({ label, id, value, onChange, options, placeholde
     {label && <label id={`${id}-label`} htmlFor={id} className="text-sm font-medium text-heading">{label}{required && <span className="ms-1 text-danger" aria-hidden="true">*</span>}</label>}
     <input type="hidden" name={id} value={value} />
     <button ref={triggerRef} type="button" role="combobox" id={id} aria-haspopup="listbox" aria-expanded={open} aria-controls={listboxId}
-      aria-labelledby={label ? `${id}-label ${id}` : undefined} aria-label={label ? undefined : id} aria-activedescendant={open && items[active] ? `${id}-option-${active}` : undefined}
+      aria-labelledby={label ? `${id}-label` : undefined} aria-label={label ? undefined : ariaLabel} aria-activedescendant={open && items[active] ? `${id}-option-${active}` : undefined}
       aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined} aria-required={required || undefined} disabled={disabled}
       onClick={() => open ? hide() : show()} onKeyDown={onKeyDown}
       className={cn("flex h-12 w-full min-w-0 items-center justify-between gap-3 rounded-xl border bg-surface px-4 text-start text-sm outline-none transition-colors duration-150 hover:border-border-strong focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50", error ? "border-danger bg-danger-soft/40 focus:border-danger focus:ring-danger/25" : "border-border", className)}>

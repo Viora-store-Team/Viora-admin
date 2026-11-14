@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   description: "لوحة مالك منصة فيورا — إدارة المتاجر والمستخدمين والمحتوى.",
 };
 
-export const viewport: Viewport = { themeColor: "#511016" };
+export const viewport: Viewport = { themeColor: "#511016" }; // tokens-allow
 
 /*
   ما في StoreProvider هون — سياق المتجر خاص بلوحة التاجر (بيعبّي نموذج

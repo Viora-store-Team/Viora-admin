@@ -10,8 +10,9 @@ interface ModalProps {
   open: boolean;
   onClose: () => void;
   title: string;
+  ariaLabel?: string;
   description?: ReactNode;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   footer?: ReactNode;
   children?: ReactNode;
   closeOnBackdrop?: boolean;
@@ -20,7 +21,7 @@ interface ModalProps {
 
 const focusableSelector = 'button:not(:disabled), a[href], input:not(:disabled), textarea:not(:disabled), select:not(:disabled), [tabindex="0"]';
 
-export default function Modal({ open, onClose, title, description, size = "md", footer, children, closeOnBackdrop = true, labelledById }: ModalProps) {
+export default function Modal({ open, onClose, title, ariaLabel, description, size = "md", footer, children, closeOnBackdrop = true, labelledById }: ModalProps) {
   const generatedId = useId();
   const titleId = labelledById ?? generatedId;
   const panelRef = useRef<HTMLDivElement>(null);
@@ -68,8 +69,8 @@ export default function Modal({ open, onClose, title, description, size = "md", 
   return createPortal(
     <div className="fixed inset-0 z-50 grid place-items-center p-4">
       <div className="absolute inset-0 bg-heading/40 animate-[viora-fade-in_200ms_ease-out_both]" aria-hidden="true" onClick={closeOnBackdrop ? onClose : undefined} />
-      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId}
-        className={cn("relative flex max-h-[calc(100dvh-2rem)] w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-pop animate-[viora-pop-in_200ms_ease-out_both]", size === "sm" ? "max-w-sm" : size === "lg" ? "max-w-2xl" : "max-w-lg")}
+      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={ariaLabel ? undefined : titleId} aria-label={ariaLabel}
+        className={cn("relative flex max-h-[calc(100dvh-2rem)] w-full flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-pop animate-[viora-pop-in_200ms_ease-out_both]", size === "sm" ? "max-w-sm" : size === "lg" ? "max-w-2xl" : size === "xl" ? "max-w-4xl" : "max-w-lg")}
       >
         <div className="flex shrink-0 items-start justify-between gap-4 px-6 pt-6 pb-4">
           <div><h2 id={titleId} className="text-lg font-bold text-heading">{title}</h2>{description && <div className="mt-2 text-sm text-text-secondary">{description}</div>}</div>

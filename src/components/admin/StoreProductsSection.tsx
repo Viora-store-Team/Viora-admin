@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ImageOff, Package } from "lucide-react";
 import { useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
+import Checkbox from "@/components/ui/Checkbox";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import ErrorBanner from "@/components/ui/ErrorBanner";
@@ -128,14 +129,11 @@ export default function StoreProductsSection({ storeId }: { storeId: number }) {
   return (
     <Card>
       <CardHeader title="منتجات المتجر" action={
-        <label className="flex items-center gap-2 text-sm text-heading">
-          <input type="checkbox" checked={archived} onChange={(event) => {
+        <Checkbox label="عرض المؤرشفة" checked={archived} onChange={(checked) => {
             setLoading(true);
-            setArchived(event.target.checked);
+            setArchived(checked);
             setPage(1);
           }} />
-          عرض المؤرشفة
-        </label>
       } />
       <CardBody>
         {loading ? <Spinner /> : error ? (

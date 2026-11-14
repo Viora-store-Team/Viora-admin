@@ -192,7 +192,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
             onChange={value => { setQueryText(value); setPage(1); }}
             placeholder={t.admin.orders.searchPlaceholder} />
         </div>
-        <Select id="store-orders-sort" value={sortOption}
+        <Select id="store-orders-sort" ariaLabel="ترتيب الطلبات" value={sortOption}
           onChange={value => { setSortOption(value as "newest" | "oldest" | "highest"); setPage(1); }}
           options={[
             { value: "newest", label: t.admin.orders.sortNewest },
@@ -304,7 +304,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
       )}
 
       <Modal open={selectedOrder !== null} onClose={() => { setSelectedOrder(null); setOrderDetail(null); }}
-        title={t.admin.orders.detailsTitle} size="lg"
+        title={t.admin.orders.detailsTitle} size="xl"
         description={selectedOrder ? <>{orderDetail?.orderNumber || selectedOrder.orderNumber} · {formatDate(orderDetail?.createdAt || selectedOrder.createdAt)}</> : undefined}>
         {selectedOrder && (
           <>

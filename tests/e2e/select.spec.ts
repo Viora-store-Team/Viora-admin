@@ -71,3 +71,35 @@ test("trigger keeps its height", async ({ page }) => {
   expect((await field.boundingBox())?.height).toBe(48);
   await expect(field.locator("[data-select-label]")).toHaveCSS("text-overflow", "ellipsis");
 });
+
+test("select inside finance dialog stays above the modal and Escape closes one layer at a time", async ({ page }) => {
+  const finance: Record<string, unknown> = {
+    "/admin/settings/commission": { success: true, settings: { defaultRate: 10, customStoresCount: 0 } },
+    "/admin/payouts/balances": { success: true, balances: [{ storeId: 7, storeName: "متجر الاختبار", outstanding: "100.00", payoutAccounts: [{ method: "BANK", accountNumber: "123" }, { method: "WALLET", accountNumber: "456" }] }], totals: { unpaidAmount: "100.00", storesCount: 1 } },
+    "/admin/payouts": { success: true, payouts: [], pagination },
+    "/admin/settlements/summary": { success: true, summary: { platformPromoCost: "0.00" } },
+    "/admin/settlements": { success: true, settlements: [], pagination },
+  };
+  await page.route(`${api}/admin/**`, route => {
+    const path = new URL(route.request().url()).pathname.replace(/^\/api/, "");
+    if (!(path in finance)) return route.fallback();
+    return route.fulfill({ json: finance[path] });
+  });
+  await page.goto("/finance");
+  await page.getByRole("button", { name: "تسجيل التحويل" }).click();
+  const dialog = page.getByRole("dialog", { name: "تسجيل تحويل للمتجر" });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("combobox", { name: "طريقة التحويل" }).click();
+  const listbox = page.getByRole("listbox");
+  await expect(listbox).toBeVisible();
+  expect(await listbox.evaluate(element => {
+    const rect = element.getBoundingClientRect();
+    const top = document.elementFromPoint(rect.left + rect.width / 2, rect.top + Math.min(rect.height / 2, 20));
+    return top === element || element.contains(top);
+  })).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(listbox).toHaveCount(0);
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+});
