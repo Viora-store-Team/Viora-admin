@@ -6,6 +6,7 @@ import { NAV_ITEMS } from "@/config/nav";
 import { t } from "@/lib/strings";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import { useNavCounts } from "@/lib/admin/useNavCounts";
 
 /**
  * قشرة لوحة التحكم.
@@ -23,6 +24,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     كـ prop بيرمي "Functions cannot be passed directly to Client Components".
   */
   const items = NAV_ITEMS;
+  const counts = useNavCounts();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -63,6 +65,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
         items={items}
+        counts={counts}
         tagline={t.admin.tagline}
         roleLabel={t.admin.ownerRole}
         userFallback={t.admin.owner}
@@ -73,6 +76,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           onOpenMenu={() => setMobileOpen(true)}
           mobileOpen={mobileOpen}
           items={items}
+          counts={counts}
         />
         <main className="flex-1 p-4 sm:p-6">{children}</main>
       </div>

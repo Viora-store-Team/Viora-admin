@@ -14,6 +14,8 @@ import {
 import type { AppNotification } from "@/lib/admin/types";
 import { formatDate } from "@/lib/format";
 import { dispatchToast } from "@/lib/toast";
+import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
 
 export default function NotificationsDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -166,30 +168,30 @@ export default function NotificationsDropdown() {
       case "ORDER_ACCEPTED":
       case "ORDER_DELIVERED":
         return {
-          icon: <Package className="size-4 text-primary" />,
+          icon: <Package className="size-4 text-primary" strokeWidth={1.75} aria-hidden="true" />,
           bg: "bg-primary/10",
         };
       case "ORDER_REJECTED":
       case "ORDER_CANCELLED":
         return {
-          icon: <XCircle className="size-4 text-danger" />,
+          icon: <XCircle className="size-4 text-danger" strokeWidth={1.75} aria-hidden="true" />,
           bg: "bg-danger/10",
         };
       case "STORE_APPROVED":
       case "STORE_ACTIVATED":
         return {
-          icon: <Store className="size-4 text-success" />,
+          icon: <Store className="size-4 text-success" strokeWidth={1.75} aria-hidden="true" />,
           bg: "bg-success/10",
         };
       case "STORE_REJECTED":
       case "STORE_SUSPENDED":
         return {
-          icon: <AlertTriangle className="size-4 text-warning" />,
+          icon: <AlertTriangle className="size-4 text-warning" strokeWidth={1.75} aria-hidden="true" />,
           bg: "bg-warning/10",
         };
       default:
         return {
-          icon: <Bell className="size-4 text-primary" />,
+          icon: <Bell className="size-4 text-primary" strokeWidth={1.75} aria-hidden="true" />,
           bg: "bg-primary-soft",
         };
     }
@@ -198,63 +200,50 @@ export default function NotificationsDropdown() {
   return (
     <div className="relative" ref={containerRef}>
       {/* 🔔 Bell Trigger Button */}
-      <button
-        type="button"
+      <IconButton
+        label="الإشعارات"
+        icon={<Bell className="size-5" strokeWidth={1.75} aria-hidden="true" />}
         onClick={handleToggle}
         onKeyDown={(event) => { if (event.key === "Escape") setIsOpen(false); }}
-        aria-label="الإشعارات"
         aria-expanded={isOpen}
-        className={`relative grid size-10 place-items-center rounded-xl transition cursor-pointer ${
-          isOpen
-            ? "bg-primary text-white shadow-xs"
-            : "bg-field-bg text-field-label hover:bg-primary-soft hover:text-primary"
-        }`}
-      >
-        <Bell className="size-5" aria-hidden="true" />
-        {unreadCount > 0 && (
-          <span
-            className="absolute -top-1 -end-1 flex size-5 items-center justify-center rounded-full bg-danger text-[10px] font-black text-white ring-2 ring-app-bg animate-pulse"
-            title={`${unreadCount} إشعار جديد`}
-          >
-            {unreadCount > 9 ? "9+" : unreadCount}
-          </span>
-        )}
-      </button>
+        badge={unreadCount}
+        className={isOpen ? "bg-primary-soft text-primary" : undefined}
+      />
 
       {/* 📬 Notifications Dropdown Panel */}
       {isOpen && (
-        <div onKeyDown={(event) => { if (event.key === "Escape") setIsOpen(false); }} className="absolute end-0 top-full mt-2.5 z-50 w-80 max-w-[calc(100vw-2rem)] sm:w-96 rounded-2xl border border-border bg-surface p-0 shadow-2xl backdrop-blur-sm animate-in fade-in-0 zoom-in-95 duration-150">
+        <div onKeyDown={(event) => { if (event.key === "Escape") setIsOpen(false); }} className="absolute end-0 top-full z-50 mt-2.5 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-surface p-0 shadow-pop animate-[viora-drop-in_200ms_ease-out] sm:w-96">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border/80 px-4 py-3.5 bg-field-bg/30 rounded-t-2xl">
+          <div className="flex items-center justify-between rounded-t-2xl border-b border-border bg-surface-muted px-4 py-3.5">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-black text-heading">الإشعارات</span>
+              <span className="text-sm font-bold text-heading">الإشعارات</span>
               {unreadCount > 0 ? (
-                <span className="rounded-full bg-danger/10 px-2 py-0.5 text-[11px] font-extrabold text-danger">
+                <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">
                   {unreadCount} غير مقروء
                 </span>
               ) : (
-                <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-extrabold text-success">
+                <span className="rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-bold text-success">
                   محدّث
                 </span>
               )}
             </div>
 
             {unreadCount > 0 && (
-              <button
+              <Button
                 type="button"
                 onClick={handleMarkAllAsRead}
                 disabled={markingAll}
-                className="flex items-center gap-1 text-xs font-bold text-primary hover:underline cursor-pointer disabled:opacity-50"
+                variant="ghost" size="sm" className="gap-1 px-2 text-xs"
               >
-                <CheckCheck className="size-3.5" />
+                <CheckCheck className="size-3.5" strokeWidth={1.75} aria-hidden="true" />
                 <span>{markingAll ? "جاري التعليم..." : "تعليم الكل كمقروء"}</span>
-              </button>
+              </Button>
             )}
           </div>
 
           {/* Body */}
           <ErrorBanner message={error} onRetry={() => void loadList()} />
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-border/60">
+          <div className="max-h-[380px] divide-y divide-border overflow-y-auto">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <Spinner variant="inline" className="size-6 border-2" />
@@ -265,9 +254,9 @@ export default function NotificationsDropdown() {
             ) : notifications.length === 0 && !error ? (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary mb-2">
-                  <Sparkles className="size-6" />
+                  <Sparkles className="size-6" strokeWidth={1.75} aria-hidden="true" />
                 </span>
-                <p className="text-sm font-extrabold text-heading">
+                <p className="text-sm font-bold text-heading">
                   لا توجد إشعارات حالياً
                 </p>
                 <p className="mt-1 text-xs text-text-secondary">
@@ -280,15 +269,15 @@ export default function NotificationsDropdown() {
                 const meta = getIconMeta(n.type);
 
                 return (
-                  <button
+                  <Button
                     key={n.id}
-                    type="button"
+                    type="button" variant="ghost"
                     onClick={() => handleItemClick(n)}
                     disabled={readingId !== null || markingAll}
-                    className={`flex w-full items-start gap-3 p-3.5 text-right transition cursor-pointer ${
+                    className={`h-auto w-full items-start justify-start gap-3 rounded-none p-3.5 text-start ${
                       isUnread
-                        ? "bg-primary/5 hover:bg-primary/10"
-                        : "bg-surface hover:bg-field-bg/60"
+                        ? "bg-primary-soft hover:bg-primary-subtle"
+                        : "bg-surface hover:bg-surface-muted"
                     }`}
                   >
                     <span
@@ -302,7 +291,7 @@ export default function NotificationsDropdown() {
                         <p
                           className={`truncate text-xs ${
                             isUnread
-                              ? "font-black text-heading"
+                              ? "font-bold text-heading"
                               : "font-bold text-text-secondary"
                           }`}
                         >
@@ -318,16 +307,16 @@ export default function NotificationsDropdown() {
                       </p>
 
                       <div className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-text-secondary/80">
-                        <Clock className="size-3 shrink-0" />
+                        <Clock className="size-3 shrink-0" strokeWidth={1.75} aria-hidden="true" />
                         <span>{formatDate(n.createdAt)}</span>
                       </div>
                     </div>
-                  </button>
+                  </Button>
                 );
               })
             )}
           </div>
-          {page < totalPages && <button type="button" disabled={loading} onClick={() => void loadList(page + 1)} className="w-full p-3 text-sm font-bold text-primary">تحميل المزيد</button>}
+          {page < totalPages && <Button type="button" variant="ghost" disabled={loading} onClick={() => void loadList(page + 1)} className="w-full">تحميل المزيد</Button>}
         </div>
       )}
     </div>

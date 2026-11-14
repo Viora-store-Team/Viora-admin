@@ -1,9 +1,10 @@
 import {
   FileText,
   Flag,
-  ImageIcon,
-  FolderTree,
-  LayoutDashboard,
+  Image as ImageIcon,
+  Headphones,
+  Layers,
+  LayoutGrid,
   Megaphone,
   Star,
   Store,
@@ -19,22 +20,31 @@ export interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  group: NavGroup | null;
+  countKey?: NavCountKey;
 }
+
+export type NavCountKey = "stores" | "reports" | "support";
+export type NavGroup = "manage" | "monitor" | "marketing" | "settings";
+export const NAV_GROUP_LABELS: Record<NavGroup, string> = {
+  manage: "الإدارة", monitor: "المراقبة", marketing: "التسويق", settings: "الإعدادات والمالية",
+};
 
 /** المصدر الوحيد لروابط السايدبار — نفس المصفوفة بتغذّي عنوان الصفحة بالتوب-بار */
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: t.admin.nav.dashboard, icon: LayoutDashboard },
-  { href: "/stores", label: t.admin.nav.stores, icon: Store },
-  { href: "/users", label: t.admin.nav.users, icon: Users },
-  { href: "/categories", label: t.admin.nav.categories, icon: FolderTree },
-  { href: "/reviews", label: t.admin.nav.reviews, icon: Star },
-  { href: "/reports", label: t.admin.nav.reports, icon: Flag },
-  { href: "/orders", label: t.admin.nav.orders, icon: ShoppingBag },
-  { href: "/promo-codes", label: "أكواد الخصم", icon: TicketPercent },
-  { href: "/broadcasts", label: "إشعارات للزبائن", icon: Megaphone },
-  { href: "/banners", label: "بنرات التطبيق", icon: ImageIcon },
-  { href: "/content", label: t.admin.nav.content, icon: FileText },
-  { href: "/finance", label: t.admin.nav.finance, icon: Wallet },
+  { href: "/", label: t.admin.nav.dashboard, icon: LayoutGrid, group: null },
+  { href: "/stores", label: t.admin.nav.stores, icon: Store, group: "manage", countKey: "stores" },
+  { href: "/users", label: t.admin.nav.users, icon: Users, group: "manage" },
+  { href: "/orders", label: t.admin.nav.orders, icon: ShoppingBag, group: "manage" },
+  { href: "/categories", label: t.admin.nav.categories, icon: Layers, group: "manage" },
+  { href: "/reviews", label: t.admin.nav.reviews, icon: Star, group: "monitor" },
+  { href: "/reports", label: t.admin.nav.reports, icon: Flag, group: "monitor", countKey: "reports" },
+  { href: "/support", label: t.admin.nav.support, icon: Headphones, group: "monitor", countKey: "support" },
+  { href: "/promo-codes", label: "أكواد الخصم", icon: TicketPercent, group: "marketing" },
+  { href: "/broadcasts", label: "إشعارات للزبائن", icon: Megaphone, group: "marketing" },
+  { href: "/banners", label: "بنرات التطبيق", icon: ImageIcon, group: "marketing" },
+  { href: "/content", label: t.admin.nav.content, icon: FileText, group: "settings" },
+  { href: "/finance", label: t.admin.nav.finance, icon: Wallet, group: "settings" },
 ];
 
 /**

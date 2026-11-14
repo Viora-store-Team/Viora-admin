@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowLeft, ChevronDown, LoaderCircle, ShieldOff } from "lucide-react";
+import { ChevronDown, LoaderCircle, ShieldOff } from "lucide-react";
+import Image from "next/image";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import ErrorBanner from "@/components/ui/ErrorBanner";
@@ -9,7 +10,6 @@ import { useAuth } from "@/context/AuthContext";
 import { adminLogin, ADMIN_ROLE } from "@/lib/auth/api";
 import { dispatchToast } from "@/lib/toast";
 import { t } from "@/lib/strings";
-import styles from "../auth.module.css";
 
 /** فحص محلي بسيط — بيوفّر رحلة شبكة على حقل فاضي أو إيميل بلا @ */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -124,32 +124,33 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className={styles.login}>
-        <div className={styles.intro}>
-          <p className={styles.eyebrow}>{t.auth.login.eyebrow}</p>
-          <h1 className={styles.title}>
+    <section aria-label="تسجيل الدخول إلى فيورا" className="w-full max-w-[400px] rounded-2xl border border-border bg-surface p-6 sm:p-8">
+        <div className="mb-8 text-center">
+          <Image src="/icons/original-logo.png" alt="شعار فيورا" width={48} height={48} className="mx-auto mb-5 size-12 object-contain" />
+          <p className="mb-2 text-xs font-medium text-primary">{t.auth.login.eyebrow}</p>
+          <h1 className="text-2xl font-bold text-heading">
             {t.auth.login.title}
           </h1>
-          <p className={styles.subtitle}>{t.auth.login.subtitle}</p>
+          <p className="mt-2 text-sm text-text-secondary">{t.auth.login.subtitle}</p>
         </div>
 
         {/* لوحة الحساب الموقوف — بديل شريط الخطأ العام، مش زيادة عليه */}
         {showSuspended ? (
           <div
             role="alert"
-            className={`${styles.feedback} ${styles.suspended}`}
+            className="mb-6 rounded-xl border border-border bg-surface-muted p-4"
           >
-            <div className={styles.suspendedTitle}>
-              <ShieldOff size={18} aria-hidden="true" />
+            <div className="flex items-center gap-2 text-sm font-bold text-danger">
+              <ShieldOff size={18} strokeWidth={1.75} aria-hidden="true" />
               {t.auth.login.suspendedTitle}
             </div>
-            <p>{suspendedBody}</p>
+            <p className="mt-2 text-xs leading-6 text-text-secondary">{suspendedBody}</p>
           </div>
         ) : (
-          <ErrorBanner message={shownBanner} className={styles.feedback} />
+          <ErrorBanner message={shownBanner} className="mb-6" />
         )}
 
-        <form ref={formRef} onSubmit={handleSubmit} className={styles.form} aria-busy={loading} noValidate>
+        <form ref={formRef} onSubmit={handleSubmit} className="grid gap-5" aria-busy={loading} noValidate>
           <Input
             label={t.auth.login.email}
             id="email"
@@ -185,22 +186,20 @@ export default function AdminLoginPage() {
             size="lg"
             fullWidth
             disabled={loading}
-            className={styles.submit}
+            className="mt-1"
           >
             <span>{loading ? t.auth.login.submitting : t.auth.login.submit}</span>
             {loading ? (
-              <LoaderCircle size={18} className={styles.spinner} aria-hidden="true" />
-            ) : (
-              <ArrowLeft size={18} className={styles.submitArrow} aria-hidden="true" />
-            )}
+              <LoaderCircle size={18} strokeWidth={1.75} className="animate-spin" aria-hidden="true" />
+            ) : null}
           </Button>
         </form>
         <p className="sr-only" role="status">{loading ? t.auth.login.submitting : ""}</p>
 
-        <details className={styles.help}>
-          <summary>{t.auth.login.helpTitle}<ChevronDown size={13} aria-hidden="true" /></summary>
-          <p>{t.auth.login.helpBody}</p>
+        <details className="mt-6 text-center text-sm text-text-tertiary">
+          <summary className="inline-flex cursor-pointer items-center gap-1 hover:text-primary">{t.auth.login.helpTitle}<ChevronDown size={13} strokeWidth={1.75} aria-hidden="true" /></summary>
+          <p className="mt-2 leading-6">{t.auth.login.helpBody}</p>
         </details>
-    </div>
+    </section>
   );
 }

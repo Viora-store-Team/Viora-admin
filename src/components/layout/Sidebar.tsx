@@ -1,45 +1,31 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import {
-  ChevronDown,
-  LogOut,
-  PanelRightClose,
-  PanelRightOpen,
-  X,
-} from "lucide-react";
+import { ChevronDown, LogOut, PanelRightClose, PanelRightOpen, X } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { getActiveNavItem, NAV_ITEMS, type NavItem } from "@/config/nav";
+import { getActiveNavItem, NAV_GROUP_LABELS, NAV_ITEMS, type NavCountKey, type NavGroup, type NavItem } from "@/config/nav";
 import { t } from "@/lib/strings";
 import { cn } from "@/lib/cn";
 import SidebarLink from "./SidebarLink";
 import { useAuth } from "@/context/AuthContext";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import IconButton from "@/components/ui/IconButton";
+import Button from "@/components/ui/Button";
 
 interface SidebarProps {
   collapsed: boolean;
   onToggleCollapse: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
-  /** الافتراضي كل روابط اللوحة — القشرة بتمرّرها صراحةً */
   items?: NavItem[];
+  counts: Partial<Record<NavCountKey, number>>;
   tagline?: string;
   roleLabel?: string;
-  /** الاسم اللي بينعرض لما ما في جلسة محمّلة بعد */
   userFallback?: string;
 }
 
-export default function Sidebar({
-  collapsed,
-  onToggleCollapse,
-  mobileOpen,
-  onCloseMobile,
-  items = NAV_ITEMS,
-  tagline = t.admin.tagline,
-  roleLabel,
-  userFallback = t.admin.owner,
-}: SidebarProps) {
+export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile, items = NAV_ITEMS, counts, tagline = t.admin.tagline, roleLabel, userFallback = t.admin.owner }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
@@ -47,170 +33,48 @@ export default function Sidebar({
   const userName = user?.name || userFallback;
   const userInitial = userName.charAt(0).toUpperCase();
   const userRole = roleLabel ?? user?.role ?? t.admin.ownerRole;
-
-  // نفس الدالة اللي بتشتق عنوان التوب-بار — مصدر واحد لمنطق "الرابط النشط"
   const activeHref = getActiveNavItem(pathname, items)?.href;
 
-  // الدروار بالموبايل بيضل موسّع دايماً — الطيّ ميزة خاصة بسطح المكتب
-  const renderContent = (collapsed: boolean) => (
-    <>
-      {/* البراند */}
-      <div
-        className={cn(
-          "flex items-center gap-3 px-4 py-5",
-          collapsed && "flex-col gap-4 px-2",
-        )}
-      >
-        <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/95 p-1.5">
-          <Image src="/icons/original-logo.png" width={40} height={40} alt="شعار فيورا" className="size-full object-contain" />
-        </span>
-        {!collapsed && (
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-base font-extrabold text-on-primary">
-              {t.app.name}
-            </p>
-            <p className="truncate text-xs text-on-primary/60">{tagline}</p>
-          </div>
-        )}
-
-        {/*
-          زر الطيّ — سطح المكتب فقط، جوّا السايدبار مش معلّق على حافته
-          (بره كان بينحجب تحت التوب-بار لأن التوب-بار z-30).
-          أيقونات PanelRight* بتوصف الحالة مباشرة، فما بنحتاج نلعب باتجاه سهم.
-        */}
-        <button
-          type="button"
-          onClick={onToggleCollapse}
-          aria-label={collapsed ? t.nav.expand : t.nav.collapse}
-          aria-expanded={!collapsed}
-          title={collapsed ? t.nav.expand : t.nav.collapse}
-          className="hidden size-9 shrink-0 place-items-center rounded-xl text-on-primary/70 transition hover:bg-on-primary/10 hover:text-on-primary lg:grid"
-        >
-          {collapsed ? (
-            <PanelRightOpen className="size-5" aria-hidden="true" />
-          ) : (
-            <PanelRightClose className="size-5" aria-hidden="true" />
-          )}
-        </button>
-
-        {/* زر إغلاق الدروار — موبايل فقط */}
-        <button
-          type="button"
-          onClick={onCloseMobile}
-          aria-label={t.nav.closeMenu}
-          className="grid size-9 shrink-0 place-items-center rounded-xl text-on-primary/70 transition hover:bg-on-primary/10 hover:text-on-primary lg:hidden"
-        >
-          <X className="size-5" aria-hidden="true" />
-        </button>
+  const renderContent = (isCollapsed: boolean) => {
+    let lastGroup: NavGroup | null = null;
+    return <>
+      <div className={cn("flex items-center gap-3 px-4 py-5", isCollapsed && "flex-col gap-3 px-2")}>
+        <Image src="/icons/original-logo.png" width={36} height={36} alt="شعار فيورا" className="size-9 shrink-0 object-contain" />
+        {!isCollapsed && <div className="min-w-0 flex-1"><p className="truncate text-lg font-bold text-heading">{t.app.name}</p><p className="truncate text-xs text-text-tertiary">{tagline}</p></div>}
+        <IconButton label={isCollapsed ? t.nav.expand : t.nav.collapse} icon={isCollapsed ? <PanelRightOpen className="size-5" strokeWidth={1.75} aria-hidden="true" /> : <PanelRightClose className="size-5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onClick={onToggleCollapse} aria-expanded={!isCollapsed} className="hidden lg:inline-grid" />
+        <IconButton label={t.nav.closeMenu} icon={<X className="size-5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onClick={onCloseMobile} className="lg:hidden" />
       </div>
-
-      {/* الروابط */}
-      <nav
-        aria-label={tagline}
-        className={cn("flex flex-1 flex-col gap-1 px-3", collapsed && "px-2")}
-      >
-        {items.map((item) => (
-          <SidebarLink
-            key={item.href}
-            item={item}
-            active={activeHref === item.href}
-            collapsed={collapsed}
-            onNavigate={onCloseMobile}
-          />
-        ))}
+      <nav aria-label={tagline} className={cn("flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-3", isCollapsed && "px-2")}>
+        {items.map((item) => {
+          const groupChanged = item.group !== lastGroup;
+          lastGroup = item.group;
+          return <div key={item.href}>
+            {groupChanged && item.group && (isCollapsed ? <div aria-hidden="true" className="mx-3 mt-4 mb-2 border-t border-border" /> : <p className="px-3 pt-4 pb-1.5 text-xs font-medium text-text-tertiary">{NAV_GROUP_LABELS[item.group]}</p>)}
+            <SidebarLink item={item} active={activeHref === item.href} collapsed={isCollapsed} count={item.countKey ? counts[item.countKey] : undefined} onNavigate={onCloseMobile} />
+          </div>;
+        })}
       </nav>
-
-      {/* أسفل السايدبار */}
-      <div className="mt-auto border-t border-on-primary/10 p-3">
-        <div className="relative">
-          <button
-            type="button"
-            aria-expanded={profileOpen}
-            aria-haspopup="menu"
-            onClick={() => setProfileOpen((open) => !open)}
-            title={collapsed ? userName : undefined}
-            className={cn(
-              "flex w-full items-center gap-3 rounded-xl px-2 py-2 text-start transition-colors hover:bg-on-primary/10",
-              collapsed && "justify-center px-0",
-            )}
-          >
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-on-primary/15 text-sm font-bold text-on-primary">
-              {userInitial}
-            </span>
-            {!collapsed && (
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold text-on-primary">{userName}</span>
-                <span className="block truncate text-xs text-on-primary/60">{userRole}</span>
-              </span>
-            )}
-            {!collapsed && <ChevronDown className={cn("size-4 shrink-0 text-on-primary/70 transition-transform", profileOpen && "rotate-180")} aria-hidden="true" />}
+      <div className="mt-auto border-t border-border p-3">
+        <div className="relative min-w-0">
+          <button type="button" aria-expanded={profileOpen} aria-haspopup="menu" onClick={() => setProfileOpen((open) => !open)} title={isCollapsed ? userName : undefined}
+            className={cn("flex min-h-14 w-full min-w-0 items-center gap-3 rounded-xl border border-border px-2 py-2 text-start transition-colors hover:bg-surface-muted", isCollapsed && "justify-center px-0")}>
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-bold text-primary">{userInitial}</span>
+            {!isCollapsed && <span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-heading">{userName}</span><span className="block truncate text-xs text-text-tertiary">{userRole}</span></span>}
+            {!isCollapsed && <ChevronDown className={cn("size-4 shrink-0 text-text-tertiary transition-transform", profileOpen && "rotate-180")} strokeWidth={1.75} aria-hidden="true" />}
           </button>
-          {profileOpen && (
-            <div role="menu" className={cn("absolute bottom-full z-20 mb-2 min-w-48 overflow-hidden rounded-xl border border-border bg-surface p-1 shadow-xl", collapsed ? "start-full ms-2" : "inset-x-0")}>
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => { setProfileOpen(false); setLogoutConfirmOpen(true); }}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-danger transition-colors hover:bg-danger/10"
-              >
-                <LogOut className="size-4" aria-hidden="true" />
-                <span>{t.nav.logout}</span>
-              </button>
-            </div>
-          )}
+          {profileOpen && <div role="menu" className={cn("absolute bottom-full z-20 mb-2 min-w-48 overflow-hidden rounded-2xl border border-border bg-surface p-1 shadow-pop animate-[viora-drop-in_200ms_ease-out]", isCollapsed ? "start-full ms-2" : "inset-x-0")}>
+            <Button role="menuitem" variant="ghost" size="sm" onClick={() => { setProfileOpen(false); setLogoutConfirmOpen(true); }} className="w-full justify-start text-danger hover:bg-danger-soft hover:text-danger" icon={<LogOut className="size-4" strokeWidth={1.75} aria-hidden="true" />}>{t.nav.logout}</Button>
+          </div>}
         </div>
       </div>
-    </>
-  );
+    </>;
+  };
 
-  return (
-    <>
-      {/* ── سطح المكتب: عمود ثابت ────────────────────────── */}
-      <aside
-        className={cn(
-          "sticky top-0 hidden h-dvh shrink-0 flex-col bg-primary transition-[width] duration-200 lg:flex",
-          collapsed ? "w-20" : "w-64",
-        )}
-      >
-        {renderContent(collapsed)}
-      </aside>
-
-      {/* ── الموبايل: دروار + طبقة تعتيم ─────────────────── */}
-      <button
-        type="button"
-        onClick={onCloseMobile}
-        aria-label={t.nav.closeMenu}
-        tabIndex={mobileOpen ? 0 : -1}
-        className={cn(
-          "fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] transition-opacity lg:hidden",
-          mobileOpen ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
-      />
-      <aside
-        id="mobile-sidebar"
-        role="dialog"
-        aria-modal={mobileOpen}
-        aria-label={t.nav.openMenu}
-        aria-hidden={!mobileOpen}
-        className={cn(
-          "fixed inset-y-0 start-0 z-50 flex w-72 flex-col bg-primary shadow-2xl transition-transform duration-300 lg:hidden",
-          // بالـ RTL الدروار بيطلع من اليمين، فالإخفاء لازم يكون بالاتجاه المعاكس
-          mobileOpen
-            ? "translate-x-0"
-            : "-translate-x-full rtl:translate-x-full",
-        )}
-      >
-        {renderContent(false)}
-      </aside>
-
-      <ConfirmDialog
-        open={logoutConfirmOpen}
-        title="تسجيل الخروج"
-        body="هل أنت متأكد أنك تريد تسجيل الخروج؟"
-        confirmLabel={t.nav.logout}
-        onConfirm={() => { setLogoutConfirmOpen(false); onCloseMobile(); void logout(); }}
-        onCancel={() => setLogoutConfirmOpen(false)}
-      />
-    </>
-  );
+  return <>
+    <aside className={cn("sticky top-0 hidden h-dvh shrink-0 flex-col border-e border-border bg-surface transition-[width] duration-200 lg:flex", collapsed ? "w-[76px]" : "w-66")}>{renderContent(collapsed)}</aside>
+    <button type="button" onClick={onCloseMobile} aria-label={t.nav.closeMenu} tabIndex={mobileOpen ? 0 : -1} className={cn("fixed inset-0 z-40 bg-heading/40 transition-opacity duration-200 lg:hidden", mobileOpen ? "opacity-100" : "pointer-events-none opacity-0")} />
+    <aside id="mobile-sidebar" role="dialog" aria-modal={mobileOpen} aria-label={t.nav.openMenu} aria-hidden={!mobileOpen}
+      className={cn("fixed inset-y-0 start-0 z-50 flex w-72 flex-col border-e border-border bg-surface shadow-pop transition-transform duration-[250ms] lg:hidden", mobileOpen ? "translate-x-0" : "-translate-x-full rtl:translate-x-full")}>{renderContent(false)}</aside>
+    <ConfirmDialog open={logoutConfirmOpen} title="تسجيل الخروج" body="هل أنت متأكد أنك تريد تسجيل الخروج؟" confirmLabel={t.nav.logout} onConfirm={() => { setLogoutConfirmOpen(false); onCloseMobile(); void logout(); }} onCancel={() => setLogoutConfirmOpen(false)} />
+  </>;
 }

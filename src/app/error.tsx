@@ -13,12 +13,12 @@ export default function GlobalError({
   return (
     <div className="grid min-h-dvh place-items-center p-6">
       <div className="flex flex-col items-center gap-3 text-center">
-        <h1 className="text-xl font-extrabold text-heading">
+        <h1 className="text-xl font-bold text-heading">
           {t.errors.genericTitle}
         </h1>
         <p className="text-sm text-text-secondary">{t.errors.genericBody}</p>
         {error.digest && (
-          <p className="ltr-nums text-xs text-placeholder">{error.digest}</p>
+          <p className="ltr-nums text-xs text-text-tertiary">{error.digest}</p>
         )}
         <Button onClick={reset} className="mt-2">
           {t.errors.retry}

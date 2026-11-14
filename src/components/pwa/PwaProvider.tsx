@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { dispatchToast } from "@/lib/toast";
 import { Download } from "lucide-react";
+import Button from "@/components/ui/Button";
 
 interface InstallPrompt extends Event {
   prompt(): Promise<void>;
@@ -67,13 +68,13 @@ export function InstallButton() {
   }
 
   return <div className="relative">
-    <button type="button" onClick={install} disabled={busy} aria-label="تثبيت التطبيق" aria-expanded={ios ? help : undefined} className="flex h-10 items-center gap-2 rounded-xl bg-primary-soft px-3 text-sm font-bold text-primary disabled:opacity-50">
-      <Download className="size-5" aria-hidden="true" /><span className="hidden sm:inline">تثبيت التطبيق</span>
-    </button>
-    {help && ios && <div className="absolute end-0 top-12 z-40 w-64 rounded-xl border border-border bg-surface p-4 text-sm leading-7 shadow-lg">
+    <Button type="button" variant="ghost" size="sm" onClick={install} disabled={busy} aria-label="تثبيت التطبيق" aria-expanded={ios ? help : undefined} className="h-10 bg-primary-soft text-sm text-primary hover:bg-primary-subtle" icon={<Download className="size-5" strokeWidth={1.75} aria-hidden="true" />}>
+      <span className="hidden sm:inline">تثبيت التطبيق</span>
+    </Button>
+    {help && ios && <div className="absolute end-0 top-12 z-40 w-64 rounded-xl border border-border bg-surface p-4 text-sm leading-7 shadow-pop">
       افتح الموقع في Safari، واضغط مشاركة، ثم «إضافة إلى الشاشة الرئيسية».
-      <button type="button" onClick={() => setHelp(false)} className="mt-2 block font-bold text-primary">إغلاق</button>
+      <Button type="button" variant="ghost" size="sm" onClick={() => setHelp(false)} className="mt-2">إغلاق</Button>
     </div>}
-    {error && <p role="alert" className="absolute end-0 top-12 w-64 rounded-xl bg-surface p-3 text-sm text-danger shadow-lg">{error}</p>}
+    {error && <p role="alert" className="absolute end-0 top-12 w-64 rounded-xl bg-surface p-3 text-sm text-danger shadow-pop">{error}</p>}
   </div>;
 }
