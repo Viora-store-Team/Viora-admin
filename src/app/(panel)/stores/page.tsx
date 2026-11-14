@@ -108,7 +108,7 @@ export default function AdminStoresPage() {
         onRetry={list.unauthorized ? undefined : list.reload}
       />
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <SearchInput
           id="stores-search"
           value={list.q}
@@ -125,7 +125,7 @@ export default function AdminStoresPage() {
       {list.loading ? (
         <Spinner />
       ) : list.rows.length === 0 ? (
-        <Card className="overflow-hidden border border-border shadow-xs">
+        <Card className="overflow-hidden border border-border shadow-card">
           <CardBody className="p-8">
             {/* الفرق مقصود: "ما في متاجر" غير "بحثك ما طلّع نتيجة" */}
             <EmptyState
@@ -150,7 +150,7 @@ export default function AdminStoresPage() {
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
-          <Card className="overflow-hidden border border-border shadow-xs">
+          <Card className="overflow-hidden border border-border shadow-card">
             <StoresTable
               stores={newestStores}
               onOpen={(id) => router.push(`/stores/${id}`)}

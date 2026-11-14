@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ImageIcon, Upload, Save } from "lucide-react";
 import Button from "@/components/ui/Button";
+import PageHeader from "@/components/ui/PageHeader";
 import { Card } from "@/components/ui/Card";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import { fetchBanners, updateBanner } from "@/lib/admin/api";
@@ -92,25 +93,25 @@ function BannerCard({ slot, banner, ready, onSaved }: {
   return (
     <Card className="overflow-hidden">
       <div className="flex items-center justify-between border-b border-border p-5">
-        <h2 className="font-extrabold text-heading">البنر {slot}</h2>
-        <span className="rounded-full bg-field-bg px-3 py-1 text-xs text-muted">
+        <h2 className="font-bold text-heading">البنر {slot}</h2>
+        <span className="rounded-full bg-surface-muted px-3 py-1 text-xs text-text-secondary">
           {!ready ? "غير متاح" : banner?.isPublished ? "منشور" : "خانة فارغة"}
         </span>
       </div>
       <div className="space-y-4 p-5" aria-busy={busy}>
-        <div className="flex aspect-[1505/625] items-center justify-center overflow-hidden rounded-xl border border-border bg-field-bg">
+        <div className="flex aspect-[1505/625] items-center justify-center overflow-hidden rounded-xl border border-border bg-surface-muted">
           {imageUrl ? (
             // Uploaded and remote banner URLs are provided by the API.
             // eslint-disable-next-line @next/next/no-img-element
             <img src={imageUrl} alt={`معاينة البنر ${slot}`} className="h-full w-full object-contain" />
           ) : (
-            <div className="space-y-2 text-center text-muted">
+            <div className="space-y-2 text-center text-text-secondary">
               <ImageIcon className="mx-auto size-9" />
               <p className="text-sm">{ready ? "لم تُضف صورة بعد" : "بانتظار تحميل البنر"}</p>
             </div>
           )}
         </div>
-        {file && <p className="break-all text-xs text-muted">صورة جديدة: {file.name} — لم تُحفظ بعد</p>}
+        {file && <p className="break-all text-xs text-text-secondary">صورة جديدة: {file.name} — لم تُحفظ بعد</p>}
         <input ref={input} type="file" accept={UPLOAD_LIMITS.types.join(",")} className="hidden"
           aria-label={`اختيار صورة البنر ${slot}`} disabled={!ready || busy}
           onChange={(event) => { chooseFile(event.target.files?.[0]); event.target.value = ""; }} />
@@ -125,12 +126,12 @@ function BannerCard({ slot, banner, ready, onSaved }: {
             setFile(null); setPreview(""); setUploadedUrl(""); setError(""); setNotice("");
           }}>إلغاء</Button>}
         </div>
-        <p className="text-xs text-muted">المقاس المناسب: 1505 × 625 بكسل — JPG، PNG أو WebP حتى 10 ميجابايت</p>
+        <p className="text-xs text-text-secondary">المقاس المناسب: 1505 × 625 بكسل — JPG، PNG أو WebP حتى 10 ميجابايت</p>
         <ErrorBanner message={error} />
         {notice && <p role="status" className="text-sm text-primary">{notice}</p>}
-        {banner?.updatedAt && <p className="text-xs text-muted">آخر تعديل: {formatDate(banner.updatedAt)}</p>}
-        {banner?.createdAt && <p className="text-xs text-muted">تاريخ الإنشاء: {formatDate(banner.createdAt)}</p>}
-        {banner?.updatedBy && <p className="text-xs text-muted">بواسطة: {banner.updatedBy.name || banner.updatedBy.email}</p>}
+        {banner?.updatedAt && <p className="text-xs text-text-secondary">آخر تعديل: {formatDate(banner.updatedAt)}</p>}
+        {banner?.createdAt && <p className="text-xs text-text-secondary">تاريخ الإنشاء: {formatDate(banner.createdAt)}</p>}
+        {banner?.updatedBy && <p className="text-xs text-text-secondary">بواسطة: {banner.updatedBy.name || banner.updatedBy.email}</p>}
       </div>
     </Card>
   );
@@ -158,13 +159,10 @@ export default function BannersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold text-heading">بنرات التطبيق</h1>
-        <p className="mt-2 text-sm text-muted">ثلاث خانات ثابتة تظهر بالترتيب. اختر صورة واحفظها لنشرها في التطبيق والمتجر.</p>
-      </div>
+      <PageHeader title="بنرات التطبيق" subtitle="ثلاث خانات ثابتة تظهر بالترتيب. اختر صورة واحفظها لنشرها في التطبيق والمتجر." />
       <ErrorBanner message={error} onRetry={() => { setError(""); setAttempt(value => value + 1); }} />
-      {!banners && !error && <p role="status" className="text-sm text-muted">جارٍ تحميل البنرات…</p>}
-      <div className="grid gap-5 xl:grid-cols-2">
+      {!banners && !error && <p role="status" className="text-sm text-text-secondary">جارٍ تحميل البنرات…</p>}
+      <div className="grid gap-6 xl:grid-cols-2">
         {SLOTS.map(slot => <BannerCard key={slot} slot={slot} ready={banners !== null}
           banner={banners?.find(banner => banner.slot === slot)}
           onSaved={saved => setBanners(previous => previous?.map(banner => banner.slot === saved.slot ? saved : banner) ?? null)} />)}

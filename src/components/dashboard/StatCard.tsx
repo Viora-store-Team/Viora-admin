@@ -24,53 +24,53 @@ const COLOR_MAP: Record<
   }
 > = {
   emerald: {
-    iconBg: "bg-emerald-500/10",
-    iconText: "text-emerald-600",
-    iconBorder: "border-emerald-500/20",
-    topAccent: "bg-emerald-500",
-    glow: "group-hover:bg-emerald-500/5",
+    iconBg: "bg-success-soft",
+    iconText: "text-success",
+    iconBorder: "border-success/20",
+    topAccent: "bg-success",
+    glow: "group-hover:bg-success-soft/50",
   },
   amber: {
-    iconBg: "bg-amber-500/10",
-    iconText: "text-amber-600",
-    iconBorder: "border-amber-500/20",
-    topAccent: "bg-amber-500",
-    glow: "group-hover:bg-amber-500/5",
+    iconBg: "bg-warning-soft",
+    iconText: "text-warning",
+    iconBorder: "border-warning/20",
+    topAccent: "bg-warning",
+    glow: "group-hover:bg-warning-soft/50",
   },
   rose: {
-    iconBg: "bg-rose-500/10",
-    iconText: "text-rose-600",
-    iconBorder: "border-rose-500/20",
-    topAccent: "bg-rose-500",
-    glow: "group-hover:bg-rose-500/5",
+    iconBg: "bg-danger-soft",
+    iconText: "text-danger",
+    iconBorder: "border-danger/20",
+    topAccent: "bg-danger",
+    glow: "group-hover:bg-danger-soft/50",
   },
   blue: {
-    iconBg: "bg-sky-500/10",
-    iconText: "text-sky-600",
-    iconBorder: "border-sky-500/20",
-    topAccent: "bg-sky-500",
-    glow: "group-hover:bg-sky-500/5",
+    iconBg: "bg-info-soft",
+    iconText: "text-info",
+    iconBorder: "border-info/20",
+    topAccent: "bg-info",
+    glow: "group-hover:bg-info-soft/50",
   },
   indigo: {
-    iconBg: "bg-indigo-500/10",
-    iconText: "text-indigo-600",
-    iconBorder: "border-indigo-500/20",
-    topAccent: "bg-indigo-500",
-    glow: "group-hover:bg-indigo-500/5",
+    iconBg: "bg-info-soft",
+    iconText: "text-info",
+    iconBorder: "border-info/20",
+    topAccent: "bg-info",
+    glow: "group-hover:bg-info-soft/50",
   },
   purple: {
-    iconBg: "bg-purple-500/10",
-    iconText: "text-purple-600",
-    iconBorder: "border-purple-500/20",
-    topAccent: "bg-purple-500",
-    glow: "group-hover:bg-purple-500/5",
+    iconBg: "bg-primary-soft",
+    iconText: "text-primary",
+    iconBorder: "border-primary/20",
+    topAccent: "bg-primary",
+    glow: "group-hover:bg-primary-soft/50",
   },
   teal: {
-    iconBg: "bg-teal-500/10",
-    iconText: "text-teal-600",
-    iconBorder: "border-teal-500/20",
-    topAccent: "bg-teal-500",
-    glow: "group-hover:bg-teal-500/5",
+    iconBg: "bg-success-soft",
+    iconText: "text-success",
+    iconBorder: "border-success/20",
+    topAccent: "bg-success",
+    glow: "group-hover:bg-success-soft/50",
   },
   neutral: {
     iconBg: "bg-primary-soft",
@@ -117,8 +117,8 @@ export default function StatCard({
     <div
       className={cn(
         "group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/80 bg-surface p-5 transition-all duration-200",
-        "shadow-xs hover:border-border hover:shadow-md",
-        (href || onClick) && "cursor-pointer hover:-translate-y-0.5",
+        "shadow-card hover:border-border hover:shadow-pop",
+        (href || onClick) && "cursor-pointer focus-visible:border-primary",
       )}
     >
       {/* Accent strip on top */}
@@ -132,7 +132,7 @@ export default function StatCard({
       {/* Subtle corner light */}
       <div
         className={cn(
-          "pointer-events-none absolute -left-8 -top-8 size-28 rounded-full blur-2xl transition-all duration-300",
+          "pointer-events-none absolute -start-8 -top-8 size-28 rounded-full blur-2xl transition-colors duration-150",
           colors.glow,
         )}
       />
@@ -144,20 +144,20 @@ export default function StatCard({
             {badge && (
               <span
                 className={cn(
-                  "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-extrabold",
-                  badge.variant === "warning" && "bg-amber-500/15 text-amber-700",
-                  badge.variant === "danger" && "bg-rose-500/15 text-rose-700",
-                  badge.variant === "success" && "bg-emerald-500/15 text-emerald-700",
-                  badge.variant === "info" && "bg-sky-500/15 text-sky-700",
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium",
+                  badge.variant === "warning" && "bg-warning-soft text-warning",
+                  badge.variant === "danger" && "bg-danger-soft text-danger",
+                  badge.variant === "success" && "bg-success-soft text-success",
+                  badge.variant === "info" && "bg-info-soft text-info",
                   (!badge.variant || badge.variant === "neutral") &&
-                    "bg-field-bg text-field-label",
+                    "bg-chip text-chip-text",
                 )}
               >
                 {badge.text}
               </span>
             )}
           </div>
-          <p className="ltr-nums text-2xl font-black tracking-tight text-heading">
+          <p className="ltr-nums text-2xl font-bold tracking-tight text-heading">
             {value}
           </p>
         </div>
@@ -182,8 +182,8 @@ export default function StatCard({
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-bold",
                   positive
-                    ? "bg-emerald-500/10 text-emerald-600"
-                    : "bg-rose-500/10 text-rose-600",
+                    ? "bg-success-soft text-success"
+                    : "bg-danger-soft text-danger",
                 )}
               >
                 <TrendIcon className="size-3" aria-hidden="true" />
@@ -214,7 +214,7 @@ export default function StatCard({
 
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className="w-full text-start">
+      <button type="button" onClick={onClick} className="block w-full rounded-2xl text-start">
         {content}
       </button>
     );

@@ -15,7 +15,7 @@ export default function InfoGrid({ rows }: { rows: InfoRow[] }) {
     <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
       {rows.map((row) => (
         <div key={row.label} className="min-w-0">
-          <dt className="text-xs font-semibold text-text-secondary">
+          <dt className="text-xs font-medium text-text-secondary">
             {row.label}
           </dt>
           <dd className="mt-1 text-sm font-bold break-words text-heading">

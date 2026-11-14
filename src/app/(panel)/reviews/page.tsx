@@ -28,6 +28,8 @@ import EmptyState from "@/components/ui/EmptyState";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Pagination from "@/components/ui/Pagination";
 import Spinner from "@/components/ui/Spinner";
+import Input from "@/components/ui/Input";
+import Tabs from "@/components/ui/Tabs";
 import {
   fetchRatingsSnapshot,
   fetchTopRatedStores,
@@ -71,7 +73,7 @@ function StarRating({ rating, size = "md" }: { rating: number | null; size?: "sm
             key={star}
             className={`${sizeClasses[size]} ${
               isFilled
-                ? "fill-amber-400 text-amber-400"
+                ? "fill-star text-star"
                 : "fill-border/40 text-border"
             }`}
             aria-hidden="true"
@@ -289,7 +291,7 @@ export default function AdminReviewsPage() {
       />
 
       {flash && (
-        <div className="flex items-center gap-2 rounded-xl border border-success/20 bg-success-soft px-4 py-3 text-sm font-bold text-success shadow-xs">
+        <div className="flex items-center gap-2 rounded-xl border border-success/20 bg-success-soft px-4 py-3 text-sm font-bold text-success shadow-card">
           <Check className="size-4" />
           <span>{flash}</span>
         </div>
@@ -300,22 +302,22 @@ export default function AdminReviewsPage() {
       {/* 📊 4 Top KPI Metric Cards */}
       {overview && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card className="border border-border/80 p-5 shadow-xs">
+          <Card className="border border-border/80 p-5 shadow-card">
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
-                <span className="text-xs font-extrabold text-text-secondary">
+                <span className="text-xs font-bold text-text-secondary">
                   {t.admin.reviews.storeAverage}
                 </span>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className="ltr-nums text-2xl font-black text-heading">
+                  <span className="ltr-nums text-2xl font-bold text-heading">
                     {overview.totalReviews > 0 && Number.isFinite(overview.platformAverage)
                       ? overview.platformAverage.toFixed(1)
                       : "—"}
                   </span>
-                  <Star className="size-5 fill-amber-400 text-amber-400" />
+                  <Star className="size-5 fill-star text-star" />
                 </div>
               </div>
-              <span className="grid size-12 place-items-center rounded-2xl bg-amber-500/10 text-amber-500">
+              <span className="grid size-12 place-items-center rounded-2xl bg-warning-soft text-star">
                 <Star className="size-6" />
               </span>
             </div>
@@ -324,13 +326,13 @@ export default function AdminReviewsPage() {
             </p>
           </Card>
 
-          <Card className="border border-border/80 p-5 shadow-xs">
+          <Card className="border border-border/80 p-5 shadow-card">
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
-                <span className="text-xs font-extrabold text-text-secondary">
+                <span className="text-xs font-bold text-text-secondary">
                   {t.admin.reviews.totalReviews}
                 </span>
-                <span className="ltr-nums mt-1 text-2xl font-black text-heading">
+                <span className="ltr-nums mt-1 text-2xl font-bold text-heading">
                   {formatNumber(overview.totalReviews)}
                 </span>
               </div>
@@ -343,13 +345,13 @@ export default function AdminReviewsPage() {
             </p>
           </Card>
 
-          <Card className="border border-border/80 p-5 shadow-xs">
+          <Card className="border border-border/80 p-5 shadow-card">
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
-                <span className="text-xs font-extrabold text-text-secondary">
+                <span className="text-xs font-bold text-text-secondary">
                   {t.admin.reviews.positiveRate}
                 </span>
-                <span className="ltr-nums mt-1 text-2xl font-black text-heading">
+                <span className="ltr-nums mt-1 text-2xl font-bold text-heading">
                   {overview.positivePercentage}%
                 </span>
               </div>
@@ -362,13 +364,13 @@ export default function AdminReviewsPage() {
             </p>
           </Card>
 
-          <Card className="border border-border/80 p-5 shadow-xs">
+          <Card className="border border-border/80 p-5 shadow-card">
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
-                <span className="text-xs font-extrabold text-text-secondary">
+                <span className="text-xs font-bold text-text-secondary">
                   {t.admin.reviews.hiddenCount}
                 </span>
-                <span className="ltr-nums mt-1 text-2xl font-black text-heading">
+                <span className="ltr-nums mt-1 text-2xl font-bold text-heading">
                   {formatNumber(overview.hiddenCount)}
                 </span>
               </div>
@@ -387,61 +389,30 @@ export default function AdminReviewsPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-5 lg:col-span-2">
           {/* Tabs Filter */}
-          <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
-            {[
+          <Tabs active={activeTab} onChange={(key) => { setActiveTab(key); setPage(1); }} items={[
               { key: "all", label: t.admin.reviews.tabAll, count: overview?.totalReviews },
               { key: "5", label: t.admin.reviews.tab5Stars, count: overview?.starCounts[5] },
               { key: "4", label: t.admin.reviews.tab4Stars, count: overview?.starCounts[4] },
               { key: "3", label: t.admin.reviews.tab3Stars, count: overview?.starCounts[3] },
               { key: "low", label: t.admin.reviews.tabLowStars, count: (overview?.starCounts[2] || 0) + (overview?.starCounts[1] || 0) },
               { key: "hidden", label: t.admin.reviews.tabHidden, count: overview?.hiddenCount },
-            ].map((tab) => {
-              const isActive = activeTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => {
-                    setActiveTab(tab.key);
-                    setPage(1);
-                  }}
-                  className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition ${
-                    isActive
-                      ? "bg-primary text-white shadow-xs"
-                      : "border border-border/80 bg-surface text-text-secondary hover:border-primary/40 hover:text-heading"
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  {typeof tab.count === "number" && tab.count > 0 && (
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                        isActive
-                          ? "bg-white/20 text-white"
-                          : "bg-field-bg text-text-secondary"
-                      }`}
-                    >
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+            ].map(tab => ({ ...tab, count: tab.count && tab.count > 0 ? tab.count : undefined }))} />
 
           {/* Search & Sort Bar */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative flex-1">
-              <Search className="absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-text-secondary" />
-              <input
+              <Search className="pointer-events-none absolute end-3.5 top-1/2 z-10 size-4 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
+              <Input
+                id="reviews-search"
                 type="search"
                 aria-label="البحث في جميع التقييمات"
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
+                onChange={(value) => {
+                  setSearchQuery(value);
                   setPage(1);
                 }}
                 placeholder={t.admin.reviews.searchPlaceholder}
-                className="h-10.5 w-full rounded-xl border border-border bg-surface pl-4 pr-10 text-sm text-heading placeholder:text-text-secondary/70 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20"
+                className="pe-10"
               />
             </div>
 
@@ -454,13 +425,13 @@ export default function AdminReviewsPage() {
                     setSortOption(e.target.value as "newest" | "highest" | "lowest");
                     setPage(1);
                   }}
-                  className="h-10.5 appearance-none rounded-xl border border-border bg-surface pl-8 pr-4 text-xs font-bold text-heading hover:border-primary/40 focus:border-primary focus:outline-hidden"
+                  className="h-12 appearance-none rounded-xl border border-border bg-surface ps-4 pe-8 text-xs font-bold text-heading transition-colors duration-150 hover:border-border-strong focus:border-primary focus:outline-hidden"
                 >
                   <option value="newest">{t.admin.orders.sortNewest}</option>
                   <option value="highest">الأعلى تقييماً</option>
                   <option value="lowest">الأقل تقييماً</option>
                 </select>
-                <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-text-secondary" />
+                <ArrowUpDown className="pointer-events-none absolute end-3 top-1/2 size-3.5 -translate-y-1/2 text-text-secondary" aria-hidden="true" />
               </div>
             </div>
           </div>
@@ -512,22 +483,22 @@ export default function AdminReviewsPage() {
                       isHidden
                         ? "border-danger/30 bg-danger-soft/20"
                         : "border-border bg-surface hover:border-primary/30"
-                    } shadow-xs`}
+                    } shadow-card`}
                   >
                     <div className="p-5">
                       {/* Top Row: Customer Info, Star Rating, and Status Badge */}
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-black text-primary">
+                          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                             {customerName.charAt(0)}
                           </span>
                           <div className="flex flex-col">
                             <div className="flex items-center gap-2">
-                              <span className="font-extrabold text-heading">
+                              <span className="font-bold text-heading">
                                 {customerName}
                               </span>
                               {isVerifiedPurchase && (
-                                <span className="flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-[10px] font-extrabold text-success">
+                                <span className="flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-[10px] font-bold text-success">
                                   <Check className="size-3" />
                                   {t.admin.reviews.verifiedBuyer}
                                 </span>
@@ -550,7 +521,7 @@ export default function AdminReviewsPage() {
 
                         <div className="flex items-center gap-3">
                           <StarRating rating={getReviewRating(review)} />
-                          <span className="ltr-nums text-xs font-extrabold text-text-secondary">
+                          <span className="ltr-nums text-xs font-bold text-text-secondary">
                             {getReviewRating(review) ?? "—"}/5
                           </span>
                           {isHidden ? (
@@ -565,7 +536,7 @@ export default function AdminReviewsPage() {
                       <div className="mt-3.5 flex flex-wrap items-center gap-2">
                         {/* Product Tag */}
                         {(review.product?.name || review.productName) && (
-                          <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-field-bg/60 px-2.5 py-1 text-xs font-bold text-heading">
+                          <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface-muted/60 px-2.5 py-1 text-xs font-bold text-heading">
                             <Package className="size-3.5 text-primary" />
                             <span>{productName}</span>
                           </div>
@@ -573,7 +544,7 @@ export default function AdminReviewsPage() {
 
                         {/* Order Number Tag */}
                         {orderNum && (
-                          <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-field-bg/60 px-2.5 py-1 text-xs font-bold text-text-secondary">
+                          <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface-muted/60 px-2.5 py-1 text-xs font-bold text-text-secondary">
                             <ShoppingBag className="size-3.5 text-info" />
                             <span>{orderNum}</span>
                           </div>
@@ -583,14 +554,14 @@ export default function AdminReviewsPage() {
                         {sId ? (
                           <Link
                             href={`/stores/${sId}`}
-                            className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-field-bg/60 px-2.5 py-1 text-xs font-bold text-heading transition hover:border-primary/40 hover:text-primary"
+                            className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface-muted/60 px-2.5 py-1 text-xs font-bold text-heading transition hover:border-primary/40 hover:text-primary"
                             title="الانتقال لصفحة تفاصيل المتجر"
                           >
                             <StoreIcon className="size-3.5 text-primary" />
                             <span>{storeName}</span>
                           </Link>
                         ) : (
-                          <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-field-bg/60 px-2.5 py-1 text-xs font-bold text-heading">
+                          <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-surface-muted/60 px-2.5 py-1 text-xs font-bold text-heading">
                             <StoreIcon className="size-3.5 text-primary" />
                             <span>{storeName}</span>
                           </div>
@@ -598,7 +569,7 @@ export default function AdminReviewsPage() {
                       </div>
 
                       {/* Review Body Comment */}
-                      <div className="mt-3.5 rounded-xl border border-border/60 bg-field-bg/30 p-3.5">
+                      <div className="mt-3.5 rounded-xl border border-border/60 bg-surface-muted/30 p-3.5">
                         <p className="text-sm font-medium leading-relaxed text-heading">
                           {review.comment || t.admin.reviews.noComment}
                         </p>
@@ -655,11 +626,11 @@ export default function AdminReviewsPage() {
 
         {/* 🏬 Sidebar: Store Average Ratings Overview */}
         <div className="flex flex-col gap-4">
-          <Card className="border border-border/80 shadow-xs">
+          <Card className="border border-border/80 shadow-card">
             <CardHeader
               title={t.admin.reviews.topRatedStores}
               action={
-                <span className="flex items-center gap-1 text-xs font-extrabold text-primary">
+                <span className="flex items-center gap-1 text-xs font-bold text-primary">
                   <Star className="size-3.5 fill-primary text-primary" />
                   حسب التقييم
                 </span>
@@ -671,7 +642,7 @@ export default function AdminReviewsPage() {
               </p>
 
               {topRatedError ? (
-                <div role="alert" className="rounded-xl border border-danger/20 bg-danger-soft/50 p-4 text-xs font-semibold text-danger">{topRatedError}</div>
+                <div role="alert" className="rounded-xl border border-danger/20 bg-danger-soft/50 p-4 text-xs font-medium text-danger">{topRatedError}</div>
               ) : storesRatings.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-border/80 p-6 text-center">
                   <p className="text-xs font-bold text-text-secondary">لا توجد تقييمات للمتاجر حالياً</p>
@@ -685,15 +656,15 @@ export default function AdminReviewsPage() {
                     <Link
                       key={store.id}
                       href={`/stores/${store.id}`}
-                      className="group -mx-2 flex items-center justify-between rounded-xl px-2 py-3 transition hover:bg-field-bg/60"
+                      className="group -mx-2 flex items-center justify-between rounded-xl px-2 py-3 transition hover:bg-surface-muted/60"
                       title={`الانتقال لتفاصيل ${store.name}`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-white">
+                        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-on-primary">
                           <StoreIcon className="size-4.5" />
                         </span>
                         <div>
-                          <p className="text-sm font-extrabold text-heading transition group-hover:text-primary">
+                          <p className="text-sm font-bold text-heading transition group-hover:text-primary">
                             {store.name}
                           </p>
                           <p className="text-xs text-text-secondary">
@@ -703,8 +674,8 @@ export default function AdminReviewsPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 rounded-lg bg-amber-400/15 px-2 py-1 text-xs font-black text-amber-700">
-                          <Star className="size-3.5 fill-amber-500 text-amber-500" />
+                        <div className="flex items-center gap-1 rounded-lg bg-warning-soft px-2 py-1 text-xs font-bold text-star">
+                          <Star className="size-3.5 fill-star text-star" />
                           <span>{store.ratingCount > 0 && normalizeRating(store.ratingAvg) !== null ? Number(store.ratingAvg).toFixed(1) : "—"}</span>
                         </div>
                         <ChevronLeft className="size-4 text-text-secondary/60 transition group-hover:-translate-x-0.5 group-hover:text-primary" />

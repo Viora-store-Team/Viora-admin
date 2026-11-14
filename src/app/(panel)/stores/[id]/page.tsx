@@ -4,6 +4,8 @@ import { storeLocation } from "@/lib/admin/storeLocation";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Ban, Calendar, Check, CircleCheck, DollarSign, ExternalLink, MapPin, Package, Power, PowerOff, RotateCcw, ShieldOff, ShoppingBag, Star, StarOff, Store as StoreIcon, Tag, Trash2, TriangleAlert } from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
+import Tabs from "@/components/ui/Tabs";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -314,7 +316,7 @@ function AdminStoreDetailPageContent() {
 
   if (notFound || !validId) {
     return (
-      <Card className="overflow-hidden border border-border shadow-xs">
+      <Card className="overflow-hidden border border-border shadow-card">
         <CardBody className="p-8">
           <EmptyState
             icon={StoreIcon}
@@ -360,13 +362,14 @@ function AdminStoreDetailPageContent() {
       {/* Top Breadcrumb & Flash Notification */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-sm text-text-secondary">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => router.push("/stores")}
-            className="font-bold transition hover:text-heading"
+            className="font-bold"
           >
             {t.admin.stores.title}
-          </button>
+          </Button>
           <span>/</span>
           <span className="font-bold text-heading">{displayName}</span>
         </div>
@@ -375,7 +378,7 @@ function AdminStoreDetailPageContent() {
           {flash && (
             <span
               role="status"
-              className="flex items-center gap-1.5 rounded-xl bg-success-soft px-3 py-1.5 text-xs font-bold text-success shadow-xs"
+              className="flex items-center gap-1.5 rounded-xl bg-success-soft px-3 py-1.5 text-xs font-bold text-success shadow-card"
             >
               <Check className="size-4" aria-hidden="true" />
               {flash}
@@ -391,13 +394,15 @@ function AdminStoreDetailPageContent() {
         </div>
       </div>
 
+      <PageHeader title={displayName} />
+
       <ErrorBanner message={error} />
 
       {/* ⚠️ Broken Encoding Warning Banner */}
       {broken && (
         <Card className="border-warning/20 bg-warning-soft/40">
           <CardBody className="space-y-1">
-            <p className="flex items-center gap-2 text-sm font-extrabold text-warning">
+            <p className="flex items-center gap-2 text-sm font-bold text-warning">
               <TriangleAlert className="size-4" aria-hidden="true" />
               {t.admin.stores.brokenTitle}
             </p>
@@ -407,16 +412,16 @@ function AdminStoreDetailPageContent() {
       )}
 
       {/* 🌟 Redesigned Store Hero Card */}
-      <Card className="overflow-hidden border border-border shadow-xs">
+      <Card className="overflow-hidden border border-border shadow-card">
         {/* Subtle cover gradient header */}
-        <div className="h-28 w-full bg-linear-to-r from-primary/15 via-primary/5 to-field-bg" />
+        <div className="h-28 w-full bg-linear-to-r from-primary/15 via-primary/5 to-surface-muted" />
 
         <div className="relative px-6 pb-6 pt-0">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             {/* Logo + Identity Info */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               {/* Store Avatar Logo */}
-              <div className="-mt-12 grid size-24 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-surface bg-surface shadow-md">
+              <div className="-mt-12 grid size-24 shrink-0 place-items-center overflow-hidden rounded-2xl border-4 border-surface bg-surface shadow-pop">
                 {store.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -433,10 +438,7 @@ function AdminStoreDetailPageContent() {
 
               <div className="flex flex-col gap-1.5">
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <h1 className="text-2xl font-black text-heading">
-                    {displayName}
-                  </h1>
-                  <span className="ltr-nums rounded-lg bg-field-bg px-2.5 py-0.5 text-xs font-extrabold text-text-secondary">
+                  <span className="ltr-nums rounded-lg bg-surface-muted px-2.5 py-0.5 text-xs font-bold text-text-secondary">
                     #{store.id}
                   </span>
                 </div>
@@ -540,7 +542,7 @@ function AdminStoreDetailPageContent() {
               <StatusBadge meta={accountStatus(false)} />
             )}
             {store.isFeatured && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/25 bg-warning-soft px-3 py-1 text-xs font-extrabold text-warning">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/25 bg-warning-soft px-3 py-1 text-xs font-bold text-warning">
                 <Star className="size-3.5 fill-warning text-warning" aria-hidden="true" />
                 <span>{t.admin.stores.featuredBadge}</span>
               </span>
@@ -556,9 +558,9 @@ function AdminStoreDetailPageContent() {
 
       {/* 🔴 Rejection Info if Rejected */}
       {store.status === "REJECTED" && store.rejectionReason && (
-        <Card className="border-danger/20 bg-danger-soft/40 shadow-xs">
+        <Card className="border-danger/20 bg-danger-soft/40 shadow-card">
           <CardBody className="space-y-2 p-5">
-            <p className="flex items-center gap-2 text-sm font-extrabold text-danger">
+            <p className="flex items-center gap-2 text-sm font-bold text-danger">
               <ShieldOff className="size-4" aria-hidden="true" />
               {t.admin.stores.rejectionInfo}
             </p>
@@ -577,13 +579,13 @@ function AdminStoreDetailPageContent() {
 
       {/* 📊 4 Modern KPI Metrics Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="border border-border/80 p-5 shadow-xs">
+        <Card className="border border-border/80 p-5 shadow-card">
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
-              <span className="text-xs font-extrabold text-text-secondary">
+              <span className="text-xs font-bold text-text-secondary">
                 {t.admin.stores.revenue}
               </span>
-              <span className="ltr-nums mt-1 text-xl font-black text-heading">
+              <span className="ltr-nums mt-1 text-xl font-bold text-heading">
                 {formatCurrency(Number(store.revenue))}
               </span>
             </div>
@@ -593,13 +595,13 @@ function AdminStoreDetailPageContent() {
           </div>
         </Card>
 
-        <Card className="border border-border/80 p-5 shadow-xs">
+        <Card className="border border-border/80 p-5 shadow-card">
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
-              <span className="text-xs font-extrabold text-text-secondary">
+              <span className="text-xs font-bold text-text-secondary">
                 {t.admin.stores.colOrders}
               </span>
-              <span className="ltr-nums mt-1 text-xl font-black text-heading">
+              <span className="ltr-nums mt-1 text-xl font-bold text-heading">
                 {formatNumber(store.ordersCount)} {t.admin.stores.ordersUnit}
               </span>
             </div>
@@ -609,13 +611,13 @@ function AdminStoreDetailPageContent() {
           </div>
         </Card>
 
-        <Card className="border border-border/80 p-5 shadow-xs">
+        <Card className="border border-border/80 p-5 shadow-card">
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
-              <span className="text-xs font-extrabold text-text-secondary">
+              <span className="text-xs font-bold text-text-secondary">
                 {t.admin.stores.colProducts}
               </span>
-              <span className="ltr-nums mt-1 text-xl font-black text-heading">
+              <span className="ltr-nums mt-1 text-xl font-bold text-heading">
                 {formatNumber(store.productsCount)} {t.admin.stores.productsUnit}
               </span>
             </div>
@@ -625,78 +627,33 @@ function AdminStoreDetailPageContent() {
           </div>
         </Card>
 
-        <Card className="border border-border/80 p-5 shadow-xs">
+        <Card className="border border-border/80 p-5 shadow-card">
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
-              <span className="text-xs font-extrabold text-text-secondary">
+              <span className="text-xs font-bold text-text-secondary">
                 {t.admin.common.createdAt}
               </span>
               <span className="ltr-nums mt-1 text-sm font-bold text-heading">
                 {formatDate(store.createdAt)}
               </span>
             </div>
-            <span className="grid size-11 place-items-center rounded-2xl bg-field-bg text-text-secondary">
+            <span className="grid size-11 place-items-center rounded-2xl bg-surface-muted text-text-secondary">
               <Calendar className="size-5" />
             </span>
           </div>
         </Card>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-border pb-3">
-        <button
-          type="button"
-          onClick={() => setActiveSection("info")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-extrabold transition ${
-            activeSection === "info"
-              ? "bg-primary text-white shadow-xs"
-              : "bg-surface text-text-secondary hover:text-heading"
-          }`}
-        >
-          <StoreIcon className="size-4" />
-          <span>{t.admin.stores.tabInfo}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveSection("orders")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-extrabold transition ${
-            activeSection === "orders"
-              ? "bg-primary text-white shadow-xs"
-              : "bg-surface text-text-secondary hover:text-heading"
-          }`}
-        >
-          <ShoppingBag className="size-4" />
-          <span>{t.admin.stores.tabOrders}</span>
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-              activeSection === "orders"
-                ? "bg-white/20 text-white"
-                : "bg-field-bg text-text-secondary"
-            }`}
-          >
-            {store.ordersCount}
-          </span>
-        </button>
-        <button
-          type="button"
-          aria-pressed={activeSection === "products"}
-          onClick={() => setActiveSection("products")}
-          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-extrabold transition ${
-            activeSection === "products"
-              ? "bg-primary text-white shadow-xs"
-              : "bg-surface text-text-secondary hover:text-heading"
-          }`}
-        >
-          <Package className="size-4" aria-hidden="true" />
-          <span>المنتجات</span>
-        </button>
-      </div>
+      <Tabs items={[{ key: "info", label: t.admin.stores.tabInfo },
+        { key: "orders", label: t.admin.stores.tabOrders, count: store.ordersCount },
+        { key: "products", label: "المنتجات" }]}
+        active={activeSection} onChange={key => setActiveSection(key as typeof activeSection)} />
 
       {/* 📄 Section 1: Store & Owner Information Grid */}
       {activeSection === "info" && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Store Info */}
-          <Card className="border border-border/80 shadow-xs">
+          <Card className="border border-border/80 shadow-card">
             <CardHeader title={t.admin.stores.info} />
             <CardBody>
               <InfoGrid
@@ -741,7 +698,7 @@ function AdminStoreDetailPageContent() {
           </Card>
 
           {/* Owner Info */}
-          <Card className="border border-border/80 shadow-xs">
+          <Card className="border border-border/80 shadow-card">
             <CardHeader
               title={t.admin.stores.ownerInfo}
               action={

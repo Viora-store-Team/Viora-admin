@@ -291,38 +291,38 @@ export default function AdminCategoriesPage() {
                   <Layers className="size-5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-text-secondary truncate">
+                  <p className="text-xs font-medium text-text-secondary truncate">
                     {t.admin.categories.totalRoots}
                   </p>
-                  <p className="ltr-nums mt-0.5 text-xl font-extrabold text-heading">
+                  <p className="ltr-nums mt-0.5 text-xl font-bold text-heading">
                     {formatNumber(stats.totalRoots)}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 shadow-2xs">
-                <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-field-bg text-heading">
+                <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface-muted text-heading">
                   <GitBranch className="size-5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-text-secondary truncate">
+                  <p className="text-xs font-medium text-text-secondary truncate">
                     {t.admin.categories.totalChildren}
                   </p>
-                  <p className="ltr-nums mt-0.5 text-xl font-extrabold text-heading">
+                  <p className="ltr-nums mt-0.5 text-xl font-bold text-heading">
                     {formatNumber(stats.totalChildren)}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4 shadow-2xs">
-                <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-field-bg text-heading">
+                <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface-muted text-heading">
                   <Package className="size-5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-text-secondary truncate">
+                  <p className="text-xs font-medium text-text-secondary truncate">
                     {t.admin.categories.totalLinkedProducts}
                   </p>
-                  <p className="ltr-nums mt-0.5 text-xl font-extrabold text-heading">
+                  <p className="ltr-nums mt-0.5 text-xl font-bold text-heading">
                     {formatNumber(stats.totalProducts)}
                   </p>
                 </div>
@@ -333,10 +333,10 @@ export default function AdminCategoriesPage() {
                   <Eye className="size-5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-text-secondary truncate">
+                  <p className="text-xs font-medium text-text-secondary truncate">
                     {t.admin.categories.activeCategories}
                   </p>
-                  <p className="ltr-nums mt-0.5 text-xl font-extrabold text-heading">
+                  <p className="ltr-nums mt-0.5 text-xl font-bold text-heading">
                     {formatNumber(stats.totalActive)}
                   </p>
                 </div>
@@ -346,7 +346,7 @@ export default function AdminCategoriesPage() {
 
           {/* شريط البحث وتصفية الحالة */}
           {!loading && roots.length > 0 && (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="w-full sm:max-w-md">
                 <SearchInput
                   id="categories-search"

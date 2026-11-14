@@ -92,7 +92,7 @@ export default function AdminPromoCodesPage() {
       />
 
       <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex flex-wrap items-end gap-3">
           <SearchInput
             id="promo-search"
             value={list.q}
@@ -157,7 +157,7 @@ export default function AdminPromoCodesPage() {
         body={
           confirm ? (
             <p>
-              الكود <span dir="ltr" className="font-extrabold">{confirm.code}</span>
+              الكود <span dir="ltr" className="font-bold">{confirm.code}</span>
               {confirm.owner === "STORE" && confirm.store
                 ? ` (كود متجر ${confirm.store.name})`
                 : " (كود Viora)"}

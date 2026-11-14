@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
 import Badge from "@/components/ui/Badge";
 import CategorySizesSummary from "@/components/admin/CategorySizesSummary";
 import CategoryColorsBadge from "@/components/admin/CategoryColorsBadge";
@@ -52,7 +53,7 @@ export default function CategoryDetailDialog({
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 z-40 bg-heading/40 backdrop-blur-xs transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -88,7 +89,7 @@ export default function CategoryDetailDialog({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-extrabold text-heading">{node.name}</h2>
+                  <h2 className="text-base font-bold text-heading">{node.name}</h2>
                   <Badge tone={node.isActive ? "success" : "warning"}>
                     {node.isActive ? "نشط" : "مخفي"}
                   </Badge>
@@ -99,29 +100,23 @@ export default function CategoryDetailDialog({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="grid size-8 place-items-center rounded-lg text-text-secondary hover:bg-field-bg hover:text-heading"
-              aria-label="إغلاق"
-            >
-              <X className="size-4" />
-            </button>
+            <IconButton label="إغلاق" icon={<X className="size-4" aria-hidden="true" />}
+              variant="ghost" size="sm" onClick={onClose} />
           </div>
 
           {/* محتوى التفاصيل */}
           <div className="mt-5 flex flex-col gap-4">
             {/* بطاقات الإحصائيات */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-border bg-field-bg p-3">
-                <p className="text-[11px] font-semibold text-text-secondary">نوع التصنيف</p>
+              <div className="rounded-xl border border-border bg-surface-muted p-3">
+                <p className="text-[11px] font-medium text-text-secondary">نوع التصنيف</p>
                 <p className="mt-1 text-xs font-bold text-heading">
                   {isRoot ? "تصنيف رئيسي" : "تصنيف فرعي"}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-border bg-field-bg p-3">
-                <p className="text-[11px] font-semibold text-text-secondary">{t.admin.categories.sizes}</p>
+              <div className="rounded-xl border border-border bg-surface-muted p-3">
+                <p className="text-[11px] font-medium text-text-secondary">{t.admin.categories.sizes}</p>
                 <div className="mt-1">
                   {isRoot ? (
                     <span className="text-xs text-text-secondary">تعتمد على الفروع</span>
@@ -132,48 +127,48 @@ export default function CategoryDetailDialog({
               </div>
 
               {!isRoot && (
-                <div className="rounded-xl border border-border bg-field-bg p-3">
-                  <p className="text-[11px] font-semibold text-text-secondary">{t.admin.categories.colors}</p>
+                <div className="rounded-xl border border-border bg-surface-muted p-3">
+                  <p className="text-[11px] font-medium text-text-secondary">{t.admin.categories.colors}</p>
                   <div className="mt-1">
                     <CategoryColorsBadge node={node} showWhenHasColors />
                   </div>
                 </div>
               )}
 
-              <div className="rounded-xl border border-border bg-field-bg p-3">
-                <p className="text-[11px] font-semibold text-text-secondary">ترتيب العرض</p>
+              <div className="rounded-xl border border-border bg-surface-muted p-3">
+                <p className="text-[11px] font-medium text-text-secondary">ترتيب العرض</p>
                 <p className="mt-1 text-xs font-bold text-heading ltr-nums">
                   #{node.sortOrder}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-border bg-field-bg p-3">
-                <div className="flex items-center gap-1 text-[11px] font-semibold text-text-secondary">
+              <div className="rounded-xl border border-border bg-surface-muted p-3">
+                <div className="flex items-center gap-1 text-[11px] font-medium text-text-secondary">
                   <Package className="size-3.5 text-primary" />
                   <span>المنتجات المرتبطة</span>
                 </div>
-                <p className="mt-1 text-sm font-extrabold text-heading ltr-nums">
+                <p className="mt-1 text-sm font-bold text-heading ltr-nums">
                   {formatNumber(node.productsCount)} منتج
                 </p>
               </div>
 
-              <div className="rounded-xl border border-border bg-field-bg p-3">
-                <div className="flex items-center gap-1 text-[11px] font-semibold text-text-secondary">
+              <div className="rounded-xl border border-border bg-surface-muted p-3">
+                <div className="flex items-center gap-1 text-[11px] font-medium text-text-secondary">
                   <Store className="size-3.5 text-text-secondary" />
                   <span>المتاجر النشطة</span>
                 </div>
-                <p className="mt-1 text-sm font-extrabold text-heading ltr-nums">
+                <p className="mt-1 text-sm font-bold text-heading ltr-nums">
                   {formatNumber(node.storesCount)} متجر
                 </p>
               </div>
 
               {isRoot && "childrenCount" in node && (
-                <div className="rounded-xl border border-border bg-field-bg p-3">
-                  <div className="flex items-center gap-1 text-[11px] font-semibold text-text-secondary">
+                <div className="rounded-xl border border-border bg-surface-muted p-3">
+                  <div className="flex items-center gap-1 text-[11px] font-medium text-text-secondary">
                     <GitBranch className="size-3.5 text-info" />
                     <span>الفروع التابعة</span>
                   </div>
-                  <p className="mt-1 text-sm font-extrabold text-heading ltr-nums">
+                  <p className="mt-1 text-sm font-bold text-heading ltr-nums">
                     {formatNumber((node as { childrenCount?: number }).childrenCount ?? 0)} فرعي
                   </p>
                 </div>
@@ -183,22 +178,22 @@ export default function CategoryDetailDialog({
             {/* الأب إذا كان فرعياً */}
             {!isRoot && parentName && (
               <div className="flex items-center justify-between rounded-xl border border-border bg-surface p-3 text-xs">
-                <span className="font-semibold text-text-secondary">يتبع للتصنيف الرئيسي:</span>
+                <span className="font-medium text-text-secondary">يتبع للتصنيف الرئيسي:</span>
                 <span className="font-bold text-primary">{parentName}</span>
               </div>
             )}
 
             {/* معلومات التواريخ */}
-            <div className="flex flex-col gap-1.5 rounded-xl border border-border/70 bg-field-bg/50 p-3 text-[11px] text-text-secondary">
+            <div className="flex flex-col gap-1.5 rounded-xl border border-border/70 bg-surface-muted/50 p-3 text-[11px] text-text-secondary">
               <div className="flex items-center gap-1.5">
                 <Calendar className="size-3 text-text-secondary" />
                 <span>تاريخ الإضافة:</span>
-                <span className="font-semibold text-heading dir-ltr">{node.createdAt}</span>
+                <span className="font-medium text-heading dir-ltr">{node.createdAt}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Calendar className="size-3 text-text-secondary" />
                 <span>آخر تعديل:</span>
-                <span className="font-semibold text-heading dir-ltr">{node.updatedAt}</span>
+                <span className="font-medium text-heading dir-ltr">{node.updatedAt}</span>
               </div>
             </div>
           </div>

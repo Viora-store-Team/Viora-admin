@@ -54,7 +54,7 @@ export default function AdminReportListItemsPage() {
       <Tabs items={STATUS_TABS} active={list.filters.status ?? ""} onChange={(key) => list.changeFilter("status", key)} />
 
       {list.loading ? <Spinner /> : list.error ? null : list.rows.length === 0 ? (
-        <Card className="overflow-hidden border border-border shadow-xs">
+        <Card className="overflow-hidden border border-border shadow-card">
           <CardBody className="p-8">
             <EmptyState
               icon={Flag}
@@ -66,7 +66,7 @@ export default function AdminReportListItemsPage() {
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
-          <Card className="overflow-hidden border border-border shadow-xs">
+          <Card className="overflow-hidden border border-border shadow-card">
             <ReportsTable reports={list.rows} onOpen={(id) => router.push(`/reports/${id}`)} />
           </Card>
           {list.pagination && <Pagination pagination={list.pagination} onChange={list.changePage} />}

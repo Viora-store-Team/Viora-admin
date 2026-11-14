@@ -3,7 +3,7 @@
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Spinner from "@/components/ui/Spinner";
-import { TableShell, Td, Thead } from "@/components/ui/Table";
+import { TableShell, Td, Thead, Tr } from "@/components/ui/Table";
 import { promoOwnerLabel, promoValueLabel } from "@/lib/admin/promo";
 import type { AdminPromoCode } from "@/lib/admin/types";
 import { formatDateTime, formatPrice } from "@/lib/format";
@@ -46,10 +46,10 @@ export default function PromoCodesTable({
   return (
     <TableShell minWidth="min-w-[960px]">
       <Thead columns={COLUMNS} />
-      <tbody className="divide-y divide-black/5">
+      <tbody className="divide-y divide-border">
         {rows.map((promo) => (
-          <tr key={promo.id}>
-            <Td className="font-extrabold text-heading">
+          <Tr key={promo.id}>
+            <Td className="font-bold text-heading">
               <span dir="ltr">{promo.code}</span>
             </Td>
             <Td>
@@ -79,7 +79,7 @@ export default function PromoCodesTable({
                 </Button>
               )}
             </Td>
-          </tr>
+          </Tr>
         ))}
       </tbody>
     </TableShell>

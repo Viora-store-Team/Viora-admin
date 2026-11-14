@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, X } from "lucide-react";
 import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
 import Input from "@/components/ui/Input";
 import Spinner from "@/components/ui/Spinner";
 import Toggle from "@/components/ui/Toggle";
@@ -146,13 +147,13 @@ export default function CategorySizesPicker({ value, onChange, disabled = false,
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs font-bold text-field-label">{t.admin.categories.sizes}</p>
+        <p className="text-xs font-bold text-heading">{t.admin.categories.sizes}</p>
         <p className="mt-1 text-xs leading-relaxed text-text-secondary">
           {t.admin.categories.sizesHint}
         </p>
       </div>
 
-      <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-field-bg/40 px-3 py-2.5">
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-muted/40 px-3 py-2.5">
         <div>
           <p className="text-xs font-bold text-heading">{t.admin.categories.noSizes}</p>
           <p className="text-[11px] text-text-secondary">{t.admin.categories.noSizesHint}</p>
@@ -191,14 +192,15 @@ export default function CategorySizesPicker({ value, onChange, disabled = false,
                 {sizes.map((size) => {
                   const selected = value.sizeIds.includes(size.id);
                   return (
-                    <button
+                    <Button
                       key={size.id}
-                      type="button"
+                      variant="secondary"
+                      size="sm"
                       aria-pressed={selected}
                       disabled={disabled}
                       onClick={() => toggle(size.id)}
                       className={cn(
-                        "ltr-nums min-w-10 rounded-lg border px-2.5 py-1.5 text-xs font-bold transition",
+                        "ltr-nums min-w-10 rounded-xl border px-2.5 text-xs font-bold transition-colors duration-150",
                         selected
                           ? "border-primary bg-primary-soft text-primary"
                           : "border-border bg-surface text-text-secondary hover:border-primary/50",
@@ -206,7 +208,7 @@ export default function CategorySizesPicker({ value, onChange, disabled = false,
                       )}
                     >
                       {size.name}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -227,15 +229,9 @@ export default function CategorySizesPicker({ value, onChange, disabled = false,
                     <span className="ltr-nums flex-1 text-xs font-bold text-heading">
                       {byId.get(id)?.name ?? id}
                     </span>
-                    <button type="button" aria-label={t.admin.categories.moveUp} disabled={disabled || index === 0} onClick={() => move(index, -1)} className="text-text-secondary hover:text-primary disabled:opacity-30">
-                      <ArrowUp className="size-4" aria-hidden="true" />
-                    </button>
-                    <button type="button" aria-label={t.admin.categories.moveDown} disabled={disabled || index === value.sizeIds.length - 1} onClick={() => move(index, 1)} className="text-text-secondary hover:text-primary disabled:opacity-30">
-                      <ArrowDown className="size-4" aria-hidden="true" />
-                    </button>
-                    <button type="button" aria-label={t.admin.categories.removeSize} disabled={disabled} onClick={() => toggle(id)} className="text-danger hover:opacity-80">
-                      <X className="size-4" aria-hidden="true" />
-                    </button>
+                    <IconButton label={t.admin.categories.moveUp} icon={<ArrowUp className="size-4" aria-hidden="true" />} variant="ghost" size="sm" disabled={disabled || index === 0} onClick={() => move(index, -1)} />
+                    <IconButton label={t.admin.categories.moveDown} icon={<ArrowDown className="size-4" aria-hidden="true" />} variant="ghost" size="sm" disabled={disabled || index === value.sizeIds.length - 1} onClick={() => move(index, 1)} />
+                    <IconButton label={t.admin.categories.removeSize} icon={<X className="size-4" aria-hidden="true" />} variant="ghost" size="sm" disabled={disabled} onClick={() => toggle(id)} className="text-danger" />
                   </li>
                 ))}
               </ol>

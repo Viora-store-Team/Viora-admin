@@ -104,7 +104,7 @@ export default function StaticPageEditor({
             </p>
           ) : (
             <>
-              <h3 className="text-lg font-extrabold text-heading">{title}</h3>
+              <h3 className="text-lg font-bold text-heading">{title}</h3>
               {/* whitespace-pre-line بيحترم الأسطر بلا ما نحوّل النص لـ HTML */}
               <p className="whitespace-pre-line text-sm leading-relaxed text-heading">
                 {body}

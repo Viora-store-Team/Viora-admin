@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
 import CategorySizesSummary from "@/components/admin/CategorySizesSummary";
 import CategoryColorsBadge from "@/components/admin/CategoryColorsBadge";
 import { cn } from "@/lib/cn";
@@ -52,7 +53,7 @@ function NodeCounters({ node }: { node: AdminCategoryNode }) {
       {node.productsCount > 0 && (
         <span
           title={`${formatNumber(node.productsCount)} ${t.admin.categories.productsUnit}`}
-          className="inline-flex items-center gap-1 rounded-lg bg-field-bg px-2 py-1 text-xs font-semibold text-text-secondary"
+          className="inline-flex items-center gap-1 rounded-lg bg-surface-muted px-2 py-1 text-xs font-medium text-text-secondary"
         >
           <Package className="size-3.5 text-primary" aria-hidden="true" />
           <span className="ltr-nums font-bold text-heading">
@@ -65,7 +66,7 @@ function NodeCounters({ node }: { node: AdminCategoryNode }) {
       {node.storesCount > 0 && (
         <span
           title={`${formatNumber(node.storesCount)} ${t.admin.categories.storesUnit}`}
-          className="inline-flex items-center gap-1 rounded-lg bg-field-bg px-2 py-1 text-xs font-semibold text-text-secondary"
+          className="inline-flex items-center gap-1 rounded-lg bg-surface-muted px-2 py-1 text-xs font-medium text-text-secondary"
         >
           <Store className="size-3.5 text-text-secondary" aria-hidden="true" />
           <span className="ltr-nums font-bold text-heading">
@@ -228,7 +229,7 @@ export default function CategoryTree({
   if (filteredRoots.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-surface p-12 text-center">
-        <div className="grid size-12 place-items-center rounded-2xl bg-field-bg text-text-secondary">
+        <div className="grid size-12 place-items-center rounded-2xl bg-surface-muted text-text-secondary">
           <Search className="size-6 text-text-secondary" />
         </div>
         <h3 className="mt-4 text-sm font-bold text-heading">
@@ -284,30 +285,28 @@ export default function CategoryTree({
               )}
             >
               {/* رأس بطاقة التصنيف الرئيسي */}
-              <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-surface hover:bg-field-bg/30 transition">
+              <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-surface hover:bg-surface-muted/30 transition">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <button
-                    type="button"
+                  <IconButton
                     onClick={() => toggle(root.id)}
                     aria-expanded={isOpen}
-                    aria-label={
+                    label={
                       isOpen
                         ? t.admin.categories.collapse
                         : t.admin.categories.expand
                     }
-                    className="grid size-9 shrink-0 place-items-center rounded-xl bg-field-bg text-text-secondary transition hover:bg-primary/10 hover:text-primary"
-                  >
-                    {isOpen ? (
+                    size="sm"
+                    icon={isOpen ? (
                       <ChevronDown className="size-4" aria-hidden="true" />
                     ) : (
                       <ChevronLeft className="size-4" aria-hidden="true" />
                     )}
-                  </button>
+                  />
 
                   {/* صورة التصنيف الرئيسي */}
                   <div
                     onClick={() => onSelectNode?.(root)}
-                    className="relative size-12 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-border bg-field-bg shadow-2xs transition hover:opacity-80"
+                    className="relative size-12 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-border bg-surface-muted shadow-2xs transition-colors duration-150 hover:border-primary focus-visible:border-primary"
                   >
                     {root.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -325,13 +324,13 @@ export default function CategoryTree({
 
                   <div
                     onClick={() => onSelectNode?.(root)}
-                    className="min-w-0 flex-1 cursor-pointer"
+                    className="min-w-0 flex-1 cursor-pointer rounded-xl focus-visible:bg-primary-soft"
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="truncate text-base font-extrabold text-heading hover:text-primary transition">
+                      <h3 className="truncate text-base font-bold text-heading hover:text-primary transition">
                         {root.name}
                       </h3>
-                      <span className="ltr-nums inline-block rounded-md bg-field-bg px-2 py-0.5 text-[11px] font-semibold text-text-secondary">
+                      <span className="ltr-nums inline-block rounded-md bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-text-secondary">
                         {root.slug}
                       </span>
                       {root.sortOrder > 0 && (
@@ -383,7 +382,7 @@ export default function CategoryTree({
 
               {/* قسم التصنيفات الفرعية */}
               {isOpen && (
-                <div className="border-t border-border/80 bg-field-bg/30 p-4">
+                <div className="border-t border-border/80 bg-surface-muted/30 p-4">
                   {root.children.length === 0 ? (
                     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-surface/50 py-8 px-4 text-center">
                       <p className="text-xs font-bold text-heading">
@@ -415,10 +414,10 @@ export default function CategoryTree({
                         >
                           <div
                             onClick={() => onSelectNode?.(child, root.name)}
-                            className="flex items-start gap-2.5 cursor-pointer"
+                            className="flex cursor-pointer items-start gap-2.5 rounded-xl focus-visible:bg-primary-soft"
                           >
                             {/* صورة الفرعي */}
-                            <div className="size-10 shrink-0 overflow-hidden rounded-lg border border-border bg-field-bg shadow-2xs">
+                            <div className="size-10 shrink-0 overflow-hidden rounded-lg border border-border bg-surface-muted shadow-2xs">
                               {child.imageUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
@@ -427,7 +426,7 @@ export default function CategoryTree({
                                   className="size-full object-cover"
                                 />
                               ) : (
-                                <div className="grid size-full place-items-center bg-field-bg text-text-secondary">
+                                <div className="grid size-full place-items-center bg-surface-muted text-text-secondary">
                                   <Tag className="size-4" aria-hidden="true" />
                                 </div>
                               )}

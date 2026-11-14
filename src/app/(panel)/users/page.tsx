@@ -130,7 +130,7 @@ export default function AdminUsersPage() {
       {list.loading ? (
         <Spinner />
       ) : list.rows.length === 0 ? (
-        <Card className="overflow-hidden border border-border shadow-xs">
+        <Card className="overflow-hidden border border-border shadow-card">
           <CardBody className="p-8">
             <EmptyState
               icon={Users}
@@ -154,7 +154,7 @@ export default function AdminUsersPage() {
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
-          <Card className="overflow-hidden border border-border shadow-xs">
+          <Card className="overflow-hidden border border-border shadow-card">
             <UsersTable
               users={newestUsers}
               onOpen={(id) => router.push(`/users/${id}`)}

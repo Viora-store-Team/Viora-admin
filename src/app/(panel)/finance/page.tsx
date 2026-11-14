@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle,
   ArrowLeftRight,
   Banknote,
   Check,
@@ -18,11 +17,16 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
+import Input from "@/components/ui/Input";
+import Modal from "@/components/ui/Modal";
+import PageHeader from "@/components/ui/PageHeader";
+import Select from "@/components/ui/Select";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Pagination from "@/components/ui/Pagination";
 import Spinner from "@/components/ui/Spinner";
-import { TableShell, Td, Thead } from "@/components/ui/Table";
+import { TableShell, Td, Thead, Tr } from "@/components/ui/Table";
 import {
   createPayout,
   fetchAdminSettlements,
@@ -378,20 +382,8 @@ export default function FinancePage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 pb-10">
-      <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-l from-primary-soft via-surface to-surface p-5 shadow-sm sm:p-7">
-        <div className="pointer-events-none absolute -start-8 -top-12 size-44 rounded-full bg-primary/5 blur-2xl" />
-        <div className="relative flex flex-wrap items-center justify-between gap-5">
-          <div className="max-w-2xl">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-extrabold text-primary"><Wallet className="size-4" /> الإدارة المالية</div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-heading sm:text-3xl">العمولات والتحويلات</h1>
-            <p className="mt-2 text-sm leading-6 text-text-secondary">تابعي مستحقات المتاجر وسجّلي التحويلات بعد تنفيذها. كل الأرقام هنا من بيانات الخادم.</p>
-          </div>
-          <Button variant="secondary" disabled={loading || busy === "refresh"} icon={<RotateCw className={`size-4 ${loading || busy === "refresh" ? "animate-spin" : ""}`} />} onClick={() => void refreshData()}>
-            {busy === "refresh" ? "جارٍ التحديث…" : "تحديث البيانات"}
-          </Button>
-        </div>
-      </section>
+    <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-6 pb-10">
+      <PageHeader title="العمولات والتحويلات" subtitle="تابعي مستحقات المتاجر وسجّلي التحويلات بعد تنفيذها. كل الأرقام هنا من بيانات الخادم." action={<Button variant="secondary" disabled={loading || busy === "refresh"} icon={<RotateCw className={`size-4 ${loading || busy === "refresh" ? "animate-spin" : ""}`} />} onClick={() => void refreshData()}>{busy === "refresh" ? "جارٍ التحديث…" : "تحديث البيانات"}</Button>} />
 
       {loading ? <Spinner /> : (
         <>
@@ -404,40 +396,39 @@ export default function FinancePage() {
 
           <nav aria-label="أقسام المالية" className="grid grid-cols-1 gap-2 rounded-2xl border border-border bg-surface p-2 shadow-sm sm:grid-cols-3">
             {([ ["overview", "مستحقات المتاجر", Wallet], ["payouts", "سجل التحويلات", ArrowLeftRight], ["settlements", "مستحقات الطلبات", Receipt] ] as const).map(([view, label, Icon]) => (
-              <button key={view} type="button" aria-pressed={activeView === view} onClick={() => setActiveView(view)} className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-extrabold transition ${activeView === view ? "bg-primary text-on-primary shadow-sm" : "text-text-secondary hover:bg-field-bg hover:text-heading"}`}><Icon className="size-4" />{label}</button>
+              <Button key={view} size="sm" variant={activeView === view ? "primary" : "ghost"} aria-pressed={activeView === view} onClick={() => setActiveView(view)} icon={<Icon className="size-4" strokeWidth={1.75} aria-hidden="true" />} className="w-full">{label}</Button>
             ))}
           </nav>
 
           <Card className={activeView === "overview" ? "overflow-hidden" : "hidden"}>
-            <CardHeader title="نسبة العمولة" action={<span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-extrabold text-primary">طلبات جديدة فقط</span>} />
+            <CardHeader title="نسبة العمولة" action={<span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-bold text-primary">طلبات جديدة فقط</span>} />
             <CardBody className="gap-4">
               {sectionErrors.commission && <ErrorBanner message={`تعذر تحميل العمولة: ${sectionErrors.commission}`} onRetry={() => setRefreshKey((key) => key + 1)} />}
               <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
                 <div>
                   <p className="max-w-2xl text-sm leading-6 text-text-secondary">تُحسب العمولة على الطلبات التي تُنشأ بعد حفظ النسبة. الطلبات السابقة ومتاجر النسبة الخاصة لا تتأثر.</p>
                   <div className="mt-4 flex flex-wrap items-end gap-4">
-                    <label className="flex flex-col gap-2 text-sm font-bold text-heading">
-                      <span>النسبة الافتراضية</span>
-                      <span className="flex items-center gap-2">
-                        <input
+                    <div className="flex items-center gap-2">
+                        <Input
+                          id="default-commission"
+                          label="النسبة الافتراضية"
                           aria-label="نسبة العمولة الافتراضية"
                           type="number"
                           min="0"
                           max="100"
                           step="0.01"
                           value={commissionInput}
-                          onChange={(event) => setCommissionInput(event.target.value)}
-                          className="w-36 rounded-xl border border-border bg-app-bg px-3 py-2.5 text-heading outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+                          onChange={setCommissionInput}
+                          className="w-36"
                         />
-                        <span className="font-extrabold text-text-secondary">%</span>
-                      </span>
-                    </label>
+                        <span className="self-end pb-3 font-bold text-text-secondary">%</span>
+                    </div>
                     <Button onClick={saveCommission} disabled={commission === null || busy === "commission" || Number(commissionInput) === commission} icon={<Check className="size-4" />}>
                       {busy === "commission" ? "جارٍ الحفظ…" : "حفظ النسبة"}
                     </Button>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 rounded-2xl bg-field-bg px-4 py-3">
+                <div className="flex items-center gap-3 rounded-2xl bg-surface-muted px-4 py-3">
                   <span className="grid size-10 place-items-center rounded-xl bg-surface text-primary"><Percent className="size-5" /></span>
                   <span><span className="block text-xs font-bold text-text-secondary">متاجر بمعدل خاص</span><strong className="mt-0.5 block text-lg text-heading">{customStoresCount === null ? "—" : formatNumber(customStoresCount)}</strong></span>
                 </div>
@@ -446,7 +437,7 @@ export default function FinancePage() {
           </Card>
 
           <Card className={activeView === "overview" ? "overflow-hidden" : "hidden"}>
-            <CardHeader title="المبالغ المستحقة للمتاجر" action={<span className="rounded-full bg-info-soft px-3 py-1 text-xs font-extrabold text-info">مرتبة حسب الأعلى</span>} />
+            <CardHeader title="المبالغ المستحقة للمتاجر" action={<span className="rounded-full bg-info-soft px-3 py-1 text-xs font-bold text-info">مرتبة حسب الأعلى</span>} />
             <CardBody className="gap-4">
               <div className="flex gap-3 rounded-2xl border border-info/15 bg-info-soft/60 px-4 py-3 text-sm leading-6 text-heading">
                 <Info className="mt-1 size-4 shrink-0 text-info" />
@@ -458,12 +449,12 @@ export default function FinancePage() {
                   <Thead columns={["المتجر", "بانتظار التحويل", "طريقة الاستلام", "الإجراء"]} />
                   <tbody className="divide-y divide-border/70">
                     {sortedBalances.map((store) => (
-                      <tr key={store.storeId}>
+                      <Tr key={store.storeId}>
                         <Td className="font-bold text-heading">{store.storeName || `متجر #${store.storeId}`}</Td>
-                        <Td className="font-extrabold text-heading">{money(store.outstanding)}</Td>
+                        <Td className="font-bold text-heading">{money(store.outstanding)}</Td>
                         <Td className="text-xs text-text-secondary">{store.payoutAccounts && store.payoutAccounts.length > 0 ? <span className="flex flex-col gap-1">{store.payoutAccounts.map((account) => <span key={String(account.method)}>{accountSummary(account)}</span>)}</span> : <span className="inline-flex items-center gap-1.5 text-warning"><CircleAlert className="size-3.5" />لم يضف المتجر وسيلة استلام</span>}</Td>
                         <Td><Button size="sm" disabled={value(store.outstanding) === null || (value(store.outstanding) ?? 0) <= 0 || !store.payoutAccounts?.length || busy === `payout-${store.storeId}`} onClick={() => openPayout(store)} icon={<ArrowLeftRight className="size-4" />}>{busy === `payout-${store.storeId}` ? "جارٍ التسجيل…" : "تسجيل التحويل"}</Button></Td>
-                      </tr>
+                      </Tr>
                     ))}
                   </tbody>
                 </TableShell>
@@ -480,14 +471,14 @@ export default function FinancePage() {
                   <Thead columns={["رقم الدفعة", "المتجر", "المبلغ", "التاريخ", "الحالة", "الإجراءات"]} />
                   <tbody className="divide-y divide-border/70">
                     {payouts.map((payout) => (
-                      <tr key={payout.id}>
+                      <Tr key={payout.id}>
                         <Td className="font-bold text-heading">#{payout.id}</Td>
                         <Td>{payout.storeName ?? `متجر #${payout.storeId}`}</Td>
                         <Td>{money(payout.amount)}</Td>
                         <Td>{formatDateTime(payout.createdAt)}</Td>
-                        <Td><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-extrabold ${isVoided(payout.status) ? "bg-danger-soft text-danger" : "bg-success-soft text-success"}`}>{isVoided(payout.status) ? "ملغى" : "تم التحويل"}</span></Td>
+                        <Td><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${isVoided(payout.status) ? "bg-danger-soft text-danger" : "bg-success-soft text-success"}`}>{isVoided(payout.status) ? "ملغى" : "تم التحويل"}</span></Td>
                         <Td><div className="flex flex-wrap gap-2"><Button size="sm" variant="secondary" onClick={() => void showPayoutDetail(payout.id)} disabled={detailLoading}>{detailLoading ? "جارٍ التحميل…" : "عرض التفاصيل"}</Button>{!isVoided(payout.status) && <Button size="sm" variant="danger" onClick={() => { setVoidTarget(payout.id); setVoidReason(""); }}>إلغاء التحويل</Button>}</div></Td>
-                      </tr>
+                      </Tr>
                     ))}
                   </tbody>
                 </TableShell>
@@ -505,15 +496,15 @@ export default function FinancePage() {
                   <Thead columns={["الطلب", "المتجر", "المستحق", "الخصم", "توصيل مجاني", "تاريخ الإغلاق", "التحويل"]} />
                   <tbody className="divide-y divide-border/70">
                     {settlements.map((settlement) => (
-                      <tr key={settlement.id}>
+                      <Tr key={settlement.id}>
                         <Td className="font-bold text-heading">#{settlement.orderId}</Td>
                         <Td>{settlement.storeName || `متجر #${settlement.storeId}`}</Td>
                         <Td className="font-bold text-heading">{money(settlement.amount)}</Td>
                         <Td><PromoAmount value={settlement.discountAmount} fundedBy={settlement.promoFundedBy} /></Td>
                         <Td><PromoAmount value={settlement.deliveryWaived} fundedBy={settlement.promoFundedBy} /></Td>
                         <Td>{formatDateTime(settlement.createdAt)}</Td>
-                        <Td><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-extrabold ${settlement.paid ? "bg-success-soft text-success" : "bg-warning-soft text-warning"}`}>{settlement.paid ? "تم التحويل" : "بانتظار التحويل"}</span></Td>
-                      </tr>
+                        <Td><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${settlement.paid ? "bg-success-soft text-success" : "bg-warning-soft text-warning"}`}>{settlement.paid ? "تم التحويل" : "بانتظار التحويل"}</span></Td>
+                      </Tr>
                     ))}
                   </tbody>
                 </TableShell>
@@ -525,49 +516,30 @@ export default function FinancePage() {
       )}
 
       {payoutTarget && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-heading/45 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && busy !== `payout-${payoutTarget.storeId}`) setPayoutTarget(null); }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="record-payout-title" className="w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl">
-            <div className="mb-5 flex items-start gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-success-soft text-success"><ArrowLeftRight className="size-5" /></span><div><h2 id="record-payout-title" className="text-lg font-extrabold text-heading">تسجيل تحويل للمتجر</h2><p className="mt-1 text-sm text-text-secondary">راجعي المعلومات قبل تسجيله</p></div></div>
-            <dl className="mb-4 grid grid-cols-2 gap-3 rounded-2xl bg-app-bg p-4 text-sm"><div><dt className="text-text-secondary">المتجر</dt><dd className="mt-1 font-extrabold text-heading">{payoutTarget.storeName}</dd></div><div><dt className="text-text-secondary">المبلغ المستحق</dt><dd className="mt-1 font-extrabold text-heading">{money(payoutTarget.outstanding)}</dd></div></dl>
+        <Modal open onClose={() => { if (busy !== `payout-${payoutTarget.storeId}`) setPayoutTarget(null); }} title="تسجيل تحويل للمتجر" description="راجعي المعلومات قبل تسجيله" size="md" labelledById="record-payout-title" footer={<><Button variant="secondary" onClick={() => setPayoutTarget(null)} disabled={busy === `payout-${payoutTarget.storeId}`}>رجوع</Button><Button onClick={() => void confirmPayout()} disabled={!payoutMethod || busy === `payout-${payoutTarget.storeId}`} icon={<Check className="size-4" />}>{busy === `payout-${payoutTarget.storeId}` ? "جارٍ التسجيل…" : "تم التحويل، سجّله"}</Button></>}>
+            <dl className="mb-4 grid grid-cols-2 gap-3 rounded-2xl bg-app-bg p-4 text-sm"><div><dt className="text-text-secondary">المتجر</dt><dd className="mt-1 font-bold text-heading">{payoutTarget.storeName}</dd></div><div><dt className="text-text-secondary">المبلغ المستحق</dt><dd className="mt-1 font-bold text-heading">{money(payoutTarget.outstanding)}</dd></div></dl>
             <div className="mb-5 flex gap-2 rounded-2xl border border-warning/20 bg-warning-soft/70 p-3 text-sm leading-6 text-warning"><Info className="mt-1 size-4 shrink-0" /><p>التسجيل لا يحوّل المال. كمّلي التحويل خارج اللوحة أولاً. عند التأكيد سيُسجّل الخادم الدفعة ويرسل إشعاراً للمتجر.</p></div>
             {(payoutTarget.payoutAccounts ?? []).length === 0 ? (
               <p className="mb-4 text-xs leading-5 text-text-secondary">التسجيل بانتظار ما يضيف المتجر طريقة استلام.</p>
             ) : (
-              <label className="mb-5 block text-sm font-bold text-heading" htmlFor="payout-method">
-                طريقة التحويل
-                <select id="payout-method" value={payoutMethod} onChange={(event) => setPayoutMethod(event.target.value)} className="mt-2 w-full rounded-xl border border-border bg-app-bg px-3 py-2 text-sm font-bold text-heading outline-none focus:border-primary">
-                  {(payoutTarget.payoutAccounts ?? []).length > 1 && <option value="">اختاري الطريقة</option>}
-                  {(payoutTarget.payoutAccounts ?? []).map((account) => (
-                    <option key={String(account.method)} value={String(account.method ?? "")}>{accountSummary(account)}</option>
-                  ))}
-                </select>
-              </label>
+              <div className="mb-5"><Select id="payout-method" label="طريقة التحويل" value={payoutMethod} onChange={setPayoutMethod} placeholder={(payoutTarget.payoutAccounts ?? []).length > 1 ? "اختاري الطريقة" : undefined} options={(payoutTarget.payoutAccounts ?? []).map((account) => ({ value: String(account.method ?? ""), label: accountSummary(account) }))} /></div>
             )}
-            <div className="flex justify-end gap-2"><Button variant="secondary" onClick={() => setPayoutTarget(null)} disabled={busy === `payout-${payoutTarget.storeId}`}>رجوع</Button><Button onClick={() => void confirmPayout()} disabled={!payoutMethod || busy === `payout-${payoutTarget.storeId}`} icon={<Check className="size-4" />}>{busy === `payout-${payoutTarget.storeId}` ? "جارٍ التسجيل…" : "تم التحويل، سجّله"}</Button></div>
-          </section>
-        </div>
+        </Modal>
       )}
 
       {voidTarget !== null && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-heading/45 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && busy !== `void-${voidTarget}`) setVoidTarget(null); }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="void-payout-title" className="w-full max-w-md rounded-3xl border border-border bg-surface p-6 shadow-2xl">
-            <div className="mb-4 flex items-start gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-danger-soft text-danger"><AlertTriangle className="size-5" /></span><div><h2 id="void-payout-title" className="text-lg font-extrabold text-heading">إلغاء التحويل #{voidTarget}</h2><p className="mt-1 text-sm text-text-secondary">لا يُحذف السجل؛ ترجع الطلبات للمستحقات غير المدفوعة.</p></div></div>
-            <label className="mb-2 block text-sm font-bold text-heading" htmlFor="void-reason">سبب الإلغاء</label>
-            <textarea id="void-reason" value={voidReason} onChange={(event) => setVoidReason(event.target.value)} maxLength={500} rows={3} className="w-full rounded-xl border border-border bg-app-bg p-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15" placeholder="اكتبي السبب (3 أحرف على الأقل)" />
-            <div className="mt-5 flex justify-end gap-2"><Button variant="secondary" onClick={() => setVoidTarget(null)} disabled={busy === `void-${voidTarget}`}>رجوع</Button><Button variant="danger" onClick={() => void confirmVoid()} disabled={voidReason.trim().length < 3 || busy === `void-${voidTarget}`} icon={<Check className="size-4" />}>{busy === `void-${voidTarget}` ? "جارٍ الإلغاء…" : "تأكيد الإلغاء"}</Button></div>
-          </section>
-        </div>
+        <Modal open onClose={() => { if (busy !== `void-${voidTarget}`) setVoidTarget(null); }} title={`إلغاء التحويل #${voidTarget}`} description="لا يُحذف السجل؛ ترجع الطلبات للمستحقات غير المدفوعة." size="md" labelledById="void-payout-title" footer={<><Button variant="secondary" onClick={() => setVoidTarget(null)} disabled={busy === `void-${voidTarget}`}>رجوع</Button><Button variant="danger" onClick={() => void confirmVoid()} disabled={voidReason.trim().length < 3 || busy === `void-${voidTarget}`} icon={<Check className="size-4" />}>{busy === `void-${voidTarget}` ? "جارٍ الإلغاء…" : "تأكيد الإلغاء"}</Button></>}>
+          <Input id="void-reason" label="سبب الإلغاء" value={voidReason} onChange={setVoidReason} maxLength={500} multiline rows={3} placeholder="اكتبي السبب (3 أحرف على الأقل)" />
+        </Modal>
       )}
 
       {payoutDetail && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setPayoutDetail(null); }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="payout-detail-title" className="w-full max-w-lg rounded-3xl border border-border bg-surface p-6 shadow-2xl">
-            <div className="mb-5 flex items-center justify-between gap-4"><div><p className="text-xs font-bold text-text-secondary">معلومات التحويل</p><h2 id="payout-detail-title" className="mt-1 text-lg font-extrabold text-heading">تحويل رقم #{payoutDetail.id}</h2></div><button type="button" aria-label="إغلاق التفاصيل" onClick={() => setPayoutDetail(null)} className="grid size-9 place-items-center rounded-xl bg-field-bg text-text-secondary transition hover:text-heading"><X className="size-4" /></button></div>
+        <Modal open onClose={() => setPayoutDetail(null)} title={`تحويل رقم #${payoutDetail.id}`} size="md" labelledById="payout-detail-title">
+            <div className="mb-5 flex items-center justify-between gap-4"><p className="text-xs font-bold text-text-secondary">معلومات التحويل</p><IconButton label="إغلاق التفاصيل" icon={<X className="size-4" strokeWidth={1.75} aria-hidden="true" />} size="sm" onClick={() => setPayoutDetail(null)} /></div>
             <dl className="grid grid-cols-2 gap-3 rounded-2xl bg-app-bg p-4 text-sm"><div><dt className="text-text-secondary">المتجر</dt><dd className="mt-1 font-bold">{payoutDetail.storeName ?? `متجر #${payoutDetail.storeId}`}</dd></div><div><dt className="text-text-secondary">المبلغ</dt><dd className="mt-1 font-bold">{money(payoutDetail.amount)}</dd></div><div><dt className="text-text-secondary">التاريخ</dt><dd className="mt-1 font-bold">{formatDateTime(payoutDetail.createdAt)}</dd></div><div><dt className="text-text-secondary">الحالة</dt><dd className="mt-1 font-bold">{isVoided(payoutDetail.status) ? "ملغى" : "تم التحويل"}</dd></div></dl>
-            {payoutDetail.orderIds && <div className="mt-5"><h3 className="mb-2 text-sm font-extrabold">الطلبات المشمولة ({formatNumber(payoutDetail.orderIds.length)})</h3><p className="break-words text-sm text-text-secondary">{payoutDetail.orderIds.length ? payoutDetail.orderIds.map((id) => `#${id}`).join("، ") : "لا توجد طلبات مرتبطة."}</p></div>}
-            {payoutDetail.reason && <p className="mt-4 rounded-xl bg-field-bg p-3 text-sm">سبب الإلغاء: {payoutDetail.reason}</p>}
-          </section>
-        </div>
+            {payoutDetail.orderIds && <div className="mt-5"><h3 className="mb-2 text-sm font-bold">الطلبات المشمولة ({formatNumber(payoutDetail.orderIds.length)})</h3><p className="break-words text-sm text-text-secondary">{payoutDetail.orderIds.length ? payoutDetail.orderIds.map((id) => `#${id}`).join("، ") : "لا توجد طلبات مرتبطة."}</p></div>}
+            {payoutDetail.reason && <p className="mt-4 rounded-xl bg-surface-muted p-3 text-sm">سبب الإلغاء: {payoutDetail.reason}</p>}
+        </Modal>
       )}
 
     </div>
@@ -594,7 +566,7 @@ function PromoAmount({ value, fundedBy }: { value?: string | null; fundedBy?: st
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className="ltr-nums font-bold text-heading">− {formatCurrency(amount)}</span>
-      <span className="rounded-full bg-field-bg px-2 py-0.5 text-[11px] font-extrabold text-text-secondary">
+      <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-bold text-text-secondary">
         {fundedBy === "PLATFORM" ? "Viora" : "المتجر"}
       </span>
     </span>
@@ -621,7 +593,7 @@ function MetricCard({
     <Card className="overflow-hidden">
       <CardBody className="flex items-center gap-4 p-4 sm:p-5">
         <span className={`grid size-12 shrink-0 place-items-center rounded-2xl ${toneClass}`}><Icon className="size-5" /></span>
-        <span className="min-w-0"><span className="block text-xs font-bold text-text-secondary">{label}</span><strong className="mt-1 block truncate text-xl font-extrabold text-heading sm:text-2xl">{value}</strong></span>
+        <span className="min-w-0"><span className="block text-xs font-bold text-text-secondary">{label}</span><strong className="mt-1 block truncate text-xl font-bold text-heading sm:text-2xl">{value}</strong></span>
       </CardBody>
     </Card>
   );

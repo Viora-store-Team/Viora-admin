@@ -1,9 +1,8 @@
 "use client";
-import { useDialog } from "@/lib/useDialog";
-
 import { useRef, useState } from "react";
 import { Trash2, Upload } from "lucide-react";
 import Button from "@/components/ui/Button";
+import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import Spinner from "@/components/ui/Spinner";
 import CategorySizesPicker, {
@@ -103,8 +102,6 @@ export default function CategoryFormDialog({
     );
   }
 
-  const dialogRef = useDialog(!!mode, onCancel, loading || uploading);
-
   if (!mode) return null;
 
   const trimmed = name.trim();
@@ -192,44 +189,30 @@ export default function CategoryFormDialog({
     });
   };
 
-  const titleId = "category-dialog-title";
-
+  // الـslug ثابت بعد الإنشاء — بينعرض بالتعديل عشان ما يتفاجأ
+  // المشرف إنه ما تغيّر مع إعادة التسمية.
   return (
-    <>
-      <button
-        type="button"
-        aria-label={t.common.close}
-        onClick={onCancel}
-        disabled={busy}
-        className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[1px]"
-      />
-
-      <div className="pointer-events-none fixed inset-0 z-50 grid place-items-center p-4">
-        <div
-          ref={dialogRef}
-        tabIndex={-1}
-        aria-label="التصنيف"
-        role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          className="pointer-events-auto max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-surface p-6 shadow-2xl"
-        >
-          <h2 id={titleId} className="text-base font-extrabold text-heading">
-            {title}
-          </h2>
-
-          {mode.kind === "child" && (
-            <p className="mt-1 text-sm text-text-secondary">{mode.parentName}</p>
-          )}
-
-          {/* الـslug ثابت بعد الإنشاء — بينعرض بالتعديل عشان ما يتفاجأ
-              المشرف إنه ما تغيّر مع إعادة التسمية */}
-          {mode.kind === "edit" && (
+    <Modal open={true} onClose={() => { if (!busy) onCancel(); }} closeOnBackdrop={!busy}
+      title={title} labelledById="category-dialog-title"
+      description={mode.kind === "child"
+        ? <p className="mt-1 text-sm text-text-secondary">{mode.parentName}</p>
+        : mode.kind === "edit"
+          ? (
             <p className="ltr-nums mt-1 text-sm text-text-secondary">
               {mode.node.slug}
             </p>
-          )}
-
+          )
+          : undefined}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onCancel} disabled={busy}>
+            {t.common.cancel}
+          </Button>
+          <Button onClick={submit} disabled={busy || (touched && invalid)}>
+            {busy ? t.common.saving : t.common.save}
+          </Button>
+        </>
+      }>
           <div className="mt-5 space-y-4">
             <Input
               id="category-name"
@@ -248,7 +231,7 @@ export default function CategoryFormDialog({
 
             {/* حقل رفع الصورة */}
             <div>
-              <label className="block text-xs font-bold text-field-label mb-1.5">
+              <label className="block text-xs font-bold text-heading mb-1.5">
                 {t.admin.categories.image}
               </label>
 
@@ -263,7 +246,7 @@ export default function CategoryFormDialog({
               />
 
               {imageUrl ? (
-                <div className="flex items-center gap-3 rounded-xl border border-border bg-field-bg/40 p-2.5">
+                <div className="flex items-center gap-3 rounded-xl border border-border bg-surface-muted/40 p-2.5">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={thumbUrl(imageUrl, 128)}
@@ -275,17 +258,19 @@ export default function CategoryFormDialog({
                       {imageUrl.split("/").pop()}
                     </p>
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={busy}
                         className="text-xs font-bold text-primary hover:underline"
                       >
                         {t.admin.categories.changeImage}
-                      </button>
+                      </Button>
                       <span className="text-border">|</span>
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
                           setImageUrl("");
                           setUploadError("");
@@ -295,7 +280,7 @@ export default function CategoryFormDialog({
                       >
                         <Trash2 className="size-3" aria-hidden="true" />
                         {t.admin.categories.removeImage}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -312,7 +297,7 @@ export default function CategoryFormDialog({
                     "flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-center cursor-pointer transition",
                     isDragging
                       ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50 hover:bg-field-bg/60 bg-field-bg/30",
+                      : "border-border hover:border-primary/50 hover:bg-surface-muted/60 bg-surface-muted/30",
                     busy && "pointer-events-none opacity-60",
                   )}
                 >
@@ -370,7 +355,7 @@ export default function CategoryFormDialog({
 
             {needsSizes && (
               <div>
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-field-bg/40 px-3 py-2.5">
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-muted/40 px-3 py-2.5">
                   <div>
                     <p className="text-xs font-bold text-heading">{t.admin.categories.noColors}</p>
                     <p className="text-[11px] text-text-secondary">{t.admin.categories.noColorsHint}</p>
@@ -404,16 +389,6 @@ export default function CategoryFormDialog({
             )}
           </div>
 
-          <div className="mt-6 flex flex-wrap justify-end gap-2">
-            <Button variant="secondary" onClick={onCancel} disabled={busy}>
-              {t.common.cancel}
-            </Button>
-            <Button onClick={submit} disabled={busy || (touched && invalid)}>
-              {busy ? t.common.saving : t.common.save}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </>
+    </Modal>
   );
 }

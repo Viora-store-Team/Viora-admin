@@ -30,6 +30,9 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import IconButton from "@/components/ui/IconButton";
+import Input from "@/components/ui/Input";
+import PageHeader from "@/components/ui/PageHeader";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import { sanitizeHtml } from "@/lib/sanitizeHtml";
 import { formatDate } from "@/lib/format";
@@ -449,24 +452,7 @@ export default function AdminContentPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* 🌟 Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-black text-heading">
-              إدارة محتوى وصفحات المنصة
-            </h1>
-            <span className="flex items-center gap-1 rounded-full border border-success/20 bg-success-soft px-2.5 py-0.5 text-[11px] font-extrabold text-success">
-              <ShieldCheck className="size-3.5" />
-              مربوط بالباك إند الحقيقي
-            </span>
-          </div>
-          <p className="mt-1 text-xs font-bold text-text-secondary">
-            تحرير وتنسيق الصفحات الثابتة والسياسات (الشروط والأحكام · الخصوصية · من نحن) المعروضة للزبائن والتجار.
-          </p>
-        </div>
-
-        {/* Global Action Buttons */}
-        <div className="flex items-center gap-2.5">
+      <PageHeader title="إدارة محتوى وصفحات المنصة" subtitle="تحرير وتنسيق الصفحات الثابتة والسياسات (الشروط والأحكام · الخصوصية · من نحن) المعروضة للزبائن والتجار." action={<div className="flex flex-wrap items-center gap-2.5">
           <Button
             variant="secondary"
             onClick={handleReset}
@@ -483,13 +469,13 @@ export default function AdminContentPage() {
           >
             {saving ? "جاري الحفظ والنشر..." : "حفظ ونشر الصفحة"}
           </Button>
-        </div>
-      </div>
+        </div>} />
+      <span className="inline-flex w-fit items-center gap-1 rounded-full border border-success/20 bg-success-soft px-2.5 py-0.5 text-[11px] font-bold text-success"><ShieldCheck className="size-3.5" strokeWidth={1.75} aria-hidden="true" />مربوط بالباك إند الحقيقي</span>
 
       <ErrorBanner message={errors[activeKey]} onRetry={!loaded.includes(activeKey) ? () => { setLoading(true); setAttempt(n => n + 1); } : undefined} />
       {dirtyKeys.length > 0 && <p role="status" className="text-sm text-warning">لديك تعديلات غير محفوظة في {dirtyKeys.length} صفحة.</p>}
       {flash && (
-        <div className="flex items-center gap-2 rounded-xl border border-success/20 bg-success-soft px-4 py-3 text-sm font-extrabold text-success shadow-xs">
+        <div className="flex items-center gap-2 rounded-xl border border-success/20 bg-success-soft px-4 py-3 text-sm font-bold text-success shadow-xs">
           <CheckCircle2 className="size-4.5 shrink-0" />
           <span>{flash}</span>
         </div>
@@ -503,14 +489,14 @@ export default function AdminContentPage() {
           const isSelected = activeKey === key;
 
           return (
-            <button
+            <Button
               key={key}
-              type="button"
+              variant="ghost"
               onClick={() => handleSelectPage(key)}
-              className={`flex flex-col items-start gap-2 rounded-2xl border p-4 text-right transition cursor-pointer shadow-xs ${
+              className={`h-auto flex-col items-start gap-2 rounded-2xl border p-4 text-start shadow-card ${
                 isSelected
                   ? "border-primary bg-primary/5 ring-2 ring-primary/15"
-                  : "border-border/80 bg-surface hover:border-primary/40 hover:bg-field-bg/50"
+                  : "border-border bg-surface hover:border-primary/40 hover:bg-surface-muted"
               }`}
             >
               <div className="flex w-full items-center justify-between">
@@ -518,7 +504,7 @@ export default function AdminContentPage() {
                   <span
                     className={`grid size-8 place-items-center rounded-xl ${
                       isSelected
-                        ? "bg-primary text-white"
+                        ? "bg-primary text-on-primary"
                         : "bg-primary-soft text-primary"
                     }`}
                   >
@@ -527,16 +513,16 @@ export default function AdminContentPage() {
                     {key === "about" && <Info className="size-4" />}
                     {key === "faq" && <HelpCircle className="size-4" />}
                   </span>
-                  <span className="text-sm font-black text-heading">
+                  <span className="text-sm font-bold text-heading">
                     {item.label}
                   </span>
                 </div>
 
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                     pageData.isPublished
                       ? "bg-success-soft text-success border border-success/20"
-                      : "bg-field-bg text-text-secondary border border-border"
+                      : "bg-surface-muted text-text-secondary border border-border"
                   }`}
                 >
                   {!loaded.includes(key) ? "غير محمّلة" : pageData.isPublished ? "منشورة" : "مسودة"}
@@ -555,7 +541,7 @@ export default function AdminContentPage() {
                     : loaded.includes(key) ? "جاهزة للتعديل" : "بانتظار التحميل"}
                 </span>
               </div>
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -569,7 +555,7 @@ export default function AdminContentPage() {
             </span>
             <div>
               <p className="text-[11px] font-bold text-text-secondary">إجمالي الكلمات</p>
-              <p className="ltr-nums text-lg font-black text-heading">{wordCount} كلمة</p>
+              <p className="ltr-nums text-lg font-bold text-heading">{wordCount} كلمة</p>
             </div>
           </div>
         </Card>
@@ -581,7 +567,7 @@ export default function AdminContentPage() {
             </span>
             <div>
               <p className="text-[11px] font-bold text-text-secondary">وقت القراءة المقدر</p>
-              <p className="ltr-nums text-lg font-black text-heading">~{readingTimeMin} دقائق</p>
+              <p className="ltr-nums text-lg font-bold text-heading">~{readingTimeMin} دقائق</p>
             </div>
           </div>
         </Card>
@@ -604,20 +590,17 @@ export default function AdminContentPage() {
       {/* 📋 Main Editor Card */}
       <Card className="border border-border/80 shadow-xs overflow-hidden">
         {/* Top Control Bar */}
-        <div className="border-b border-border/70 bg-field-bg/30 p-4">
+        <div className="border-b border-border/70 bg-surface-muted/30 p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             {/* Title Input */}
             <div className="flex-1">
-              <label className="mb-1 block text-xs font-extrabold text-heading">
-                عنوان الصفحة ({PAGE_DEFINITIONS[activeKey].label})
-              </label>
-              <input
-                type="text"
+              <Input
+                id={`content-title-${activeKey}`}
+                label={`عنوان الصفحة (${PAGE_DEFINITIONS[activeKey].label})`}
                 value={currentPage.title}
                 disabled={!canEdit}
                 aria-label="عنوان الصفحة"
-                onChange={(e) => {
-                  const val = e.target.value;
+                onChange={(val) => {
                   markDirty();
                   setPagesState((prev) => ({
                     ...prev,
@@ -628,37 +611,28 @@ export default function AdminContentPage() {
                   }));
                 }}
                 placeholder="أدخل عنوان الصفحة..."
-                className="w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm font-black text-heading focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/15"
               />
             </div>
 
             {/* View Mode Toggle: Edit Mode vs Clean Customer Preview */}
             <div className="flex items-end">
               <div className="flex items-center rounded-xl border border-border bg-surface p-1">
-                <button
-                  type="button"
+                <Button
+                  size="sm"
+                  variant={activeView === "edit" ? "primary" : "ghost"}
                   onClick={() => handleSwitchView("edit")}
-                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-extrabold transition cursor-pointer ${
-                    activeView === "edit"
-                      ? "bg-primary text-white shadow-2xs"
-                      : "text-text-secondary hover:text-heading"
-                  }`}
+                  icon={<Pencil className="size-3.5" strokeWidth={1.75} aria-hidden="true" />}
                 >
-                  <Pencil className="size-3.5" />
                   محرر النص
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
+                  size="sm"
+                  variant={activeView === "preview" ? "primary" : "ghost"}
                   onClick={() => handleSwitchView("preview")}
-                  className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-extrabold transition cursor-pointer ${
-                    activeView === "preview"
-                      ? "bg-primary text-white shadow-2xs"
-                      : "text-text-secondary hover:text-heading"
-                  }`}
+                  icon={<Eye className="size-3.5" strokeWidth={1.75} aria-hidden="true" />}
                 >
-                  <Eye className="size-3.5" />
                   معاينة كعميل
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -670,235 +644,123 @@ export default function AdminContentPage() {
         {activeView === "edit" && (
           <div className="flex flex-wrap items-center gap-1 border-b border-border/70 bg-surface px-3 py-2 text-xs select-none">
             {/* Headings: h2 and h3 */}
-            <div className="flex items-center gap-0.5 border-l border-border/70 pl-2">
-              <button
+            <div className="flex items-center gap-0.5 border-s border-border/70 ps-2">
+              <Button
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault();
                   insertCustomBlock("h2");
                 }}
                 title="عنوان رئيسي (H2)"
-                className="grid size-7.5 place-items-center rounded-lg hover:bg-field-bg text-heading font-black text-xs transition cursor-pointer"
+                variant="ghost" size="sm"
               >
                 H2
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault();
                   insertCustomBlock("h3");
                 }}
                 title="عنوان فرعي (H3)"
-                className="grid size-7.5 place-items-center rounded-lg hover:bg-field-bg text-heading font-bold text-xs transition cursor-pointer"
+                variant="ghost" size="sm"
               >
                 H3
-              </button>
+              </Button>
             </div>
 
             {/* Basic Text Formatting (Bold, Italic) */}
-            <div className="flex items-center gap-0.5 border-l border-border/70 pl-2">
-              <button
-                type="button"
-                onMouseDown={(e) => {
+            <div className="flex items-center gap-0.5 border-s border-border/70 ps-2">
+              <IconButton label="عريض (Bold)" icon={<Bold className="size-3.5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onMouseDown={(e) => {
                   e.preventDefault();
                   execFormat("bold");
-                }}
-                title="عريض (Bold)"
-                className={`grid size-7.5 place-items-center rounded-lg transition cursor-pointer ${
-                  activeFormats.bold
-                    ? "bg-primary text-white shadow-2xs"
-                    : "hover:bg-field-bg text-heading"
-                }`}
-              >
-                <Bold className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => {
+                }} className={activeFormats.bold ? "bg-primary text-on-primary" : ""} />
+              <IconButton label="مائل (Italic)" icon={<Italic className="size-3.5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onMouseDown={(e) => {
                   e.preventDefault();
                   execFormat("italic");
-                }}
-                title="مائل (Italic)"
-                className={`grid size-7.5 place-items-center rounded-lg transition cursor-pointer ${
-                  activeFormats.italic
-                    ? "bg-primary text-white shadow-2xs"
-                    : "hover:bg-field-bg text-heading"
-                }`}
-              >
-                <Italic className="size-3.5" />
-              </button>
+                }} className={activeFormats.italic ? "bg-primary text-on-primary" : ""} />
             </div>
 
             {/* Text Alignment */}
-            <div className="flex items-center gap-0.5 border-l border-border/70 pl-2">
-              <button
-                type="button"
-                onMouseDown={(e) => {
+            <div className="flex items-center gap-0.5 border-s border-border/70 ps-2">
+              <IconButton label="محاذاة لليمين" icon={<AlignRight className="size-3.5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onMouseDown={(e) => {
                   e.preventDefault();
                   execFormat("justifyRight");
-                }}
-                title="محاذاة لليمين"
-                className={`grid size-7.5 place-items-center rounded-lg transition cursor-pointer ${
-                  activeFormats.justifyRight
-                    ? "bg-primary text-white shadow-2xs"
-                    : "hover:bg-field-bg text-heading"
-                }`}
-              >
-                <AlignRight className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => {
+                }} className={activeFormats.justifyRight ? "bg-primary text-on-primary" : ""} />
+              <IconButton label="توسيط" icon={<AlignCenter className="size-3.5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onMouseDown={(e) => {
                   e.preventDefault();
                   execFormat("justifyCenter");
-                }}
-                title="توسيط"
-                className={`grid size-7.5 place-items-center rounded-lg transition cursor-pointer ${
-                  activeFormats.justifyCenter
-                    ? "bg-primary text-white shadow-2xs"
-                    : "hover:bg-field-bg text-heading"
-                }`}
-              >
-                <AlignCenter className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => {
+                }} className={activeFormats.justifyCenter ? "bg-primary text-on-primary" : ""} />
+              <IconButton label="محاذاة لليسار" icon={<AlignLeft className="size-3.5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onMouseDown={(e) => {
                   e.preventDefault();
                   execFormat("justifyLeft");
-                }}
-                title="محاذاة لليسار"
-                className={`grid size-7.5 place-items-center rounded-lg transition cursor-pointer ${
-                  activeFormats.justifyLeft
-                    ? "bg-primary text-white shadow-2xs"
-                    : "hover:bg-field-bg text-heading"
-                }`}
-              >
-                <AlignLeft className="size-3.5" />
-              </button>
+                }} className={activeFormats.justifyLeft ? "bg-primary text-on-primary" : ""} />
             </div>
 
             {/* Lists: ul, ol */}
-            <div className="flex items-center gap-0.5 border-l border-border/70 pl-2">
-              <button
-                type="button"
-                onMouseDown={(e) => {
+            <div className="flex items-center gap-0.5 border-s border-border/70 ps-2">
+              <IconButton label="قائمة نقطية" icon={<List className="size-3.5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onMouseDown={(e) => {
                   e.preventDefault();
                   execFormat("insertUnorderedList");
-                }}
-                title="قائمة نقطية"
-                className={`grid size-7.5 place-items-center rounded-lg transition cursor-pointer ${
-                  activeFormats.insertUnorderedList
-                    ? "bg-primary text-white shadow-2xs"
-                    : "hover:bg-field-bg text-heading"
-                }`}
-              >
-                <List className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => {
+                }} className={activeFormats.insertUnorderedList ? "bg-primary text-on-primary" : ""} />
+              <IconButton label="قائمة مرقمة" icon={<ListOrdered className="size-3.5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onMouseDown={(e) => {
                   e.preventDefault();
                   execFormat("insertOrderedList");
-                }}
-                title="قائمة مرقمة"
-                className={`grid size-7.5 place-items-center rounded-lg transition cursor-pointer ${
-                  activeFormats.insertOrderedList
-                    ? "bg-primary text-white shadow-2xs"
-                    : "hover:bg-field-bg text-heading"
-                }`}
-              >
-                <ListOrdered className="size-3.5" />
-              </button>
+                }} className={activeFormats.insertOrderedList ? "bg-primary text-on-primary" : ""} />
             </div>
 
             {/* Blockquote, Callout, HR, Link */}
-            <div className="flex items-center gap-0.5 border-l border-border/70 pl-2">
-              <button
-                type="button"
-                onMouseDown={(e) => {
+            <div className="flex items-center gap-0.5 border-s border-border/70 ps-2">
+              <IconButton label="اقتباس" icon={<Quote className="size-3.5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onMouseDown={(e) => {
                   e.preventDefault();
                   insertCustomBlock("quote");
-                }}
-                title="اقتباس"
-                className="grid size-7.5 place-items-center rounded-lg hover:bg-field-bg text-heading transition cursor-pointer"
-              >
-                <Quote className="size-3.5" />
-              </button>
-              <button
+                }} />
+              <Button
                 type="button"
                 onMouseDown={(e) => {
                   e.preventDefault();
                   insertCustomBlock("callout");
                 }}
                 title="صندوق تنبيه وملاحظة هامة"
-                className="flex items-center gap-1 px-2.5 h-7.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary font-bold text-xs transition cursor-pointer"
+                variant="ghost" size="sm"
               >
                 <Sparkles className="size-3.5" />
                 <span>ملاحظة هامة</span>
-              </button>
+              </Button>
               {activeKey === "faq" && (
-                <button
+                <Button
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
                     insertCustomBlock("qa");
                   }}
                   title="إدراج سؤال وجواب جديد"
-                  className="flex items-center gap-1 px-2.5 h-7.5 rounded-lg bg-success-soft hover:bg-success/20 text-success font-extrabold text-xs transition cursor-pointer"
+                  variant="ghost" size="sm"
                 >
                   <Plus className="size-3.5" />
                   <span>+ سؤال وجواب</span>
-                </button>
+                </Button>
               )}
-              <button
-                type="button"
-                onMouseDown={(e) => {
+              <IconButton label="خط فاصل" icon={<Minus className="size-3.5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onMouseDown={(e) => {
                   e.preventDefault();
                   insertCustomBlock("hr");
-                }}
-                title="خط فاصل"
-                className="grid size-7.5 place-items-center rounded-lg hover:bg-field-bg text-heading transition cursor-pointer"
-              >
-                <Minus className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => {
+                }} />
+              <IconButton label="إدراج رابط" icon={<Link2 className="size-3.5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onMouseDown={(e) => {
                   e.preventDefault();
                   handleInsertLink();
-                }}
-                title="إدراج رابط"
-                className="grid size-7.5 place-items-center rounded-lg hover:bg-field-bg text-heading transition cursor-pointer"
-              >
-                <Link2 className="size-3.5" />
-              </button>
+                }} />
             </div>
 
             {/* Undo / Redo */}
-            <div className="flex items-center gap-0.5 mr-auto">
-              <button
-                type="button"
-                onMouseDown={(e) => {
+            <div className="flex items-center gap-0.5 ms-auto">
+              <IconButton label="تراجع (Ctrl+Z)" icon={<Undo className="size-3.5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onMouseDown={(e) => {
                   e.preventDefault();
                   execFormat("undo");
-                }}
-                title="تراجع (Ctrl+Z)"
-                className="grid size-7.5 place-items-center rounded-lg hover:bg-field-bg text-heading transition active:scale-95 cursor-pointer"
-              >
-                <Undo className="size-3.5" />
-              </button>
-              <button
-                type="button"
-                onMouseDown={(e) => {
+                }} />
+              <IconButton label="إعادة (Ctrl+Y)" icon={<Redo className="size-3.5" strokeWidth={1.75} aria-hidden="true" />} variant="ghost" size="sm" onMouseDown={(e) => {
                   e.preventDefault();
                   execFormat("redo");
-                }}
-                title="إعادة (Ctrl+Y)"
-                className="grid size-7.5 place-items-center rounded-lg hover:bg-field-bg text-heading transition active:scale-95 cursor-pointer"
-              >
-                <Redo className="size-3.5" />
-              </button>
+                }} />
             </div>
           </div>
         )}
@@ -934,7 +796,7 @@ export default function AdminContentPage() {
             }}
             onKeyUp={checkActiveFormats}
             onMouseUp={checkActiveFormats}
-            className="min-h-[460px] w-full rounded-2xl border border-border/80 bg-surface p-6 sm:p-8 text-sm text-heading shadow-xs focus:outline-hidden focus:ring-2 focus:ring-primary/20 leading-relaxed font-sans prose prose-neutral max-w-none [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-primary [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-black [&_h3]:text-heading [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-2.5 [&_ul]:list-disc [&_ul]:pr-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pr-5 [&_ol]:mb-3 [&_blockquote]:border-r-4 [&_blockquote]:border-primary/60 [&_blockquote]:bg-field-bg/60 [&_blockquote]:p-3 [&_blockquote]:rounded-lg [&_blockquote]:my-3 [&_hr]:my-4 [&_hr]:border-border cursor-text"
+            className="min-h-[460px] w-full rounded-2xl border border-border/80 bg-surface p-6 sm:p-8 text-sm text-heading shadow-xs focus:outline-hidden focus:ring-2 focus:ring-primary/20 leading-relaxed font-sans prose prose max-w-none [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-primary [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-heading [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-2.5 [&_ul]:list-disc [&_ul]:pe-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pe-5 [&_ol]:mb-3 [&_blockquote]:border-e-4 [&_blockquote]:border-primary/60 [&_blockquote]:bg-surface-muted/60 [&_blockquote]:p-3 [&_blockquote]:rounded-lg [&_blockquote]:my-3 [&_hr]:my-4 [&_hr]:border-border cursor-text"
             dir="rtl"
           />
         </div>
@@ -951,19 +813,19 @@ export default function AdminContentPage() {
             {/* Document Header Letterhead */}
             <div className="flex items-center justify-between border-b border-border/60 pb-4 mb-6">
               <div className="flex items-center gap-2">
-                <span className="font-black text-lg text-primary tracking-wide">VIORA</span>
+                <span className="font-bold text-lg text-primary tracking-wide">VIORA</span>
                 <span className="text-xs text-text-secondary">
                   · وثيقة {PAGE_DEFINITIONS[activeKey].label} الرسمية
                 </span>
               </div>
-              <span className="rounded-full bg-field-bg px-3 py-1 text-xs font-bold text-text-secondary">
+              <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-bold text-text-secondary">
                 {currentPage.updatedAt
                   ? `تاريخ النشر: ${formatDate(currentPage.updatedAt)}`
                   : "نسخة معتمدة"}
               </span>
             </div>
 
-            <h1 className="text-2xl font-black text-heading mb-6 leading-tight">
+            <h1 className="text-2xl font-bold text-heading mb-6 leading-tight">
               {currentPage.title}
             </h1>
 
@@ -972,7 +834,7 @@ export default function AdminContentPage() {
               dangerouslySetInnerHTML={{
                 __html: cleanPageHtml(currentPage.html),
               }}
-              className="text-sm text-heading leading-relaxed font-sans prose prose-neutral max-w-none [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-primary [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-black [&_h3]:text-heading [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-2.5 [&_ul]:list-disc [&_ul]:pr-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pr-5 [&_ol]:mb-3 [&_blockquote]:border-r-4 [&_blockquote]:border-primary/60 [&_blockquote]:bg-field-bg/60 [&_blockquote]:p-3 [&_blockquote]:rounded-lg [&_blockquote]:my-3 [&_hr]:my-4 [&_hr]:border-border"
+              className="text-sm text-heading leading-relaxed font-sans prose prose max-w-none [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-primary [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-bold [&_h3]:text-heading [&_h3]:mt-3 [&_h3]:mb-1 [&_p]:mb-2.5 [&_ul]:list-disc [&_ul]:pe-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pe-5 [&_ol]:mb-3 [&_blockquote]:border-e-4 [&_blockquote]:border-primary/60 [&_blockquote]:bg-surface-muted/60 [&_blockquote]:p-3 [&_blockquote]:rounded-lg [&_blockquote]:my-3 [&_hr]:my-4 [&_hr]:border-border"
               dir="rtl"
             />
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, MailCheck, MailX } from "lucide-react";
-import { TableShell, Td, Thead } from "@/components/ui/Table";
+import { TableShell, Td, Thead, Tr } from "@/components/ui/Table";
 import StatusBadge from "./StatusBadge";
 import { accountStatus, ROLE_LABEL } from "@/lib/admin/status";
 import type { AdminUserListItem } from "@/lib/admin/types";
@@ -29,16 +29,15 @@ export default function UsersTable({
   return (
     <TableShell minWidth="min-w-[860px]">
       <Thead columns={COLUMNS} />
-      <tbody className="divide-y divide-border/60">
+      <tbody className="divide-y divide-border">
         {users.map((user) => (
-          <tr
+          <Tr
             key={`${user.role}-${user.id}`}
-            className="cursor-pointer bg-surface transition hover:bg-primary-soft/40"
             onClick={() => onOpen(user.id)}
           >
             <Td>
               <div className="flex items-center gap-3">
-                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-field-bg text-sm font-bold text-text-secondary">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-surface-muted text-sm font-bold text-text-secondary">
                   {/* الحرف الأول من اسم مكسور بيطلع رمز مكسّر كمان */}
                   {isBrokenText(user.name)
                     ? "#"
@@ -92,7 +91,7 @@ export default function UsersTable({
                 aria-hidden="true"
               />
             </Td>
-          </tr>
+          </Tr>
         ))}
       </tbody>
     </TableShell>

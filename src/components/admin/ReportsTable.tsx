@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft } from "lucide-react";
-import { TableShell, Td, Thead } from "@/components/ui/Table";
+import { TableShell, Td, Thead, Tr } from "@/components/ui/Table";
 import StatusBadge from "./StatusBadge";
 import { REPORT_STATUS, REPORT_TARGET, reportReasonLabel } from "@/lib/admin/status";
 import type { AdminReportListItem, ReportStatus, ReportTarget } from "@/lib/admin/types";
@@ -32,11 +32,10 @@ export default function ReportsTable({
   return (
     <TableShell minWidth="min-w-[880px]">
       <Thead columns={COLUMNS} />
-      <tbody className="divide-y divide-border/60">
+      <tbody className="divide-y divide-border">
         {reports.map((report) => (
-          <tr
+          <Tr
             key={report.id}
-            className="cursor-pointer bg-surface transition hover:bg-primary-soft/40"
             onClick={() => onOpen(report.id)}
           >
             <Td>
@@ -75,7 +74,7 @@ export default function ReportsTable({
                 aria-hidden="true"
               />
             </Td>
-          </tr>
+          </Tr>
         ))}
       </tbody>
     </TableShell>

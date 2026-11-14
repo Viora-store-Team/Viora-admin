@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft } from "lucide-react";
-import { TableShell, Td, Thead } from "@/components/ui/Table";
+import { TableShell, Td, Thead, Tr } from "@/components/ui/Table";
 import StatusBadge from "./StatusBadge";
 import { SUPPORT_TICKET_STATUS } from "@/lib/admin/status";
 import type { AdminSupportTicket } from "@/lib/admin/types";
@@ -26,11 +26,10 @@ export default function SupportTicketsTable({
   return (
     <TableShell minWidth="min-w-[760px]">
       <Thead columns={COLUMNS} />
-      <tbody className="divide-y divide-border/60">
+      <tbody className="divide-y divide-border">
         {tickets.map((ticket) => (
-          <tr
+          <Tr
             key={ticket.id}
-            className="cursor-pointer bg-surface transition hover:bg-primary-soft/40"
             onClick={() => onOpen(ticket.id)}
           >
             <Td className="max-w-[320px]">
@@ -40,7 +39,7 @@ export default function SupportTicketsTable({
               </p>
             </Td>
             <Td>
-              <p className="font-semibold text-heading">{ticket.user.name}</p>
+              <p className="font-medium text-heading">{ticket.user.name}</p>
               <p className="mt-1 text-xs text-text-secondary" dir="ltr">
                 {ticket.user.email}
               </p>
@@ -54,7 +53,7 @@ export default function SupportTicketsTable({
             <Td>
               <ChevronLeft className="size-4 text-text-secondary" aria-hidden="true" />
             </Td>
-          </tr>
+          </Tr>
         ))}
       </tbody>
     </TableShell>

@@ -2,7 +2,7 @@
 import Image from "next/image";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUpDown, Eye, Layers, MapPin, Package, Search, ShoppingBag, Store, User, XCircle } from "lucide-react";
+import { Eye, Layers, MapPin, Package, ShoppingBag, Store, User } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
@@ -10,9 +10,13 @@ import EmptyState from "@/components/ui/EmptyState";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Pagination from "@/components/ui/Pagination";
 import Spinner from "@/components/ui/Spinner";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import Tabs from "@/components/ui/Tabs";
+import Modal from "@/components/ui/Modal";
 import OrderPromoLines from "@/components/admin/OrderPromoLines";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { TableShell, Td, Thead } from "@/components/ui/Table";
+import { TableShell, Td, Thead, Tr } from "@/components/ui/Table";
 import { fetchStoreOrders, fetchAdminOrderDetail } from "@/lib/admin/api";
 import { orderStatusMeta } from "@/lib/admin/status";
 import type {
@@ -169,7 +173,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
     <div className="flex flex-col gap-6">
       {/* Header & Subtitle */}
       <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-extrabold text-heading">
+        <h2 className="text-xl font-bold text-heading">
           {t.admin.orders.title}
         </h2>
         <p className="text-sm text-text-secondary">
@@ -179,76 +183,22 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
 
       <ErrorBanner message={error} onRetry={loadOrders} />
 
-      {/* Tabs with Count Pills */}
-      <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.key;
-          const count = counts[tab.key] ?? (tab.key === "all" ? counts.all : 0);
+      <Tabs items={TABS.map(tab => ({ key: tab.key, label: tab.label, count: counts[tab.key] ?? (tab.key === "all" ? counts.all : 0) }))}
+        active={activeTab} onChange={key => { setActiveTab(key); setPage(1); }} />
 
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => {
-                setActiveTab(tab.key);
-                setPage(1);
-              }}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-extrabold transition ${
-                isActive
-                  ? "bg-primary text-white shadow-xs"
-                  : "border border-border/80 bg-surface text-text-secondary hover:border-primary/40 hover:text-heading"
-              }`}
-            >
-              <span>{tab.label}</span>
-              {typeof count === "number" && (
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
-                    isActive
-                      ? "bg-white/20 text-white"
-                      : "bg-field-bg text-text-secondary"
-                  }`}
-                >
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Search & Sort Toolbar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1">
-          <Search className="absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-text-secondary" />
-          <input
-            type="search"
-            value={queryText}
-            onChange={(e) => {
-              setQueryText(e.target.value);
-              setPage(1);
-            }}
-            placeholder={t.admin.orders.searchPlaceholder}
-            className="h-10.5 w-full rounded-xl border border-border bg-surface pl-4 pr-10 text-sm text-heading placeholder:text-text-secondary/70 focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/20"
-          />
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="min-w-48 flex-1">
+          <Input id="store-orders-search" type="search" value={queryText}
+            onChange={value => { setQueryText(value); setPage(1); }}
+            placeholder={t.admin.orders.searchPlaceholder} />
         </div>
-
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <select
-              value={sortOption}
-              onChange={(e) => {
-                setSortOption(e.target.value as "newest" | "oldest" | "highest");
-                setPage(1);
-              }}
-              className="h-10.5 appearance-none rounded-xl border border-border bg-surface pl-8 pr-4 text-xs font-bold text-heading hover:border-primary/40 focus:border-primary focus:outline-hidden"
-            >
-              <option value="newest">{t.admin.orders.sortNewest}</option>
-              <option value="oldest">{t.admin.orders.sortOldest}</option>
-              <option value="highest">{t.admin.orders.sortHighest}</option>
-            </select>
-            <ArrowUpDown className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-text-secondary" />
-          </div>
-        </div>
+        <Select id="store-orders-sort" value={sortOption}
+          onChange={value => { setSortOption(value as "newest" | "oldest" | "highest"); setPage(1); }}
+          options={[
+            { value: "newest", label: t.admin.orders.sortNewest },
+            { value: "oldest", label: t.admin.orders.sortOldest },
+            { value: "highest", label: t.admin.orders.sortHighest },
+          ]} className="min-w-44" />
       </div>
 
       {/* Orders Table or Empty State */}
@@ -281,17 +231,14 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
-          <Card className="overflow-hidden border border-border shadow-xs">
+          <Card className="overflow-hidden border border-border shadow-card">
             <TableShell minWidth="min-w-[950px]">
               <Thead columns={ORDER_COLUMNS} />
               <tbody className="divide-y divide-border/60">
                 {orders.map((order) => (
-                  <tr
-                    key={order.id}
-                    className="transition hover:bg-primary-soft/30"
-                  >
+                  <Tr key={order.id}>
                     <Td>
-                      <span className="font-extrabold text-heading">
+                      <span className="font-bold text-heading">
                         {order.orderNumber}
                       </span>
                     </Td>
@@ -341,7 +288,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                         {t.admin.orders.reviewOrder}
                       </Button>
                     </Td>
-                  </tr>
+                  </Tr>
                 ))}
               </tbody>
             </TableShell>
@@ -356,41 +303,11 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
         </div>
       )}
 
-      {/* Order Detail Modal Dialog */}
-      {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-            onClick={() => {
-              setSelectedOrder(null);
-              setOrderDetail(null);
-            }}
-          />
-
-          <div className="relative z-10 max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-border bg-app-bg shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-start justify-between border-b border-border bg-surface px-6 py-5 sm:px-8">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-extrabold text-heading">
-                    {t.admin.orders.detailsTitle}
-                  </h3>
-                </div>
-                <p className="text-xs text-text-secondary">
-                  {orderDetail?.orderNumber || selectedOrder.orderNumber} · {formatDate(orderDetail?.createdAt || selectedOrder.createdAt)}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedOrder(null);
-                  setOrderDetail(null);
-                }}
-                className="grid size-9 place-items-center rounded-xl text-text-secondary hover:bg-field-bg hover:text-heading cursor-pointer"
-              >
-                <XCircle className="size-5" />
-              </button>
-            </div>
-
+      <Modal open={selectedOrder !== null} onClose={() => { setSelectedOrder(null); setOrderDetail(null); }}
+        title={t.admin.orders.detailsTitle} size="lg"
+        description={selectedOrder ? <>{orderDetail?.orderNumber || selectedOrder.orderNumber} · {formatDate(orderDetail?.createdAt || selectedOrder.createdAt)}</> : undefined}>
+        {selectedOrder && (
+          <>
             {loadingDetail ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Spinner variant="inline" className="size-8 border-3" />
@@ -410,13 +327,13 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                   <div className="grid grid-cols-2 gap-5 text-start sm:text-end">
                     <div>
                       <p className="text-xs font-bold text-on-primary/70">إجمالي المنتجات</p>
-                      <p className="mt-1 ltr-nums text-lg font-black">
+                      <p className="mt-1 ltr-nums text-lg font-bold">
                         {formatCurrency(Number(orderDetail?.money?.productsTotal ?? orderDetail?.subtotal ?? selectedOrder.total))}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs font-bold text-on-primary/70">الإجمالي المطلوب</p>
-                      <p className="mt-1 ltr-nums text-lg font-black">
+                      <p className="mt-1 ltr-nums text-lg font-bold">
                         {formatCurrency(Number(orderDetail?.total ?? selectedOrder.total))}
                       </p>
                     </div>
@@ -429,11 +346,11 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                   <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="grid size-7 place-items-center rounded-lg bg-primary text-white">
+                        <span className="grid size-7 place-items-center rounded-lg bg-primary text-on-primary">
                           <Layers className="size-4" />
                         </span>
                         <div>
-                          <p className="text-xs font-black text-heading">
+                          <p className="text-xs font-bold text-heading">
                             الطلبية الأم المشتركة (#{orderDetail.group.id})
                           </p>
                           <p className="text-[11px] font-bold text-text-secondary">
@@ -445,7 +362,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                         <span className="text-[10px] font-bold text-text-secondary block">
                           إجمالي ما دفعه الزبون بالكامل
                         </span>
-                        <span className="ltr-nums text-sm font-black text-primary">
+                        <span className="ltr-nums text-sm font-bold text-primary">
                           {formatCurrency(Number(orderDetail.group.totalAmount))}
                         </span>
                       </div>
@@ -454,7 +371,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                     {/* Sibling Stores in this Group */}
                     {orderDetail.group.orders.length > 1 && (
                       <div className="mt-3 divide-y divide-border/50 border-t border-border/60 pt-2">
-                        <p className="mb-2 text-[11px] font-extrabold text-heading">
+                        <p className="mb-2 text-[11px] font-bold text-heading">
                           متاجر الطلبية الأخرى وحالتها:
                         </p>
                         <div className="space-y-1.5">
@@ -465,7 +382,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                                 key={sib.id}
                                 className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs ${
                                   isCurrent
-                                    ? "bg-surface font-black text-primary shadow-2xs"
+                                    ? "bg-surface font-bold text-primary shadow-card"
                                     : "text-text-secondary"
                                 }`}
                               >
@@ -473,7 +390,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                                   <Store className="size-3.5 text-text-secondary" />
                                   <span>{sib.storeName || `متجر #${sib.storeId}`}</span>
                                   {isCurrent && (
-                                    <span className="rounded bg-primary/10 px-1.5 py-0.2 text-[10px] font-extrabold text-primary">
+                                    <span className="rounded bg-primary/10 px-1.5 py-0.2 text-[10px] font-bold text-primary">
                                       هذا الطلب
                                     </span>
                                   )}
@@ -495,7 +412,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
 
                 {/* Customer account and delivery information */}
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                  <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
+                  <div className="rounded-2xl border border-border bg-surface p-5 shadow-card">
                     <p className="flex items-center gap-2 text-xs font-bold text-text-secondary">
                       <User className="size-4 text-primary" />
                       {t.admin.orders.customerInfo}
@@ -525,7 +442,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                       )}
                   </div>
 
-                  <div className="rounded-2xl border border-border bg-surface p-5 shadow-xs">
+                  <div className="rounded-2xl border border-border bg-surface p-5 shadow-card">
                     <p className="flex items-center gap-2 text-xs font-bold text-text-secondary">
                       <MapPin className="size-4 text-primary" />
                       {t.admin.orders.shippingAddress}
@@ -540,7 +457,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                     </p>
                     {(orderDetail?.delivery?.notes || orderDetail?.notes) && (
                       <div className="mt-2 rounded bg-surface p-2 text-[11px] font-bold text-text-secondary">
-                        <span className="text-primary font-black">ملاحظة التوصيل: </span>
+                        <span className="text-primary font-bold">ملاحظة التوصيل: </span>
                         {orderDetail?.delivery?.notes || orderDetail?.notes}
                       </div>
                     )}
@@ -548,8 +465,8 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                 </div>
 
                 {/* Items List */}
-                <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-xs">
-                  <h4 className="border-b border-border px-5 py-4 text-base font-extrabold text-heading">
+                <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-card">
+                  <h4 className="border-b border-border px-5 py-4 text-base font-bold text-heading">
                     {t.admin.orders.itemsList} ({(orderDetail?.items || selectedOrder.items || []).length})
                   </h4>
                   <div className="divide-y divide-border/70">
@@ -575,27 +492,27 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                               className="size-16 shrink-0 rounded-xl border border-border object-cover"
                             />
                           ) : (
-                            <span className="grid size-16 shrink-0 place-items-center rounded-xl bg-field-bg text-text-secondary">
+                            <span className="grid size-16 shrink-0 place-items-center rounded-xl bg-surface-muted text-text-secondary">
                               <Package className="size-5" />
                             </span>
                           )}
                           <div className="min-w-0">
-                            <p className="truncate text-base font-extrabold text-heading">{item.productName}</p>
+                            <p className="truncate text-base font-bold text-heading">{item.productName}</p>
                             {variant && <p className="mt-1 text-sm text-text-secondary">{variant}</p>}
                           </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-3 rounded-xl bg-field-bg p-3 text-center sm:min-w-[290px]">
+                        <div className="grid grid-cols-3 gap-3 rounded-xl bg-surface-muted p-3 text-center sm:min-w-[290px]">
                           <div>
                             <p className="text-[11px] font-bold text-text-secondary">عدد القطع</p>
-                            <p className="mt-1 ltr-nums font-black text-heading">{item.quantity}</p>
+                            <p className="mt-1 ltr-nums font-bold text-heading">{item.quantity}</p>
                           </div>
                           <div>
                             <p className="text-[11px] font-bold text-text-secondary">سعر القطعة</p>
-                            <p className="mt-1 ltr-nums font-black text-heading">{formatCurrency(Number(unitPrice))}</p>
+                            <p className="mt-1 ltr-nums font-bold text-heading">{formatCurrency(Number(unitPrice))}</p>
                           </div>
                           <div>
                             <p className="text-[11px] font-bold text-text-secondary">إجمالي المنتج</p>
-                            <p className="mt-1 ltr-nums font-black text-primary">{formatCurrency(Number(lineTotal))}</p>
+                            <p className="mt-1 ltr-nums font-bold text-primary">{formatCurrency(Number(lineTotal))}</p>
                           </div>
                         </div>
                       </article>
@@ -604,7 +521,7 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                 </div>
 
                 {/* Financial Summary */}
-                <div className="rounded-2xl border border-border bg-field-bg/70 p-5">
+                <div className="rounded-2xl border border-border bg-surface-muted/70 p-5">
                   <div className="flex items-center justify-between py-1 text-sm text-text-secondary">
                     <span>{t.admin.orders.subtotal}</span>
                     <span className="ltr-nums font-bold text-heading">
@@ -621,9 +538,9 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                         : t.admin.orders.freeShipping}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between border-t border-border/80 pt-2 text-base font-extrabold text-heading">
+                  <div className="flex items-center justify-between border-t border-border/80 pt-2 text-base font-bold text-heading">
                     <span>{t.admin.orders.grandTotal}</span>
-                    <span className="ltr-nums text-primary font-black">
+                    <span className="ltr-nums text-primary font-bold">
                       {formatCurrency(Number(orderDetail?.total ?? selectedOrder.total))}
                     </span>
                   </div>
@@ -641,9 +558,9 @@ export default function StoreOrdersSection({ storeId }: { storeId: number }) {
                 {t.admin.common.backToList}
               </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

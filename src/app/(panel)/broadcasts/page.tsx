@@ -164,7 +164,7 @@ export default function AdminBroadcastsPage() {
               </div>
 
               <div className="flex flex-col gap-1.5" role="group" aria-label="الجمهور">
-                <span className="text-sm font-semibold text-field-label">الجمهور</span>
+                <span className="text-sm font-medium text-heading">الجمهور</span>
                 <Tabs
                   items={AUDIENCE_TABS}
                   active={form.audience}
@@ -214,14 +214,14 @@ export default function AdminBroadcastsPage() {
             </div>
 
             <div aria-hidden="true" className="flex flex-col gap-2">
-              <span className="text-sm font-semibold text-field-label">معاينة</span>
-              <div className="rounded-3xl bg-field-bg p-4">
+              <span className="text-sm font-medium text-heading">معاينة</span>
+              <div className="rounded-3xl bg-surface-muted p-4">
                 <div className="rounded-2xl bg-surface p-3 shadow-sm">
                   <div className="flex items-center gap-2 text-[11px] font-bold text-text-secondary">
                     <Megaphone className="size-3.5" />
                     Viora
                   </div>
-                  <p className="mt-1 break-words text-sm font-extrabold text-heading">
+                  <p className="mt-1 break-words text-sm font-bold text-heading">
                     {form.title.trim() || "عنوان الإشعار"}
                   </p>
                   <p className="mt-0.5 break-words text-xs text-text-secondary">
@@ -235,7 +235,7 @@ export default function AdminBroadcastsPage() {
       </Card>
 
       <section className="flex flex-col gap-3" aria-label="سجل الإرسال">
-        <h2 className="text-base font-extrabold text-heading">سجل الإرسال</h2>
+        <h2 className="text-base font-bold text-heading">سجل الإرسال</h2>
         <ErrorBanner
           message={list.unauthorized ? t.admin.common.sessionInvalid : list.error}
           onRetry={list.unauthorized ? undefined : list.reload}
@@ -265,8 +265,8 @@ export default function AdminBroadcastsPage() {
             <div className="flex flex-col gap-2">
               <p>
                 سيصل الإشعار إلى{" "}
-                <span className="ltr-nums font-extrabold">{formatNumber(preview.recipients)}</span> زبون على{" "}
-                <span className="ltr-nums font-extrabold">{formatNumber(preview.devices)}</span> جهاز
+                <span className="ltr-nums font-bold">{formatNumber(preview.recipients)}</span> زبون على{" "}
+                <span className="ltr-nums font-bold">{formatNumber(preview.devices)}</span> جهاز
               </p>
               {preview.target && <p>{targetText(preview.target)}</p>}
               {preview.notFoundEmails.length > 0 && (

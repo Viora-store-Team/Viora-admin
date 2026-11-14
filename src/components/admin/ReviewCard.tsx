@@ -26,7 +26,7 @@ export default function ReviewCard({ review }: { review: Review }) {
       <CardBody className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="info">{REVIEW_TARGET[review.targetType]}</Badge>
-          <span className="text-sm font-extrabold text-heading">
+          <span className="text-sm font-bold text-heading">
             {review.targetName}
           </span>
 
@@ -62,7 +62,7 @@ export default function ReviewCard({ review }: { review: Review }) {
 
         {review.isHidden && (
           <div className="space-y-1.5 rounded-xl border border-warning/25 bg-warning-soft/60 px-3 py-2.5">
-            <p className="flex items-center gap-1.5 text-xs font-extrabold text-warning">
+            <p className="flex items-center gap-1.5 text-xs font-bold text-warning">
               <EyeOff className="size-3.5" aria-hidden="true" />
               {t.admin.reports.hiddenBadge}
             </p>

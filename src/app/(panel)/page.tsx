@@ -16,7 +16,9 @@ import {
   XCircle,
 } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
-import { TableShell, Td, Thead } from "@/components/ui/Table";
+import Button from "@/components/ui/Button";
+import PageHeader from "@/components/ui/PageHeader";
+import { TableShell, Td, Thead, Tr } from "@/components/ui/Table";
 import EmptyState from "@/components/ui/EmptyState";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Spinner from "@/components/ui/Spinner";
@@ -194,26 +196,21 @@ export default function AdminOverviewPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <PageHeader title={t.admin.dashboard.title} subtitle={t.admin.dashboard.subtitle} />
       {/* ── الرأس الرئيسي الموحد مع محدد المدى الزمني ───────────────── */}
-      <div className="flex flex-col gap-4 rounded-3xl border border-border/80 bg-surface p-6 shadow-xs sm:p-8 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 shadow-card lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-extrabold text-primary">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
               <Sparkles className="size-3.5" aria-hidden="true" />
               لوحة التحكم الرئيسية
             </span>
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-heading sm:text-3xl">
-            {t.admin.dashboard.title}
-          </h1>
-          <p className="text-sm font-medium text-text-secondary">
-            {t.admin.dashboard.subtitle}
-          </p>
         </div>
 
         {/* محدد المدى الزمني بتصميم حديث */}
         <div className="flex flex-col gap-2 sm:items-start lg:items-end">
-          <div className="inline-flex items-center gap-1.5 rounded-2xl border border-border/70 bg-field-bg p-1 shadow-inner">
+          <div className="inline-flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-surface-muted p-1">
             <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-text-secondary">
               <Calendar className="size-3.5" aria-hidden="true" />
               <span>المدى:</span>
@@ -221,19 +218,18 @@ export default function AdminOverviewPage() {
             {PERIOD_OPTIONS.map((opt) => {
               const active = opt.key === period;
               return (
-                <button
+                <Button
                   key={opt.key}
-                  type="button"
+                  size="sm"
+                  variant={active ? "primary" : "ghost"}
                   onClick={() => changePeriod(opt.key)}
                   className={cn(
-                    "rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all duration-200",
-                    active
-                      ? "bg-primary text-on-primary shadow-sm scale-100"
-                      : "text-field-label hover:bg-surface hover:text-heading",
+                    "font-bold",
+                    !active && "text-text-secondary hover:bg-surface hover:text-heading",
                   )}
                 >
                   {opt.label}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -260,7 +256,7 @@ export default function AdminOverviewPage() {
           <Spinner />
         </div>
       ) : !view || !counters ? null : counters.stores.total === 0 ? (
-        <Card className="overflow-hidden border border-border shadow-xs">
+        <Card className="overflow-hidden border border-border shadow-card">
           <CardBody className="p-8">
             <EmptyState
               icon={BarChart3}
@@ -288,7 +284,7 @@ export default function AdminOverviewPage() {
 
           {/* ── الرسوم البيانية للنمو والحركة ───────────────────────── */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <Card className="border border-border/80 shadow-xs">
+            <Card className="border border-border/80 shadow-card">
               <CardHeader title={t.admin.dashboard.growthTitle} />
               <CardBody>
                 <TrendChart
@@ -310,7 +306,7 @@ export default function AdminOverviewPage() {
               </CardBody>
             </Card>
 
-            <Card className="border border-border/80 shadow-xs">
+            <Card className="border border-border/80 shadow-card">
               <CardHeader title={t.admin.dashboard.ordersTrendTitle} />
               <CardBody>
                 <TrendChart
@@ -336,7 +332,7 @@ export default function AdminOverviewPage() {
           />
 
           {/* ── جدول أعلى المتاجر أداءً ─────────────────────────────── */}
-          <Card className="overflow-hidden border border-border/80 shadow-xs">
+          <Card className="overflow-hidden border border-border/80 shadow-card">
             <CardHeader title={t.admin.dashboard.topStores} />
             {view.topStores.length === 0 ? (
               <CardBody>
@@ -349,9 +345,8 @@ export default function AdminOverviewPage() {
                 <Thead columns={TOP_STORE_COLUMNS} />
                 <tbody className="divide-y divide-border/60">
                   {view.topStores.map((row) => (
-                    <tr
+                    <Tr
                       key={row.store.id}
-                      className="cursor-pointer bg-surface transition hover:bg-primary-soft/40"
                       onClick={() => router.push(`/stores/${row.store.id}`)}
                     >
                       <Td>
@@ -368,7 +363,7 @@ export default function AdminOverviewPage() {
                       <Td className="ltr-nums">
                         {formatCurrency(Number(row.revenue))}
                       </Td>
-                    </tr>
+                    </Tr>
                   ))}
                 </tbody>
               </TableShell>

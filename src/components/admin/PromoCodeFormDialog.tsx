@@ -1,9 +1,10 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Button from "@/components/ui/Button";
 import ErrorBanner from "@/components/ui/ErrorBanner";
 import Input from "@/components/ui/Input";
+import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import Spinner from "@/components/ui/Spinner";
 import { createPromoCode } from "@/lib/admin/api";
@@ -16,7 +17,6 @@ import {
 import type { AdminPromoCode, PromoDuration, PromoType } from "@/lib/admin/types";
 import { cn } from "@/lib/cn";
 import { t } from "@/lib/strings";
-import { useDialog } from "@/lib/useDialog";
 
 const EMPTY: PromoForm = {
   code: "",
@@ -59,7 +59,6 @@ export default function PromoCodeFormDialog({
   const [failure, setFailure] = useState("");
   const [busy, setBusy] = useState(false);
   const submitting = useRef(false);
-  const titleId = useId();
 
   const close = () => {
     if (submitting.current) return;
@@ -68,7 +67,6 @@ export default function PromoCodeFormDialog({
     setFailure("");
     onClose();
   };
-  const dialogRef = useDialog(open, close, busy);
 
   function update<K extends keyof PromoForm>(key: K, value: PromoForm[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -104,33 +102,18 @@ export default function PromoCodeFormDialog({
     }
   }
 
-  if (!open) return null;
-
   const percent = form.type === "PERCENT";
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        aria-label={t.common.close}
-        className="absolute inset-0 bg-black/40"
-        onClick={close}
-      />
-      <div
-        ref={dialogRef}
-        tabIndex={-1}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className="relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-surface p-6 shadow-2xl"
-      >
-        <h2 id={titleId} className="text-base font-extrabold text-heading">
-          كود Viora جديد
-        </h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          الخصم على حساب Viora — المتاجر بتستلم سعرها كامل.
-        </p>
-
-        <div className="mt-5 flex flex-col gap-4">
+    <Modal open={open} onClose={close} closeOnBackdrop={!busy} title="كود Viora جديد"
+      description="الخصم على حساب Viora — المتاجر بتستلم سعرها كامل."
+      footer={<>
+        <Button variant="secondary" onClick={close} disabled={busy}>{t.common.cancel}</Button>
+        <Button onClick={submit} disabled={busy} aria-busy={busy}>
+          {busy ? <Spinner variant="inline" /> : null}إنشاء
+        </Button>
+      </>}
+    >
+        <div className="flex flex-col gap-4">
           <ErrorBanner message={failure} />
           <Input
             id="promo-code"
@@ -145,24 +128,25 @@ export default function PromoCodeFormDialog({
           />
 
           <fieldset>
-            <legend className="mb-2 text-sm font-bold text-field-label">نوع الخصم</legend>
+            <legend className="mb-2 text-sm font-bold text-heading">نوع الخصم</legend>
             <div className="grid grid-cols-2 gap-2">
               {TYPES.map((option) => (
-                <button
+                <Button
                   key={option.value}
-                  type="button"
+                  variant="secondary"
+                  size="sm"
                   aria-pressed={form.type === option.value}
                   disabled={busy}
                   onClick={() => update("type", option.value)}
                   className={cn(
-                    "rounded-xl border px-3 py-2.5 text-sm font-bold transition",
+                    "rounded-xl border px-3 text-sm font-medium transition-colors duration-150",
                     form.type === option.value
                       ? "border-primary bg-primary-soft text-primary"
-                      : "border-black/10 text-text-secondary hover:border-primary/40",
+                      : "border-border text-text-secondary hover:border-primary/40",
                   )}
                 >
                   {option.label}
-                </button>
+                </Button>
               ))}
             </div>
           </fieldset>
@@ -229,16 +213,6 @@ export default function PromoCodeFormDialog({
           )}
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
-          <Button variant="secondary" onClick={close} disabled={busy}>
-            {t.common.cancel}
-          </Button>
-          <Button onClick={submit} disabled={busy} aria-busy={busy}>
-            {busy ? <Spinner variant="inline" /> : null}
-            إنشاء
-          </Button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

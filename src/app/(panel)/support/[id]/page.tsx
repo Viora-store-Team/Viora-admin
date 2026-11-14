@@ -91,7 +91,7 @@ function AdminSupportTicketDetailPageContent() {
 
   if (loading && validId) return <Spinner />;
   if (notFound || !validId) {
-    return <Card className="overflow-hidden border border-border shadow-xs"><CardBody className="p-8"><EmptyState icon={Headphones} title={t.admin.common.notFound} hint={t.admin.common.notFoundHint} action={<Button onClick={() => router.push("/support")}>{t.admin.common.backToList}</Button>} /></CardBody></Card>;
+    return <Card className="overflow-hidden border border-border shadow-card"><CardBody className="p-8"><EmptyState icon={Headphones} title={t.admin.common.notFound} hint={t.admin.common.notFoundHint} action={<Button onClick={() => router.push("/support")}>{t.admin.common.backToList}</Button>} /></CardBody></Card>;
   }
   if (!ticket) return <ErrorBanner message={error || t.admin.common.loadFailed} onRetry={reload} />;
 
@@ -99,7 +99,7 @@ function AdminSupportTicketDetailPageContent() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t.admin.support.detailsTitle} subtitle={ticket.subject} action={<div className="flex flex-wrap items-center gap-3">
-        {flash && <span role="status" className="flex items-center gap-1.5 rounded-xl bg-success-soft px-3 py-1.5 text-xs font-bold text-success shadow-xs"><Check className="size-4" aria-hidden="true" />{flash}</span>}
+        {flash && <span role="status" className="flex items-center gap-1.5 rounded-xl bg-success-soft px-3 py-1.5 text-xs font-bold text-success shadow-card"><Check className="size-4" aria-hidden="true" />{flash}</span>}
         <Button variant="secondary" onClick={() => router.push("/support")} icon={<ArrowLeft className="size-4 rtl:rotate-180" aria-hidden="true" />}>{t.admin.common.backToList}</Button>
       </div>} />
       <ErrorBanner message={error} />

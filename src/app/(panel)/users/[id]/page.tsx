@@ -157,7 +157,7 @@ function AdminUserDetailPageContent() {
 
   if (notFound || !validId) {
     return (
-      <Card className="overflow-hidden border border-border shadow-xs">
+      <Card className="overflow-hidden border border-border shadow-card">
         <CardBody className="p-8">
           <EmptyState
             icon={UserRound}
@@ -215,7 +215,7 @@ function AdminUserDetailPageContent() {
             {flash && (
               <span
                 role="status"
-                className="flex items-center gap-1.5 rounded-xl bg-success-soft px-3 py-1.5 text-xs font-bold text-success shadow-xs"
+                className="flex items-center gap-1.5 rounded-xl bg-success-soft px-3 py-1.5 text-xs font-bold text-success shadow-card"
               >
                 <Check className="size-4" aria-hidden="true" />
                 {flash}
@@ -354,9 +354,9 @@ function AdminUserDetailPageContent() {
                   {user.addresses.map((address) => (
                     <li key={address.id} className="space-y-1 break-words py-3 first:pt-0 last:pb-0">
                       <div className="flex flex-wrap items-baseline gap-x-2">
-                        <span className="font-semibold text-heading">{address.label}</span>
+                        <span className="font-medium text-heading">{address.label}</span>
                         {address.isDefault && (
-                          <span className="text-xs font-semibold text-text-secondary">
+                          <span className="text-xs font-medium text-text-secondary">
                             {t.admin.users.defaultAddress}
                           </span>
                         )}

@@ -19,7 +19,7 @@ function ProductImage({ src, name }: { src?: string; name: string }) {
   const [failed, setFailed] = useState(false);
   const imageUrl = src && /^(https?:\/\/|\/(?!\/))/i.test(src) ? src : undefined;
   return (
-    <div className="aspect-square size-20 shrink-0 overflow-hidden rounded-lg bg-field-bg sm:size-24">
+    <div className="aspect-square size-20 shrink-0 overflow-hidden rounded-lg bg-surface-muted sm:size-24">
       {imageUrl && !failed ? (
         <Image
           src={imageUrl}
@@ -46,13 +46,13 @@ function ProductCard({ product }: { product: AdminCatalogProduct }) {
     0,
   );
   return (
-    <article className="overflow-hidden rounded-xl border border-border p-4">
+    <article className="overflow-hidden rounded-2xl border border-border bg-surface p-4">
       <div className="flex min-w-0 gap-3">
         <ProductImage key={cover} src={cover} name={product.name} />
         <div className="min-w-0 space-y-1 break-words">
           <h3 className="font-bold text-heading">{product.name}</h3>
           <p className="text-sm text-text-secondary">{product.category.name}</p>
-          <p className="flex flex-wrap gap-x-2 text-sm font-semibold text-heading">
+          <p className="flex flex-wrap gap-x-2 text-sm font-medium text-heading">
             <span>{formatCurrency(Number(product.price))}</span>
             {product.compareAtPrice != null && (
               <del className="text-text-secondary">{formatCurrency(Number(product.compareAtPrice))}</del>
@@ -66,11 +66,11 @@ function ProductCard({ product }: { product: AdminCatalogProduct }) {
       <p className="my-3 text-sm text-text-secondary">إجمالي المخزون {formatNumber(stock)}</p>
       {product.variants.length > 0 ? (
         <details className="rounded-lg border border-border p-3">
-          <summary className="cursor-pointer text-sm font-semibold text-heading">الصور والألوان والمقاسات</summary>
+          <summary className="cursor-pointer text-sm font-medium text-heading">الصور والألوان والمقاسات</summary>
           <ul className="mt-3 space-y-3">
             {product.variants.map((variant) => (
               <li key={variant.id} className="space-y-2 border-t border-border pt-3">
-                <p className="flex items-center gap-2 text-sm font-semibold text-heading">
+                <p className="flex items-center gap-2 text-sm font-medium text-heading">
                   <span className="size-4 rounded-full border border-border" style={{ backgroundColor: variant.colorHex }} aria-hidden="true" />
                   {variant.colorName || variant.colorHex}
                 </p>

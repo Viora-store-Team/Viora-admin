@@ -184,7 +184,7 @@ function AdminReportDetailPageContent() {
 
   if (notFound || !validId) {
     return (
-      <Card className="overflow-hidden border border-border shadow-xs">
+      <Card className="overflow-hidden border border-border shadow-card">
         <CardBody className="p-8">
           <EmptyState
             icon={Flag}
@@ -226,7 +226,7 @@ function AdminReportDetailPageContent() {
             {flash && (
               <span
                 role="status"
-                className="flex items-center gap-1.5 rounded-xl bg-success-soft px-3 py-1.5 text-xs font-bold text-success shadow-xs"
+                className="flex items-center gap-1.5 rounded-xl bg-success-soft px-3 py-1.5 text-xs font-bold text-success shadow-card"
               >
                 <Check className="size-4" aria-hidden="true" />
                 {flash}
@@ -312,7 +312,7 @@ function AdminReportDetailPageContent() {
 
             {/* وصف الزبون بنص كامل ومع فواصل الأسطر — مش عنوان فرعي مقصوص */}
             <div className="mt-5 border-t border-border/60 pt-4">
-              <p className="text-xs font-semibold text-text-secondary">
+              <p className="text-xs font-medium text-text-secondary">
                 {t.admin.reports.reportDetails}
               </p>
               <p className="mt-1 text-sm leading-7 break-words whitespace-pre-wrap text-heading">
@@ -327,7 +327,7 @@ function AdminReportDetailPageContent() {
         </Card>
 
         <div className="flex flex-col gap-4">
-          <h2 className="text-sm font-extrabold text-heading">
+          <h2 className="text-sm font-bold text-heading">
             {t.admin.reports.reportedContent}
           </h2>
 
@@ -336,7 +336,7 @@ function AdminReportDetailPageContent() {
           {product && (
             <Card>
               <CardBody className="space-y-3">
-                <p className="text-sm font-extrabold text-heading">
+                <p className="text-sm font-bold text-heading">
                   {product.name}
                 </p>
                 <InfoGrid
@@ -366,7 +366,7 @@ function AdminReportDetailPageContent() {
           {store && (
             <Card>
               <CardBody className="space-y-3">
-                <p className="text-sm font-extrabold text-heading">
+                <p className="text-sm font-bold text-heading">
                   {store.name}
                 </p>
                 <InfoGrid

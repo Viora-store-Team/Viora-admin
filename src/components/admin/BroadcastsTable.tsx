@@ -1,7 +1,7 @@
 "use client";
 
 import Badge from "@/components/ui/Badge";
-import { TableShell, Td, Thead } from "@/components/ui/Table";
+import { TableShell, Td, Thead, Tr } from "@/components/ui/Table";
 import { audienceLabel, linkTargetLabel } from "@/lib/admin/broadcast";
 import type { Broadcast } from "@/lib/admin/types";
 import { formatDateTime, formatNumber } from "@/lib/format";
@@ -13,12 +13,12 @@ export default function BroadcastsTable({ rows }: { rows: Broadcast[] }) {
   return (
     <TableShell minWidth="min-w-[860px]">
       <Thead columns={COLUMNS} />
-      <tbody className="divide-y divide-black/5">
+      <tbody className="divide-y divide-border">
         {rows.map((row) => (
-          <tr key={row.id}>
+          <Tr key={row.id}>
             <Td className="whitespace-nowrap text-text-secondary">{formatDateTime(row.createdAt)}</Td>
             <Td className="max-w-xs">
-              <p className="font-extrabold text-heading">{row.title}</p>
+              <p className="font-bold text-heading">{row.title}</p>
               <p className="truncate text-xs text-text-secondary" title={row.body}>
                 {row.body}
               </p>
@@ -30,7 +30,7 @@ export default function BroadcastsTable({ rows }: { rows: Broadcast[] }) {
             <Td className="ltr-nums">{formatNumber(row.devices)}</Td>
             <Td className="ltr-nums font-bold">{formatNumber(row.delivered)}</Td>
             <Td className="text-text-secondary">{linkTargetLabel(row.link)}</Td>
-          </tr>
+          </Tr>
         ))}
       </tbody>
     </TableShell>

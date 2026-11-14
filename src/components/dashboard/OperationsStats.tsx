@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import Button from "@/components/ui/Button";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
 import Select, { type SelectOption } from "@/components/ui/Select";
-import { TableShell, Td, Thead } from "@/components/ui/Table";
+import { TableShell, Td, Thead, Tr } from "@/components/ui/Table";
 import { fetchAdminCategories, fetchStats, fetchStores } from "@/lib/admin/api";
 import { orderStatusMeta } from "@/lib/admin/status";
 import type { InventoryAlerts, OrderPerformance, StatsPeriod, TopProductRow } from "@/lib/admin/types";
@@ -25,7 +26,7 @@ function Performance({ performance }: { performance: OrderPerformance }) {
         <p className="text-sm text-text-secondary">الحالات الحالية للطلبات التي أُنشئت خلال الفترة المحددة.</p>
         <dl className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
           {Object.entries(performance.byStatus).map(([status, count]) => (
-            <div key={status} className="space-y-2 rounded-xl bg-field-bg p-3">
+            <div key={status} className="space-y-2 rounded-xl bg-surface-muted p-3">
               <dt><StatusBadge meta={orderStatusMeta(status)} /></dt>
               <dd className="font-bold text-heading">{formatNumber(count)}</dd>
             </div>
@@ -122,15 +123,15 @@ function TopProducts({ products, period }: { products: TopProductRow[]; period: 
       <CardHeader
         title="المنتجات الأكثر مبيعًا"
         action={!options && (
-          <button type="button" disabled={pending} onClick={loadFilters} className="text-sm font-semibold text-primary disabled:opacity-50">
+          <Button variant="ghost" size="sm" disabled={pending} onClick={loadFilters}>
             تصفية المنتجات
-          </button>
+          </Button>
         )}
       />
       <CardBody>
         <p className="text-sm text-text-secondary">أعلى 10 منتجات حسب القطع التي استلمها الزباين خلال الفترة.</p>
         {options && (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-wrap gap-3 [&>*]:min-w-48 [&>*]:flex-1">
             <Select id="top-products-store" label="المتجر" value={storeId} options={options.stores} placeholder="كل المتاجر"
               disabled={pending} onChange={(next) => applyFilters(next, categoryId)} />
             <Select id="top-products-category" label="التصنيف" value={categoryId} options={options.categories} placeholder="كل التصنيفات"
@@ -140,7 +141,7 @@ function TopProducts({ products, period }: { products: TopProductRow[]; period: 
         {pending && <p role="status" className="text-sm text-text-secondary">جارٍ التحميل…</p>}
         {error && (
           <p role="alert" className="text-sm text-danger">
-            {error} {hasFilter && <button type="button" onClick={() => applyFilters(storeId, categoryId)} className="underline">أعد المحاولة</button>}
+            {error} {hasFilter && <Button variant="ghost" size="sm" onClick={() => applyFilters(storeId, categoryId)}>أعد المحاولة</Button>}
           </p>
         )}
         {rows && (rows.length === 0 ? (
@@ -150,11 +151,11 @@ function TopProducts({ products, period }: { products: TopProductRow[]; period: 
             <Thead columns={["المنتج", "المتجر", "القطع المستلمة"]} />
             <tbody className="divide-y divide-border">
               {rows.map((row) => (
-                <tr key={`${row.storeId}:${row.productId ?? row.productName}`}>
+                <Tr key={`${row.storeId}:${row.productId ?? row.productName}`}>
                   <Td>{row.productName}</Td>
                   <Td><Link href={`/stores/${row.storeId}`} className="text-primary hover:underline">{row.storeName}</Link></Td>
                   <Td>{formatNumber(row.units)}</Td>
-                </tr>
+                </Tr>
               ))}
             </tbody>
           </TableShell>
@@ -177,7 +178,7 @@ function StockAlerts({ alerts }: { alerts: InventoryAlerts }) {
         <p className="text-sm text-text-secondary">المخزون الحالي حسب اللون والمقاس. المخزون المنخفض من 1 إلى {formatNumber(alerts.lowStockThreshold)} قطع.</p>
         {sections.map(({ title, total, items }) => (
           <div key={title} className="space-y-2">
-            <h3 className="font-semibold text-heading">{title} · {formatNumber(total)}</h3>
+            <h3 className="font-medium text-heading">{title} · {formatNumber(total)}</h3>
             {items.length === 0 ? (
               <p className="text-sm text-text-secondary">ما في أصناف.</p>
             ) : (
@@ -186,13 +187,13 @@ function StockAlerts({ alerts }: { alerts: InventoryAlerts }) {
                   <Thead columns={["المنتج", "المتجر", "اللون", "المقاس", "المخزون"]} />
                   <tbody className="divide-y divide-border">
                     {items.map((row) => (
-                      <tr key={row.variantSizeId}>
+                      <Tr key={row.variantSizeId}>
                         <Td>{row.productName}</Td>
                         <Td><Link href={`/stores/${row.storeId}`} className="text-primary hover:underline">{row.storeName}</Link></Td>
                         <Td>{row.color}</Td>
                         <Td>{row.size}</Td>
                         <Td>{formatNumber(row.stock)}</Td>
-                      </tr>
+                      </Tr>
                     ))}
                   </tbody>
                 </TableShell>
