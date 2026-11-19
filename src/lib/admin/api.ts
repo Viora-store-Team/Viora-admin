@@ -64,16 +64,18 @@ export function fetchStats(
 // ─── المتاجر ✅ ────────────────────────────────────────────────
 
 /**
- * ✅ `GET /admin/stores?page&limit&q&status&isActive`
+ * ✅ `GET /admin/stores?page&limit&q&status&isActive&isHidden`
  *
  * `status` من قيم `StoreStatus` (PENDING · APPROVED · REJECTED).
  * `isActive` الحظر ("true" | "false").
+ * `isHidden` الإخفاء عن الزبائن ("true" | "false") — منفصل عن الحظر.
  * `q` بيبحث بالاسم والمدينة والمالك.
  */
 export function fetchStores(
   params: ListParams & {
     status?: StoreStatus | "";
     isActive?: "true" | "false" | "";
+    isHidden?: "true" | "false" | "";
   } = {},
 ): Promise<Paged<"stores", AdminStoreListItem>> {
   return adminFetch(
@@ -83,6 +85,7 @@ export function fetchStores(
       q: params.q,
       status: params.status,
       isActive: params.isActive,
+      isHidden: params.isHidden,
     })}`,
   );
 }
@@ -158,6 +161,27 @@ export function unfeatureStore(
   id: number,
 ): Promise<ApiResponse & { store?: AdminStoreDetail }> {
   return adminFetch(`/admin/stores/${id}/unfeature`, { method: "PATCH" });
+}
+
+/**
+ * ✅ `PATCH /admin/stores/:id/hide` — إخفاء المتجر عن الزبائن (`hiddenAt`)
+ *
+ * مش حظر: `isActive` و`status` ما بيتغيّروا والتاجر ما بيوصله إشعار.
+ * idempotent — إخفاء مخفي أصلاً بيرجع 200 وبيحافظ على `hiddenAt` الأصلي.
+ */
+export function hideStore(
+  id: number,
+): Promise<ApiResponse & { store?: AdminStoreDetail }> {
+  return adminFetch(`/admin/stores/${id}/hide`, { method: "PATCH" });
+}
+
+/**
+ * ✅ `PATCH /admin/stores/:id/unhide` — إظهار المتجر للزبائن (`hiddenAt: null`)
+ */
+export function unhideStore(
+  id: number,
+): Promise<ApiResponse & { store?: AdminStoreDetail }> {
+  return adminFetch(`/admin/stores/${id}/unhide`, { method: "PATCH" });
 }
 
 /**

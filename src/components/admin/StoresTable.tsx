@@ -2,6 +2,7 @@
 
 import {
   ChevronLeft,
+  EyeOff,
   PowerOff,
   Star,
   Store as StoreIcon,
@@ -86,6 +87,16 @@ export default function StoresTable({
                     >
                       <Star className="size-3 fill-warning text-warning" strokeWidth={1.75} aria-hidden="true" />
                       <span>{t.admin.stores.featuredBadge}</span>
+                    </span>
+                  )}
+                  {/* الإخفاء مش حظر — لون info وأيقونة عين، مش أحمر «موقوف» */}
+                  {store.hiddenAt != null && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-md bg-info-soft px-1.5 py-0.5 text-xs font-bold text-info"
+                      title={t.admin.stores.hiddenHint}
+                    >
+                      <EyeOff className="size-3" strokeWidth={1.75} aria-hidden="true" />
+                      <span>{t.admin.stores.hiddenBadge}</span>
                     </span>
                   )}
                   {/* التوقّف مستقل عن قرار المراجعة — متجر مقبول وموقوف

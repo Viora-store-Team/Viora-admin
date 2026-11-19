@@ -27,18 +27,21 @@ import type { ApiResponse } from "@/lib/api";
    2. نشط (status=APPROVED & isActive=true)
    3. بانتظار التوثيق (status=PENDING)
    4. موقوف (isActive=false)
-   5. مرفوض (status=REJECTED) */
+   5. مرفوض (status=REJECTED)
+   6. مخفية عن الزبائن (isHidden=true) — منفصلة عن الموقوف */
 const STATUS_TABS: TabItem[] = [
   { key: "all", label: t.admin.stores.tabAll },
   { key: "active", label: t.admin.stores.tabActive },
   { key: "pending", label: t.admin.stores.tabPending },
   { key: "suspended", label: t.admin.stores.tabSuspended },
   { key: "rejected", label: t.admin.stores.tabRejected },
+  { key: "hidden", label: t.admin.stores.tabHidden },
 ];
 
 function getTabFilters(tab: string): {
   status?: StoreStatus | "";
   isActive?: "true" | "false" | "";
+  isHidden?: "true" | "false" | "";
 } {
   switch (tab) {
     case "active":
@@ -49,6 +52,8 @@ function getTabFilters(tab: string): {
       return { status: "", isActive: "false" };
     case "rejected":
       return { status: "REJECTED", isActive: "" };
+    case "hidden":
+      return { status: "", isActive: "", isHidden: "true" };
     case "all":
     default:
       return { status: "", isActive: "" };
@@ -68,8 +73,8 @@ export default function AdminStoresPage() {
       q: string;
       filters: Record<string, string>;
     }) => {
-      const { status, isActive } = getTabFilters(filters.tab || "all");
-      return fetchStores({ page, q, status, isActive });
+      const { status, isActive, isHidden } = getTabFilters(filters.tab || "all");
+      return fetchStores({ page, q, status, isActive, isHidden });
     },
     [],
   );

@@ -3,7 +3,7 @@
 import { storeLocation } from "@/lib/admin/storeLocation";
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Ban, Calendar, Check, CircleCheck, DollarSign, ExternalLink, MapPin, Package, Power, PowerOff, RotateCcw, ShieldOff, ShoppingBag, Star, StarOff, Store as StoreIcon, Tag, Trash2, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Ban, Calendar, Check, CircleCheck, DollarSign, ExternalLink, Eye, EyeOff, MapPin, Package, Power, PowerOff, RotateCcw, ShieldOff, ShoppingBag, Star, StarOff, Store as StoreIcon, Tag, Trash2, TriangleAlert } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import Tabs from "@/components/ui/Tabs";
 import { Card, CardBody, CardHeader } from "@/components/ui/Card";
@@ -24,9 +24,11 @@ import {
   deleteStore,
   featureStore,
   fetchStore,
+  hideStore,
   rejectStore,
   suspendStore,
   unfeatureStore,
+  unhideStore,
 } from "@/lib/admin/api";
 import { accountStatus, STORE_STATUS } from "@/lib/admin/status";
 import type { AdminStoreDetail, StoreOwner } from "@/lib/admin/types";
@@ -45,6 +47,8 @@ type Dialog =
   | "activate"
   | "feature"
   | "unfeature"
+  | "hide"
+  | "unhide"
   | "delete"
   | null;
 
@@ -281,6 +285,44 @@ function AdminStoreDetailPageContent() {
     showFlash(t.admin.stores.didUnfeature);
   }, [storeId, showFlash]);
 
+  const handleHideStore = useCallback(async () => {
+    setBusy(true);
+    setError("");
+    const res = await hideStore(storeId);
+    if (!res.success) {
+      setBusy(false);
+      setDialog(null);
+      const failure = classifyStatus(res);
+      dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
+      setError(failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
+      return;
+    }
+    /* وقت الإخفاء من السيرفر — الإخفاء idempotent وبيحافظ على الوقت الأصلي */
+    const hiddenAt = res.store?.hiddenAt ?? new Date().toISOString();
+    setStore((prev) => (prev ? { ...prev, hiddenAt } : null));
+    setBusy(false);
+    setDialog(null);
+    showFlash(t.admin.stores.didHide);
+  }, [storeId, showFlash]);
+
+  const handleUnhideStore = useCallback(async () => {
+    setBusy(true);
+    setError("");
+    const res = await unhideStore(storeId);
+    if (!res.success) {
+      setBusy(false);
+      setDialog(null);
+      const failure = classifyStatus(res);
+      dispatchToast("error", failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
+      setError(failure.kind === "unauthorized" ? t.admin.common.sessionInvalid : failure.message);
+      return;
+    }
+    setStore((prev) => (prev ? { ...prev, hiddenAt: null } : null));
+    setBusy(false);
+    setDialog(null);
+    showFlash(t.admin.stores.didUnhide);
+  }, [storeId, showFlash]);
+
   const handleDeleteStore = useCallback(async () => {
     setBusy(true);
     setError("");
@@ -356,6 +398,20 @@ function AdminStoreDetailPageContent() {
   const displayName = isBrokenText(store.name)
     ? `${t.admin.stores.brokenName}${store.id}`
     : store.name;
+
+  const isHidden = store.hiddenAt != null;
+
+  /* الإخفاء عن الزبائن مستقل عن الحظر والمراجعة. الزر بيظهر للمتجر المقبول،
+     وزر الإظهار بيضل ظاهر لأي متجر مخفي عشان ما يعلق مخفي لو تغيّرت حالته. */
+  const hideToggle = isHidden ? (
+    <Button variant="secondary" disabled={busy} onClick={() => setDialog("unhide")} icon={<Eye className="size-4" aria-hidden="true" />}>
+      {t.admin.stores.unhide}
+    </Button>
+  ) : (
+    <Button variant="secondary" disabled={busy} onClick={() => setDialog("hide")} icon={<EyeOff className="size-4" aria-hidden="true" />}>
+      {t.admin.stores.hide}
+    </Button>
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -480,6 +536,7 @@ function AdminStoreDetailPageContent() {
                   >
                     {t.admin.stores.reject}
                   </Button>
+                  {isHidden && hideToggle}
                 </>
               )}
 
@@ -494,6 +551,7 @@ function AdminStoreDetailPageContent() {
                       {t.admin.stores.feature}
                     </Button>
                   )}
+                  {hideToggle}
                   {store.isActive ? (
                     <Button
                       variant="danger"
@@ -524,6 +582,7 @@ function AdminStoreDetailPageContent() {
                   <Button disabled={busy} onClick={() => setDialog("rereview")} icon={<RotateCcw className="size-4" aria-hidden="true" />}>
                     {t.admin.stores.reReview}
                   </Button>
+                  {isHidden && hideToggle}
                   <Button variant="danger" disabled={busy} onClick={() => setDialog("delete")} icon={<Trash2 className="size-4" aria-hidden="true" />}>
                     حذف المتجر
                   </Button>
@@ -545,6 +604,16 @@ function AdminStoreDetailPageContent() {
               <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/25 bg-warning-soft px-3 py-1 text-xs font-bold text-warning">
                 <Star className="size-3.5 fill-warning text-warning" aria-hidden="true" />
                 <span>{t.admin.stores.featuredBadge}</span>
+              </span>
+            )}
+            {/* الإخفاء مش حظر — لون info وأيقونة عين، مش أحمر «موقوف» */}
+            {isHidden && (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border border-info/25 bg-info-soft px-3 py-1 text-xs font-bold text-info"
+                title={store.hiddenAt ? `${t.admin.stores.hiddenHint} · ${formatDate(store.hiddenAt)}` : t.admin.stores.hiddenHint}
+              >
+                <EyeOff className="size-3.5" aria-hidden="true" />
+                <span>{t.admin.stores.hiddenBadge}</span>
               </span>
             )}
             <Badge tone={store.owner.emailVerified ? "success" : "warning"}>
@@ -860,6 +929,28 @@ function AdminStoreDetailPageContent() {
         confirmLabel={t.admin.stores.unfeature}
         loading={busy}
         onConfirm={handleUnfeatureStore}
+        onCancel={() => setDialog(null)}
+      />
+
+      <ConfirmDialog
+        open={dialog === "hide"}
+        tone="primary"
+        title={t.admin.stores.hideTitle}
+        body={t.admin.stores.hideBody}
+        confirmLabel={t.admin.stores.hide}
+        loading={busy}
+        onConfirm={handleHideStore}
+        onCancel={() => setDialog(null)}
+      />
+
+      <ConfirmDialog
+        open={dialog === "unhide"}
+        tone="primary"
+        title={t.admin.stores.unhideTitle}
+        body={t.admin.stores.unhideBody}
+        confirmLabel={t.admin.stores.unhide}
+        loading={busy}
+        onConfirm={handleUnhideStore}
         onCancel={() => setDialog(null)}
       />
 

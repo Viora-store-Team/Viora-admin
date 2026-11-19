@@ -217,6 +217,7 @@ function storeListItem(s: (typeof db.stores)[number]) {
     city: s.city,
     status: s.status,
     isActive: s.isActive,
+    hiddenAt: s.hiddenAt,
     createdAt: s.createdAt,
     reviewedAt: s.reviewedAt,
     owner: s.owner,
@@ -563,10 +564,14 @@ export async function mockFetch(
 
     if (!rawId) {
       const status = q.get("status");
+      const isHidden = q.get("isHidden");
       const rows = emptyMode
         ? []
         : db.stores
             .filter((s) => (status ? s.status === status : true))
+            .filter((s) =>
+              isHidden ? (s.hiddenAt != null) === (isHidden === "true") : true,
+            )
             .filter((s) => matches(search, s.name, s.city, s.owner.name))
             .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
@@ -651,6 +656,17 @@ export async function mockFetch(
     if (action === "unfeature" && method === "PATCH") {
       store.isFeatured = false;
       store.featuredOrder = null;
+      return ok({ store });
+    }
+
+    // الإخفاء idempotent — بيحافظ على وقت الإخفاء الأصلي زي السيرفر
+    if (action === "hide" && method === "PATCH") {
+      store.hiddenAt ??= new Date().toISOString();
+      return ok({ store });
+    }
+
+    if (action === "unhide" && method === "PATCH") {
+      store.hiddenAt = null;
       return ok({ store });
     }
 

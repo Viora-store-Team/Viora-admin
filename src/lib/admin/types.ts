@@ -270,6 +270,11 @@ export interface AdminStoreListItem {
   isActive: boolean;
   isFeatured?: boolean;
   featuredOrder?: number | null;
+  /**
+   * وقت إخفاء المتجر عن الزبائن (ISO) — `null` يعني ظاهر.
+   * مستقل عن الحظر: `isActive` و`status` ما بيتغيّروا والتاجر ما بيتبلّغ.
+   */
+  hiddenAt: string | null;
   createdAt: string;
   /** وقت قرار المراجعة — null يعني لسا ما انراجع */
   reviewedAt: string | null;
